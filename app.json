@@ -3,6 +3,7 @@
     "name": "coffee-note",
     "slug": "coffee-note",
     "version": "1.0.0",
+    "scheme": "coffee-note",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -25,6 +26,11 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-router",
+      "expo-sqlite",
+      "@react-native-community/datetimepicker"
+    ]
   }
 }

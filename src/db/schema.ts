@@ -1,0 +1,60 @@
+export const CREATE_TABLES_SQL = `
+CREATE TABLE IF NOT EXISTS cafe_logs (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  cafe_name   TEXT NOT NULL,
+  menu_name   TEXT NOT NULL,
+  visited_at  TEXT NOT NULL,
+  photo_uri   TEXT,
+  rating      INTEGER,
+  memo        TEXT,
+  created_at  TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS cafe_tasting_notes (
+  id              INTEGER PRIMARY KEY AUTOINCREMENT,
+  cafe_log_id     INTEGER NOT NULL REFERENCES cafe_logs(id) ON DELETE CASCADE,
+  origin          TEXT,
+  variety         TEXT,
+  process         TEXT,
+  roast_level     TEXT,
+  official_notes  TEXT,
+  my_notes        TEXT,
+  acidity         INTEGER,
+  sweetness       INTEGER,
+  bitterness      INTEGER,
+  body            INTEGER
+);
+
+CREATE TABLE IF NOT EXISTS recipes (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  name          TEXT NOT NULL,
+  brew_method   TEXT NOT NULL,
+  bean_name     TEXT,
+  bean_amount   REAL,
+  water_amount  REAL,
+  water_temp    INTEGER,
+  grind_size    TEXT,
+  memo          TEXT,
+  is_favorite   INTEGER DEFAULT 0,
+  created_at    TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS recipe_steps (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  recipe_id   INTEGER NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
+  step_order  INTEGER NOT NULL,
+  title       TEXT NOT NULL,
+  description TEXT,
+  duration    INTEGER
+);
+
+CREATE TABLE IF NOT EXISTS brew_logs (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  recipe_id   INTEGER REFERENCES recipes(id),
+  brewed_at   TEXT NOT NULL,
+  rating      INTEGER,
+  my_notes    TEXT,
+  memo        TEXT,
+  created_at  TEXT DEFAULT (datetime('now'))
+);
+`;
