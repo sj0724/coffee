@@ -9,7 +9,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   Modal,
-  useWindowDimensions,
 } from 'react-native';
 import { Image } from 'expo-image';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -28,13 +27,23 @@ const CROP_TOOLBAR = {
 
 type Photo = { uri: string; width: number; height: number };
 
+const MENU_OPTIONS = [
+  '에스프레소',
+  '아메리카노',
+  '라떼',
+  '핸드드립',
+  '콜드브루',
+  '논커피',
+  '티',
+  '에이드',
+];
+
 export default function NewCafeLogScreen() {
   const router = useRouter();
   const [cafeName, setCafeName] = useState('');
   const [menuName, setMenuName] = useState('');
   const [date, setDate] = useState(new Date());
   const [showPicker, setShowPicker] = useState(false);
-  const [rating, setRating] = useState(0);
   const [memo, setMemo] = useState('');
   const [saving, setSaving] = useState(false);
   const [photo, setPhoto] = useState<Photo | null>(null);
@@ -90,7 +99,6 @@ export default function NewCafeLogScreen() {
       menu_name: menuName.trim(),
       visited_at: visitedAt,
       photo_uri: photo?.uri,
-      rating: rating || undefined,
       memo: memo.trim() || undefined,
     });
     setSaving(false);
@@ -112,7 +120,7 @@ export default function NewCafeLogScreen() {
       >
         <Field label="사진">
           <View className="gap-3">
-            {photo ? (
+            {photo && (
               <View className="rounded-xl">
                 <Image
                   source={{ uri: photo.uri }}
@@ -130,11 +138,6 @@ export default function NewCafeLogScreen() {
                 >
                   <Ionicons name="close" size={18} color="#fff" />
                 </TouchableOpacity>
-              </View>
-            ) : (
-              <View className="items-center justify-center h-40 gap-2 bg-white border border-coffee-border rounded-xl">
-                <Ionicons name="image-outline" size={36} color="#ccc" />
-                <Text className="text-sm text-gray-400">사진을 추가해보세요</Text>
               </View>
             )}
 
@@ -167,14 +170,26 @@ export default function NewCafeLogScreen() {
           />
         </Field>
 
-        <Field label="메뉴 이름 *">
-          <TextInput
-            className="border border-coffee-border rounded-lg p-3 text-[15px] text-[#222] bg-white"
-            value={menuName}
-            onChangeText={setMenuName}
-            placeholder="에스프레소, 플랫화이트..."
-            placeholderTextColor="#ccc"
-          />
+        <Field label="메뉴 *">
+          <View className="flex-row flex-wrap gap-2">
+            {MENU_OPTIONS.map((option) => (
+              <TouchableOpacity
+                key={option}
+                onPress={() => setMenuName(option)}
+                className={`px-4 py-2 rounded-full border ${
+                  menuName === option ? 'bg-coffee border-coffee' : 'bg-white border-coffee-border'
+                }`}
+              >
+                <Text
+                  className={`text-sm font-semibold ${
+                    menuName === option ? 'text-white' : 'text-[#555]'
+                  }`}
+                >
+                  {option}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </Field>
 
         <Field label="방문 날짜">
@@ -183,7 +198,6 @@ export default function NewCafeLogScreen() {
             onPress={() => setShowPicker(true)}
           >
             <Text className="text-[15px] text-[#222]">{visitedAt}</Text>
-            <Text className="text-base">📅</Text>
           </TouchableOpacity>
         </Field>
 
@@ -230,18 +244,6 @@ export default function NewCafeLogScreen() {
             maximumDate={new Date()}
           />
         )}
-
-        <Field label="별점">
-          <View className="flex-row gap-2">
-            {[1, 2, 3, 4, 5].map((n) => (
-              <TouchableOpacity key={n} onPress={() => setRating(n === rating ? 0 : n)}>
-                <Text className={`text-[28px] ${n <= rating ? 'text-accent' : 'text-gray-300'}`}>
-                  ★
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </Field>
 
         <Field label="메모">
           <TextInput
