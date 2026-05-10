@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Alert, TextInput } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert, TextInput, Image as RNImage } from 'react-native';
+import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { getCafeLog, deleteCafeLog } from '@/src/db/queries/cafeLogs';
@@ -11,6 +12,7 @@ export default function CafeDetailScreen() {
   const router = useRouter();
   const [log, setLog] = useState<CafeLog | null>(null);
   const [note, setNote] = useState<CafeTastingNote | null>(null);
+  const [photoSize, setPhotoSize] = useState<{ width: number; height: number } | null>(null);
   const [editingNote, setEditingNote] = useState(false);
   const [noteForm, setNoteForm] = useState<Partial<CafeTastingNote>>({});
 
@@ -23,6 +25,9 @@ export default function CafeDetailScreen() {
     const [l, n] = await Promise.all([getCafeLog(logId), getTastingNote(logId)]);
     setLog(l);
     setNote(n);
+    if (l?.photo_uri) {
+      RNImage.getSize(l.photo_uri, (w, h) => setPhotoSize({ width: w, height: h }), () => {});
+    }
     if (n) {
       setNoteForm({
         origin: n.origin,
@@ -68,11 +73,22 @@ export default function CafeDetailScreen() {
 
   if (!log) return <View className="flex-1 bg-coffee-light" />;
 
+  const imgW = photoSize?.width ?? 200;
+  const imgH = photoSize?.height ?? 300;
+
   return (
     <ScrollView
       className="flex-1 bg-coffee-light"
       contentContainerStyle={{ padding: 20, gap: 20, paddingBottom: 40 }}
     >
+      {log.photo_uri && (
+        <Image
+          source={{ uri: log.photo_uri }}
+          style={{ width: imgW, height: imgH, alignSelf: 'center', borderRadius: 12 }}
+          contentFit="cover"
+        />
+      )}
+
       <View className="flex-row items-start gap-3">
         <View className="flex-1">
           <Text className="text-[22px] font-bold text-[#222]">{log.cafe_name}</Text>
@@ -257,9 +273,7 @@ function SliderRow({
             }`}
             onPress={() => onChange(n)}
           >
-            <Text
-              className={`text-sm ${n <= (value ?? 0) ? 'text-white' : 'text-gray-400'}`}
-            >
+            <Text className={`text-sm ${n <= (value ?? 0) ? 'text-white' : 'text-gray-400'}`}>
               {n}
             </Text>
           </TouchableOpacity>

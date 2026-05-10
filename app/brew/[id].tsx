@@ -98,9 +98,7 @@ export default function BrewDetailScreen() {
             />
           )}
         </View>
-        {recipe.memo ? (
-          <Text className="text-sm text-[#555] leading-5">{recipe.memo}</Text>
-        ) : null}
+        {recipe.memo ? <Text className="text-sm text-[#555] leading-5">{recipe.memo}</Text> : null}
       </View>
 
       {steps.length > 0 && (

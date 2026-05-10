@@ -120,9 +120,7 @@ export default function NewBrewScreen() {
                 <TouchableOpacity
                   key={m}
                   className={`px-3.5 py-2 rounded-full border ${
-                    m === brewMethod
-                      ? 'bg-coffee border-coffee'
-                      : 'bg-white border-coffee-border'
+                    m === brewMethod ? 'bg-coffee border-coffee' : 'bg-white border-coffee-border'
                   }`}
                   onPress={() => setBrewMethod(m)}
                 >

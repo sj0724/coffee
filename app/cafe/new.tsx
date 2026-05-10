@@ -9,10 +9,24 @@ import {
   KeyboardAvoidingView,
   Platform,
   Modal,
+  useWindowDimensions,
 } from 'react-native';
+import { Image } from 'expo-image';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useRouter } from 'expo-router';
+import ImageCropPicker from 'react-native-image-crop-picker';
+import { Ionicons } from '@expo/vector-icons';
 import { createCafeLog } from '@/src/db/queries/cafeLogs';
+
+const CROP_TOOLBAR = {
+  cropperToolbarTitle: '사진 편집',
+  cropperToolbarColor: '#3D2B1F',
+  cropperToolbarWidgetColor: '#ffffff',
+  cropperActiveWidgetColor: '#F4A261',
+  cropperStatusBarColor: '#3D2B1F',
+};
+
+type Photo = { uri: string; width: number; height: number };
 
 export default function NewCafeLogScreen() {
   const router = useRouter();
@@ -23,12 +37,46 @@ export default function NewCafeLogScreen() {
   const [rating, setRating] = useState(0);
   const [memo, setMemo] = useState('');
   const [saving, setSaving] = useState(false);
+  const [photo, setPhoto] = useState<Photo | null>(null);
 
   const visitedAt = date.toISOString().slice(0, 10);
+
+  const imgDisplayWidth = photo?.width ?? 200;
+  const imgDisplayHeight = photo?.height ?? 300;
 
   function onDateChange(_: unknown, selected?: Date) {
     if (Platform.OS === 'android') setShowPicker(false);
     if (selected) setDate(selected);
+  }
+
+  const cropOptions = {
+    width: 300,
+    height: 400,
+    cropping: true,
+    freeStyleCropEnabled: true,
+    ...CROP_TOOLBAR,
+  };
+
+  async function pickFromLibrary() {
+    try {
+      const image = await ImageCropPicker.openPicker(cropOptions);
+      setPhoto({ uri: image.path, width: image.width, height: image.height });
+    } catch (e: unknown) {
+      if ((e as { code?: string })?.code !== 'E_PICKER_CANCELLED') {
+        Alert.alert('오류', '사진을 불러오지 못했어요.');
+      }
+    }
+  }
+
+  async function pickFromCamera() {
+    try {
+      const image = await ImageCropPicker.openCamera(cropOptions);
+      setPhoto({ uri: image.path, width: image.width, height: image.height });
+    } catch (e: unknown) {
+      if ((e as { code?: string })?.code !== 'E_PICKER_CANCELLED') {
+        Alert.alert('오류', '카메라를 열지 못했어요.');
+      }
+    }
   }
 
   async function handleSave() {
@@ -41,6 +89,7 @@ export default function NewCafeLogScreen() {
       cafe_name: cafeName.trim(),
       menu_name: menuName.trim(),
       visited_at: visitedAt,
+      photo_uri: photo?.uri,
       rating: rating || undefined,
       memo: memo.trim() || undefined,
     });
@@ -57,7 +106,57 @@ export default function NewCafeLogScreen() {
       className="flex-1"
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <ScrollView className="flex-1 bg-coffee-light" contentContainerStyle={{ padding: 20, gap: 20 }}>
+      <ScrollView
+        className="flex-1 bg-coffee-light"
+        contentContainerStyle={{ padding: 20, gap: 20 }}
+      >
+        <Field label="사진">
+          <View className="gap-3">
+            {photo ? (
+              <View className="rounded-xl">
+                <Image
+                  source={{ uri: photo.uri }}
+                  style={{
+                    width: imgDisplayWidth,
+                    height: imgDisplayHeight,
+                    alignSelf: 'center',
+                    borderRadius: 12,
+                  }}
+                  contentFit="cover"
+                />
+                <TouchableOpacity
+                  className="absolute top-2 right-2 bg-black/50 rounded-full p-1.5"
+                  onPress={() => setPhoto(null)}
+                >
+                  <Ionicons name="close" size={18} color="#fff" />
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View className="items-center justify-center h-40 gap-2 bg-white border border-coffee-border rounded-xl">
+                <Ionicons name="image-outline" size={36} color="#ccc" />
+                <Text className="text-sm text-gray-400">사진을 추가해보세요</Text>
+              </View>
+            )}
+
+            <View className="flex-row gap-3">
+              <TouchableOpacity
+                className="flex-row items-center justify-center flex-1 gap-2 py-3 bg-white border border-coffee-border rounded-xl"
+                onPress={pickFromCamera}
+              >
+                <Ionicons name="camera-outline" size={20} color="#6F4E37" />
+                <Text className="text-sm font-semibold text-coffee">카메라</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className="flex-row items-center justify-center flex-1 gap-2 py-3 bg-white border border-coffee-border rounded-xl"
+                onPress={pickFromLibrary}
+              >
+                <Ionicons name="images-outline" size={20} color="#6F4E37" />
+                <Text className="text-sm font-semibold text-coffee">갤러리</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Field>
+
         <Field label="카페 이름 *">
           <TextInput
             className="border border-coffee-border rounded-lg p-3 text-[15px] text-[#222] bg-white"
@@ -80,7 +179,7 @@ export default function NewCafeLogScreen() {
 
         <Field label="방문 날짜">
           <TouchableOpacity
-            className="border border-coffee-border rounded-lg p-3 bg-white flex-row justify-between items-center"
+            className="flex-row items-center justify-between p-3 bg-white border rounded-lg border-coffee-border"
             onPress={() => setShowPicker(true)}
           >
             <Text className="text-[15px] text-[#222]">{visitedAt}</Text>
@@ -91,7 +190,12 @@ export default function NewCafeLogScreen() {
         {Platform.OS === 'ios' && (
           <Modal transparent animationType="fade" visible={showPicker}>
             <TouchableOpacity
-              style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' }}
+              style={{
+                flex: 1,
+                backgroundColor: 'rgba(0,0,0,0.4)',
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}
               activeOpacity={1}
               onPress={() => setShowPicker(false)}
             >
@@ -157,7 +261,7 @@ export default function NewCafeLogScreen() {
           onPress={handleSave}
           disabled={saving}
         >
-          <Text className="text-white text-base font-bold">{saving ? '저장 중...' : '저장'}</Text>
+          <Text className="text-base font-bold text-white">{saving ? '저장 중...' : '저장'}</Text>
         </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
