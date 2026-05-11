@@ -27,44 +27,13 @@ export async function createCafeLog(
   try {
     const db = await getDB();
     const result = await db.runAsync(
-      `INSERT INTO cafe_logs (cafe_name, menu_name, visited_at, photo_uri, rating, memo)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [
-        log.cafe_name,
-        log.menu_name,
-        log.visited_at,
-        log.photo_uri ?? null,
-        log.rating ?? null,
-        log.memo ?? null,
-      ],
+      `INSERT INTO cafe_logs (cafe_name, visited_at, photo_uri, memo) VALUES (?, ?, ?, ?)`,
+      [log.cafe_name, log.visited_at, log.photo_uri ?? null, log.memo ?? null],
     );
     return result.lastInsertRowId;
   } catch (e) {
     console.error('createCafeLog error:', e);
     return null;
-  }
-}
-
-export async function updateCafeLog(id: number, log: Partial<CafeLog>): Promise<boolean> {
-  try {
-    const db = await getDB();
-    await db.runAsync(
-      `UPDATE cafe_logs SET cafe_name = ?, menu_name = ?, visited_at = ?, photo_uri = ?, rating = ?, memo = ?
-       WHERE id = ?`,
-      [
-        log.cafe_name ?? '',
-        log.menu_name ?? '',
-        log.visited_at ?? '',
-        log.photo_uri ?? null,
-        log.rating ?? null,
-        log.memo ?? null,
-        id,
-      ],
-    );
-    return true;
-  } catch (e) {
-    console.error('updateCafeLog error:', e);
-    return false;
   }
 }
 

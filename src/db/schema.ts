@@ -1,28 +1,36 @@
+export const DB_VERSION = 3;
+
 export const CREATE_TABLES_SQL = `
 CREATE TABLE IF NOT EXISTS cafe_logs (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,
   cafe_name   TEXT NOT NULL,
-  menu_name   TEXT NOT NULL,
   visited_at  TEXT NOT NULL,
   photo_uri   TEXT,
-  rating      INTEGER,
   memo        TEXT,
   created_at  TEXT DEFAULT (datetime('now'))
 );
 
+CREATE TABLE IF NOT EXISTS cafe_menu_items (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  cafe_log_id INTEGER NOT NULL REFERENCES cafe_logs(id) ON DELETE CASCADE,
+  menu_name   TEXT NOT NULL,
+  created_at  TEXT DEFAULT (datetime('now'))
+);
+
 CREATE TABLE IF NOT EXISTS cafe_tasting_notes (
-  id              INTEGER PRIMARY KEY AUTOINCREMENT,
-  cafe_log_id     INTEGER NOT NULL REFERENCES cafe_logs(id) ON DELETE CASCADE,
-  origin          TEXT,
-  variety         TEXT,
-  process         TEXT,
-  roast_level     TEXT,
-  official_notes  TEXT,
-  my_notes        TEXT,
-  acidity         INTEGER,
-  sweetness       INTEGER,
-  bitterness      INTEGER,
-  body            INTEGER
+  id                INTEGER PRIMARY KEY AUTOINCREMENT,
+  cafe_menu_item_id INTEGER NOT NULL REFERENCES cafe_menu_items(id) ON DELETE CASCADE,
+  origin            TEXT,
+  variety           TEXT,
+  process           TEXT,
+  roast_level       TEXT,
+  official_notes    TEXT,
+  my_notes          TEXT,
+  temperature       TEXT,
+  acidity           INTEGER,
+  nuttiness         INTEGER,
+  richness          INTEGER,
+  smoothness        INTEGER
 );
 
 CREATE TABLE IF NOT EXISTS recipes (

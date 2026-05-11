@@ -27,21 +27,9 @@ const CROP_TOOLBAR = {
 
 type Photo = { uri: string; width: number; height: number };
 
-const MENU_OPTIONS = [
-  '에스프레소',
-  '아메리카노',
-  '라떼',
-  '핸드드립',
-  '콜드브루',
-  '논커피',
-  '티',
-  '에이드',
-];
-
 export default function NewCafeLogScreen() {
   const router = useRouter();
   const [cafeName, setCafeName] = useState('');
-  const [menuName, setMenuName] = useState('');
   const [date, setDate] = useState(new Date());
   const [showPicker, setShowPicker] = useState(false);
   const [memo, setMemo] = useState('');
@@ -89,14 +77,13 @@ export default function NewCafeLogScreen() {
   }
 
   async function handleSave() {
-    if (!cafeName.trim() || !menuName.trim()) {
-      Alert.alert('필수 항목', '카페 이름과 메뉴 이름을 입력해주세요.');
+    if (!cafeName.trim()) {
+      Alert.alert('필수 항목', '카페 이름을 입력해주세요.');
       return;
     }
     setSaving(true);
     const id = await createCafeLog({
       cafe_name: cafeName.trim(),
-      menu_name: menuName.trim(),
       visited_at: visitedAt,
       photo_uri: photo?.uri,
       memo: memo.trim() || undefined,
@@ -168,28 +155,6 @@ export default function NewCafeLogScreen() {
             placeholder="블루보틀, 스타벅스..."
             placeholderTextColor="#ccc"
           />
-        </Field>
-
-        <Field label="메뉴 *">
-          <View className="flex-row flex-wrap gap-2">
-            {MENU_OPTIONS.map((option) => (
-              <TouchableOpacity
-                key={option}
-                onPress={() => setMenuName(option)}
-                className={`px-4 py-2 rounded-full border ${
-                  menuName === option ? 'bg-coffee border-coffee' : 'bg-white border-coffee-border'
-                }`}
-              >
-                <Text
-                  className={`text-sm font-semibold ${
-                    menuName === option ? 'text-white' : 'text-[#555]'
-                  }`}
-                >
-                  {option}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
         </Field>
 
         <Field label="방문 날짜">

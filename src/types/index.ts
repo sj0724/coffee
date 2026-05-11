@@ -1,27 +1,33 @@
 export interface CafeLog {
   id?: number;
   cafe_name: string;
-  menu_name: string;
   visited_at: string;
   photo_uri?: string;
-  rating?: number;
   memo?: string;
+  created_at?: string;
+}
+
+export interface CafeMenuItem {
+  id?: number;
+  cafe_log_id: number;
+  menu_name: string;
   created_at?: string;
 }
 
 export interface CafeTastingNote {
   id?: number;
-  cafe_log_id: number;
+  cafe_menu_item_id: number;
   origin?: string;
   variety?: string;
   process?: string;
   roast_level?: string;
   official_notes?: string[];
   my_notes?: string[];
+  temperature?: string;
   acidity?: number;
-  sweetness?: number;
-  bitterness?: number;
-  body?: number;
+  nuttiness?: number;
+  richness?: number;
+  smoothness?: number;
 }
 
 export interface Recipe {

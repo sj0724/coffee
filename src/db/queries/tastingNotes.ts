@@ -14,12 +14,12 @@ function parseNote(raw: RawNote): CafeTastingNote {
   };
 }
 
-export async function getTastingNote(cafeLogId: number): Promise<CafeTastingNote | null> {
+export async function getTastingNote(cafeMenuItemId: number): Promise<CafeTastingNote | null> {
   try {
     const db = await getDB();
     const raw = await db.getFirstAsync<RawNote>(
-      'SELECT * FROM cafe_tasting_notes WHERE cafe_log_id = ?',
-      [cafeLogId],
+      'SELECT * FROM cafe_tasting_notes WHERE cafe_menu_item_id = ?',
+      [cafeMenuItemId],
     );
     return raw ? parseNote(raw) : null;
   } catch (e) {
@@ -32,8 +32,8 @@ export async function upsertTastingNote(note: CafeTastingNote): Promise<boolean>
   try {
     const db = await getDB();
     const existing = await db.getFirstAsync<{ id: number }>(
-      'SELECT id FROM cafe_tasting_notes WHERE cafe_log_id = ?',
-      [note.cafe_log_id],
+      'SELECT id FROM cafe_tasting_notes WHERE cafe_menu_item_id = ?',
+      [note.cafe_menu_item_id],
     );
 
     const officialNotes = JSON.stringify(note.official_notes ?? []);
@@ -43,9 +43,9 @@ export async function upsertTastingNote(note: CafeTastingNote): Promise<boolean>
       await db.runAsync(
         `UPDATE cafe_tasting_notes
          SET origin = ?, variety = ?, process = ?, roast_level = ?,
-             official_notes = ?, my_notes = ?,
-             acidity = ?, sweetness = ?, bitterness = ?, body = ?
-         WHERE cafe_log_id = ?`,
+             official_notes = ?, my_notes = ?, temperature = ?,
+             acidity = ?, nuttiness = ?, richness = ?, smoothness = ?
+         WHERE cafe_menu_item_id = ?`,
         [
           note.origin ?? null,
           note.variety ?? null,
@@ -53,47 +53,39 @@ export async function upsertTastingNote(note: CafeTastingNote): Promise<boolean>
           note.roast_level ?? null,
           officialNotes,
           myNotes,
+          note.temperature ?? null,
           note.acidity ?? null,
-          note.sweetness ?? null,
-          note.bitterness ?? null,
-          note.body ?? null,
-          note.cafe_log_id,
+          note.nuttiness ?? null,
+          note.richness ?? null,
+          note.smoothness ?? null,
+          note.cafe_menu_item_id,
         ],
       );
     } else {
       await db.runAsync(
         `INSERT INTO cafe_tasting_notes
-         (cafe_log_id, origin, variety, process, roast_level, official_notes, my_notes, acidity, sweetness, bitterness, body)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         (cafe_menu_item_id, origin, variety, process, roast_level,
+          official_notes, my_notes, temperature, acidity, nuttiness, richness, smoothness)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
-          note.cafe_log_id,
+          note.cafe_menu_item_id,
           note.origin ?? null,
           note.variety ?? null,
           note.process ?? null,
           note.roast_level ?? null,
           officialNotes,
           myNotes,
+          note.temperature ?? null,
           note.acidity ?? null,
-          note.sweetness ?? null,
-          note.bitterness ?? null,
-          note.body ?? null,
+          note.nuttiness ?? null,
+          note.richness ?? null,
+          note.smoothness ?? null,
         ],
       );
     }
     return true;
   } catch (e) {
     console.error('upsertTastingNote error:', e);
-    return false;
-  }
-}
-
-export async function deleteTastingNote(cafeLogId: number): Promise<boolean> {
-  try {
-    const db = await getDB();
-    await db.runAsync('DELETE FROM cafe_tasting_notes WHERE cafe_log_id = ?', [cafeLogId]);
-    return true;
-  } catch (e) {
-    console.error('deleteTastingNote error:', e);
     return false;
   }
 }
