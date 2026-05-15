@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, useWindowDimensions } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -63,54 +63,26 @@ function parseNoteColors(notesJson: string | null | undefined): string[] {
 }
 
 const SIDE_PADDING = 28;
+type ListItem = 'new' | CafeLog;
 const AnimatedFlatList = Animated.createAnimatedComponent(FlatList) as typeof FlatList;
 
-type CafeCardProps = {
-  item: CafeLog;
-  index: number;
-  scrollX: SharedValue<number>;
-  cardWidth: number;
-  screenWidth: number;
-  screenHeight: number;
-  defaultCardHeight: number;
-  defaultImageHeight: number;
-};
+// ─── Coverflow animated wrapper ──────────────────────────────────────────────
 
-function CafeCard({
-  item,
+function CoverflowWrapper({
   index,
   scrollX,
-  cardWidth,
   screenWidth,
-  screenHeight,
-  defaultCardHeight,
-  defaultImageHeight,
-}: CafeCardProps) {
-  const router = useRouter();
-  const [imgRatio, setImgRatio] = useState<number | null>(null);
-  const noteColors = parseNoteColors(item.first_my_notes);
-  const hasPhoto = !!item.photo_uri;
-
-  let actualCardWidth = cardWidth;
-  let actualCardHeight = defaultCardHeight;
-  if (hasPhoto && imgRatio != null) {
-    const naturalHeight = cardWidth / imgRatio;
-    if (naturalHeight > defaultCardHeight) {
-      actualCardHeight = defaultCardHeight;
-      actualCardWidth = defaultCardHeight * imgRatio;
-    } else {
-      actualCardHeight = naturalHeight;
-      actualCardWidth = cardWidth;
-    }
-  }
-
-  const noteGradient =
-    noteColors.length > 0
-      ? ((noteColors.length === 1
-          ? [noteColors[0], noteColors[0]]
-          : noteColors) as [string, string, ...string[]])
-      : null;
-
+  cardWidth,
+  cardHeight,
+  children,
+}: {
+  index: number;
+  scrollX: SharedValue<number>;
+  screenWidth: number;
+  cardWidth: number;
+  cardHeight: number;
+  children: React.ReactNode;
+}) {
   const animStyle = useAnimatedStyle(() => {
     const center = index * screenWidth;
     const rotateY = interpolate(
@@ -138,6 +110,150 @@ function CafeCard({
   });
 
   return (
+    <Animated.View
+      style={[
+        {
+          width: cardWidth,
+          height: cardHeight,
+          borderRadius: 24,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 8 },
+          shadowOpacity: 0.22,
+          shadowRadius: 18,
+          elevation: 10,
+        },
+        animStyle,
+      ]}
+    >
+      {children}
+    </Animated.View>
+  );
+}
+
+// ─── Create card ─────────────────────────────────────────────────────────────
+
+function CreateCard({
+  index,
+  scrollX,
+  cardWidth,
+  cardHeight,
+  screenWidth,
+  screenHeight,
+}: {
+  index: number;
+  scrollX: SharedValue<number>;
+  cardWidth: number;
+  cardHeight: number;
+  screenWidth: number;
+  screenHeight: number;
+}) {
+  const router = useRouter();
+  return (
+    <View
+      style={{
+        width: screenWidth,
+        height: screenHeight,
+        justifyContent: 'center',
+        alignItems: 'center',
+      }}
+    >
+      <CoverflowWrapper
+        index={index}
+        scrollX={scrollX}
+        screenWidth={screenWidth}
+        cardWidth={cardWidth}
+        cardHeight={cardHeight}
+      >
+        <TouchableOpacity
+          className="flex-1 overflow-hidden rounded-[24px]"
+          onPress={() => router.push('/cafe/new')}
+          activeOpacity={0.88}
+          style={{ backgroundColor: '#FFF8F3' }}
+        >
+          <View className="flex-1 items-center justify-center gap-4">
+            <View
+              style={{
+                width: 72,
+                height: 72,
+                borderRadius: 36,
+                backgroundColor: '#F2E9E1',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Ionicons name="add" size={40} color="#6F4E37" />
+            </View>
+            <Text style={{ fontSize: 17, fontWeight: '600', color: '#6F4E37' }}>
+              새 카페 기록
+            </Text>
+          </View>
+          {/* subtle top/bottom border hint */}
+          <View
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              borderRadius: 24,
+              borderWidth: 1.5,
+              borderColor: '#E8D8CC',
+            }}
+            pointerEvents="none"
+          />
+        </TouchableOpacity>
+      </CoverflowWrapper>
+    </View>
+  );
+}
+
+// ─── Log card ─────────────────────────────────────────────────────────────────
+
+function CafeCard({
+  item,
+  index,
+  scrollX,
+  cardWidth,
+  screenWidth,
+  screenHeight,
+  defaultCardHeight,
+  defaultImageHeight,
+}: {
+  item: CafeLog;
+  index: number;
+  scrollX: SharedValue<number>;
+  cardWidth: number;
+  screenWidth: number;
+  screenHeight: number;
+  defaultCardHeight: number;
+  defaultImageHeight: number;
+}) {
+  const router = useRouter();
+  const [imgRatio, setImgRatio] = useState<number | null>(null);
+  const noteColors = parseNoteColors(item.first_my_notes);
+  const hasPhoto = !!item.photo_uri;
+
+  let actualCardWidth = cardWidth;
+  let actualCardHeight = defaultCardHeight;
+  if (hasPhoto && imgRatio != null) {
+    const naturalHeight = cardWidth / imgRatio;
+    if (naturalHeight > defaultCardHeight) {
+      actualCardHeight = defaultCardHeight;
+      actualCardWidth = defaultCardHeight * imgRatio;
+    } else {
+      actualCardHeight = naturalHeight;
+      actualCardWidth = cardWidth;
+    }
+  }
+
+  const noteGradient =
+    noteColors.length > 0
+      ? ((noteColors.length === 1
+          ? [noteColors[0], noteColors[0]]
+          : noteColors) as [string, string, ...string[]])
+      : null;
+
+  return (
     <View
       style={{
         width: screenWidth,
@@ -147,20 +263,12 @@ function CafeCard({
         alignItems: 'center',
       }}
     >
-      <Animated.View
-        style={[
-          {
-            width: actualCardWidth,
-            height: actualCardHeight,
-            borderRadius: 24,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 8 },
-            shadowOpacity: 0.22,
-            shadowRadius: 18,
-            elevation: 10,
-          },
-          animStyle,
-        ]}
+      <CoverflowWrapper
+        index={index}
+        scrollX={scrollX}
+        screenWidth={screenWidth}
+        cardWidth={actualCardWidth}
+        cardHeight={actualCardHeight}
       >
         <TouchableOpacity
           className="flex-1 overflow-hidden rounded-[24px]"
@@ -269,13 +377,14 @@ function CafeCard({
             </>
           )}
         </TouchableOpacity>
-      </Animated.View>
+      </CoverflowWrapper>
     </View>
   );
 }
 
+// ─── Screen ──────────────────────────────────────────────────────────────────
+
 export default function CafeScreen() {
-  const router = useRouter();
   const [logs, setLogs] = useState<CafeLog[]>([]);
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
 
@@ -288,17 +397,33 @@ export default function CafeScreen() {
     scrollX.value = event.contentOffset.x;
   });
 
+  const listRef = useRef<any>(null);
+  const initialScrollDone = useRef(false);
+
+  const listData: ListItem[] = ['new', ...logs];
+
   useFocusEffect(
     useCallback(() => {
-      getCafeLogs().then(setLogs);
+      getCafeLogs().then((data) => {
+        setLogs(data);
+        // 로그가 있으면 첫 로그(index 1)부터 보여주고 scrollX도 동기화
+        if (!initialScrollDone.current && data.length > 0) {
+          initialScrollDone.current = true;
+          scrollX.value = screenWidth;
+          requestAnimationFrame(() => {
+            listRef.current?.scrollToIndex({ index: 1, animated: false });
+          });
+        }
+      });
     }, []),
   );
 
   return (
     <View className="flex-1 bg-white">
       <AnimatedFlatList
-        data={logs}
-        keyExtractor={(item) => String((item as CafeLog).id)}
+        ref={listRef}
+        data={listData}
+        keyExtractor={(item) => (item === 'new' ? '__new__' : String((item as CafeLog).id))}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
@@ -308,30 +433,36 @@ export default function CafeScreen() {
         decelerationRate="fast"
         scrollEventThrottle={16}
         onScroll={scrollHandler as any}
-        renderItem={({ item, index }) => (
-          <CafeCard
-            item={item as CafeLog}
-            index={index}
-            scrollX={scrollX}
-            cardWidth={cardWidth}
-            screenWidth={screenWidth}
-            screenHeight={screenHeight}
-            defaultCardHeight={defaultCardHeight}
-            defaultImageHeight={defaultImageHeight}
-          />
-        )}
-        ListEmptyComponent={
-          <View style={{ width: screenWidth }} className="items-center pt-20">
-            <Text className="text-[15px] text-gray-400">카페 기록이 없어요.</Text>
-          </View>
+        getItemLayout={(_data, index) => ({
+          length: screenWidth,
+          offset: screenWidth * index,
+          index,
+        })}
+        renderItem={({ item, index }) =>
+          item === 'new' ? (
+            <CreateCard
+              index={index}
+              scrollX={scrollX}
+              cardWidth={cardWidth}
+              cardHeight={defaultCardHeight}
+              screenWidth={screenWidth}
+              screenHeight={screenHeight}
+            />
+          ) : (
+            <CafeCard
+              item={item as CafeLog}
+              index={index}
+              scrollX={scrollX}
+              cardWidth={cardWidth}
+              screenWidth={screenWidth}
+              screenHeight={screenHeight}
+              defaultCardHeight={defaultCardHeight}
+              defaultImageHeight={defaultImageHeight}
+            />
+          )
         }
+        ListEmptyComponent={null}
       />
-      <TouchableOpacity
-        className="absolute items-center justify-center rounded-full shadow-md bottom-6 right-6 w-14 h-14 bg-coffee"
-        onPress={() => router.push('/cafe/new')}
-      >
-        <Ionicons name="add" size={28} color="#fff" />
-      </TouchableOpacity>
     </View>
   );
 }
