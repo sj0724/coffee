@@ -1,3 +1,5 @@
+export type MenuCategory = 'handdip' | 'espresso' | 'simple';
+
 export interface CafeLog {
   id?: number;
   cafe_name: string;
@@ -5,6 +7,8 @@ export interface CafeLog {
   photo_uri?: string;
   memo?: string;
   created_at?: string;
+  menu_count?: number;
+  first_my_notes?: string; // JSON string from DB
 }
 
 export interface CafeMenuItem {

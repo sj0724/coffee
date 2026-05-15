@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { View, Text, SectionList, TouchableOpacity, useWindowDimensions } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, useWindowDimensions } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -9,35 +9,61 @@ import { CafeLog } from '@/src/types';
 
 import DEFAULT_CARD from '@/assets/default-card.jpg';
 
-const NUM_COLUMNS = 3;
-const GAP = 8;
-const PADDING = 12;
+const FLAVOR_COLORS: Record<string, string> = {
+  베리: '#B784A7',
+  블루베리: '#7E8CCF',
+  딸기: '#E59A9A',
+  체리: '#C96B6B',
 
-type Section = { date: string; data: CafeLog[][] };
+  오렌지: '#F2A67E',
+  자몽: '#E98F7A',
+  사과: '#9BC59D',
+  복숭아: '#F4C38D',
 
-function groupByDate(logs: CafeLog[]): Section[] {
-  const map = new Map<string, CafeLog[]>();
-  for (const log of logs) {
-    const key = log.visited_at;
-    if (!map.has(key)) map.set(key, []);
-    map.get(key)!.push(log);
+  자스민: '#C9B0D9',
+  플로럴: '#E7A7C0',
+  라벤더: '#B7A8DD',
+  로즈: '#D989A7',
+
+  카라멜: '#D2A45F',
+  흑설탕: '#A97A5B',
+  꿀: '#E6B85C',
+  메이플시럽: '#B98563',
+
+  다크초콜릿: '#7B5A48',
+  밀크초콜릿: '#A67C67',
+  코코아: '#8D6B58',
+
+  아몬드: '#D8B58A',
+  헤이즐넛: '#B89063',
+
+  와인: '#9C5A70',
+  홍차: '#B06C83',
+
+  스파이스: '#C28A61',
+  허브: '#7FA06A',
+};
+
+function parseNoteColors(notesJson: string | null | undefined): string[] {
+  if (!notesJson) return [];
+  try {
+    const tags: string[] = JSON.parse(notesJson);
+    return tags.map((t) => FLAVOR_COLORS[t]).filter(Boolean);
+  } catch {
+    return [];
   }
-  return Array.from(map.entries()).map(([date, items]) => ({
-    date,
-    data: Array.from({ length: Math.ceil(items.length / NUM_COLUMNS) }, (_, i) =>
-      items.slice(i * NUM_COLUMNS, (i + 1) * NUM_COLUMNS),
-    ),
-  }));
 }
+
+const SIDE_PADDING = 28;
 
 export default function CafeScreen() {
   const router = useRouter();
   const [logs, setLogs] = useState<CafeLog[]>([]);
-  const { width: screenWidth } = useWindowDimensions();
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
 
-  const cardWidth = (screenWidth - PADDING * 2 - GAP * (NUM_COLUMNS - 1)) / NUM_COLUMNS;
-  const cardHeight = cardWidth * 1.3;
-  const sections = groupByDate(logs);
+  const cardWidth = screenWidth - SIDE_PADDING * 2;
+  const cardHeight = screenHeight * 0.62;
+  const imageHeight = cardHeight * 0.62;
 
   useFocusEffect(
     useCallback(() => {
@@ -46,93 +72,93 @@ export default function CafeScreen() {
   );
 
   return (
-    <View className="flex-1 bg-coffee-light">
-      <SectionList
-        sections={sections}
-        keyExtractor={(row, i) => row.map((item) => item.id).join('-') + i}
-        renderSectionHeader={({ section }) => (
-          <Text
-            style={{
-              fontSize: 20,
-              fontWeight: '600',
-              color: '#black',
-              paddingHorizontal: PADDING,
-              paddingTop: 16,
-              paddingBottom: 16,
-              backgroundColor: 'transparent',
-            }}
-          >
-            {section.date.replace(/-/g, '.')}
-          </Text>
-        )}
-        renderItem={({ item: row }) => (
-          <View
-            style={{
-              flexDirection: 'row',
-              gap: GAP,
-              paddingHorizontal: PADDING,
-              marginBottom: GAP,
-            }}
-          >
-            {row.map((item) => (
-              <TouchableOpacity
-                key={item.id}
+    <View className="flex-1 bg-white">
+      <FlatList
+        data={logs}
+        keyExtractor={(item) => String(item.id)}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ alignItems: 'center' }}
+        style={{ flex: 1 }}
+        snapToInterval={screenWidth}
+        decelerationRate="fast"
+        renderItem={({ item }) => {
+          const noteColors = parseNoteColors(item.first_my_notes);
+          return (
+            <View
+              style={{
+                width: screenWidth,
+                height: screenHeight,
+                paddingHorizontal: SIDE_PADDING,
+                justifyContent: 'center',
+              }}
+            >
+              <View
                 style={{
                   width: cardWidth,
                   height: cardHeight,
-                  borderRadius: 15,
-                  overflow: 'hidden',
+                  borderRadius: 24,
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.12,
+                  shadowRadius: 12,
+                  elevation: 6,
                 }}
-                onPress={() => router.push(`/cafe/${item.id}`)}
               >
-                <Image
-                  source={item.photo_uri ? { uri: item.photo_uri } : DEFAULT_CARD}
-                  style={{ width: cardWidth, height: (cardHeight * 2) / 3 }}
-                  contentFit="cover"
-                />
-                <LinearGradient
-                  colors={['rgba(255,255,255,0)', 'rgba(255,255,255,1)']}
-                  style={{
-                    position: 'absolute',
-                    left: 0,
-                    right: 0,
-                    bottom: cardHeight / 3,
-                    height: (cardHeight * 2) / 3,
-                  }}
-                />
-                <View
-                  style={{
-                    backgroundColor: '#fff',
-                    height: cardHeight / 3,
-                    paddingHorizontal: 6,
-                    justifyContent: 'center',
-                    gap: 4,
-                  }}
+                <TouchableOpacity
+                  className="flex-1 overflow-hidden rounded-[24px]"
+                  onPress={() => router.push(`/cafe/${item.id}`)}
+                  activeOpacity={0.92}
                 >
-                  <Text
-                    style={{ fontSize: 15, fontWeight: '700', color: '#222', textAlign: 'center' }}
-                    numberOfLines={1}
+                  <View>
+                    <Image
+                      source={item.photo_uri ? { uri: item.photo_uri } : DEFAULT_CARD}
+                      style={{ width: cardWidth, height: imageHeight }}
+                      contentFit="cover"
+                    />
+                    <LinearGradient
+                      colors={['rgba(255,255,255,0)', '#ffffff']}
+                      style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 48 }}
+                    />
+                  </View>
+                  <View
+                    className="flex-1 bg-white px-5 pt-3 justify-center gap-1.5"
+                    style={{ paddingBottom: noteColors.length > 0 ? 6 : 14 }}
                   >
-                    {item.cafe_name}
-                  </Text>
-                  {/* <Text
-                    style={{ fontSize: 11, color: '#6F4E37', textAlign: 'center' }}
-                    numberOfLines={1}
-                  >
-                    {item.menu_name}
-                  </Text> */}
-                </View>
-              </TouchableOpacity>
-            ))}
-            {row.length < NUM_COLUMNS &&
-              Array.from({ length: NUM_COLUMNS - row.length }).map((_, i) => (
-                <View key={i} style={{ width: cardWidth }} />
-              ))}
-          </View>
-        )}
-        contentContainerStyle={{ paddingBottom: 100 }}
+                    <Text className="text-lg text-center text-gray-400">
+                      {item.visited_at.replace(/-/g, '.')}
+                    </Text>
+                    <Text className="text-xl font-bold text-[#222] text-center" numberOfLines={1}>
+                      {item.cafe_name}
+                    </Text>
+                    {(item.menu_count ?? 0) > 0 && (
+                      <View className="flex-row justify-center gap-1">
+                        {Array.from({ length: item.menu_count! }).map((_, i) => (
+                          <Ionicons key={i} name="cafe" size={18} color="#6F4E37" />
+                        ))}
+                      </View>
+                    )}
+                    {noteColors.length > 0 && (
+                      <LinearGradient
+                        colors={
+                          (noteColors.length === 1
+                            ? [noteColors[0], noteColors[0]]
+                            : noteColors) as [string, string, ...string[]]
+                        }
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={{ height: 6, borderRadius: 4, marginTop: 4 }}
+                      />
+                    )}
+                  </View>
+                </TouchableOpacity>
+              </View>
+            </View>
+          );
+        }}
         ListEmptyComponent={
-          <View className="items-center pt-20">
+          <View style={{ width: screenWidth }} className="items-center pt-20">
             <Text className="text-[15px] text-gray-400">카페 기록이 없어요.</Text>
           </View>
         }

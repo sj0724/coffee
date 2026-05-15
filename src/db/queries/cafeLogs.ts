@@ -4,7 +4,20 @@ import { CafeLog } from '../../types';
 export async function getCafeLogs(): Promise<CafeLog[]> {
   try {
     const db = await getDB();
-    return await db.getAllAsync<CafeLog>('SELECT * FROM cafe_logs ORDER BY visited_at DESC');
+    return await db.getAllAsync<CafeLog>(
+      `SELECT cafe_logs.*,
+         COUNT(cafe_menu_items.id) AS menu_count,
+         (SELECT ctn.my_notes
+          FROM cafe_menu_items cmi
+          JOIN cafe_tasting_notes ctn ON ctn.cafe_menu_item_id = cmi.id
+          WHERE cmi.cafe_log_id = cafe_logs.id
+          ORDER BY cmi.id ASC
+          LIMIT 1) AS first_my_notes
+       FROM cafe_logs
+       LEFT JOIN cafe_menu_items ON cafe_menu_items.cafe_log_id = cafe_logs.id
+       GROUP BY cafe_logs.id
+       ORDER BY cafe_logs.visited_at DESC`,
+    );
   } catch (e) {
     console.error('getCafeLogs error:', e);
     return [];
