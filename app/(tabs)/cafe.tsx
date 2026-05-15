@@ -4,6 +4,14 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import Animated, {
+  useSharedValue,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  interpolate,
+  Extrapolation,
+  SharedValue,
+} from 'react-native-reanimated';
 import { getCafeLogs } from '@/src/db/queries/cafeLogs';
 import { CafeLog } from '@/src/types';
 
@@ -55,9 +63,12 @@ function parseNoteColors(notesJson: string | null | undefined): string[] {
 }
 
 const SIDE_PADDING = 28;
+const AnimatedFlatList = Animated.createAnimatedComponent(FlatList) as typeof FlatList;
 
 type CafeCardProps = {
   item: CafeLog;
+  index: number;
+  scrollX: SharedValue<number>;
   cardWidth: number;
   screenWidth: number;
   screenHeight: number;
@@ -67,6 +78,8 @@ type CafeCardProps = {
 
 function CafeCard({
   item,
+  index,
+  scrollX,
   cardWidth,
   screenWidth,
   screenHeight,
@@ -98,6 +111,32 @@ function CafeCard({
           : noteColors) as [string, string, ...string[]])
       : null;
 
+  const animStyle = useAnimatedStyle(() => {
+    const center = index * screenWidth;
+    const rotateY = interpolate(
+      scrollX.value,
+      [center - screenWidth, center, center + screenWidth],
+      [38, 0, -38],
+      Extrapolation.CLAMP,
+    );
+    const scale = interpolate(
+      scrollX.value,
+      [center - screenWidth, center, center + screenWidth],
+      [0.82, 1, 0.82],
+      Extrapolation.CLAMP,
+    );
+    const opacity = interpolate(
+      scrollX.value,
+      [center - screenWidth, center, center + screenWidth],
+      [0.6, 1, 0.6],
+      Extrapolation.CLAMP,
+    );
+    return {
+      opacity,
+      transform: [{ perspective: 900 }, { rotateY: `${rotateY}deg` }, { scale }],
+    };
+  });
+
   return (
     <View
       style={{
@@ -108,17 +147,20 @@ function CafeCard({
         alignItems: 'center',
       }}
     >
-      <View
-        style={{
-          width: actualCardWidth,
-          height: actualCardHeight,
-          borderRadius: 24,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.12,
-          shadowRadius: 12,
-          elevation: 6,
-        }}
+      <Animated.View
+        style={[
+          {
+            width: actualCardWidth,
+            height: actualCardHeight,
+            borderRadius: 24,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 8 },
+            shadowOpacity: 0.22,
+            shadowRadius: 18,
+            elevation: 10,
+          },
+          animStyle,
+        ]}
       >
         <TouchableOpacity
           className="flex-1 overflow-hidden rounded-[24px]"
@@ -205,10 +247,7 @@ function CafeCard({
                 <Text className="text-lg text-center text-gray-400">
                   {item.visited_at.replace(/-/g, '.')}
                 </Text>
-                <Text
-                  className="text-xl font-bold text-[#222] text-center"
-                  numberOfLines={1}
-                >
+                <Text className="text-xl font-bold text-[#222] text-center" numberOfLines={1}>
                   {item.cafe_name}
                 </Text>
                 {(item.menu_count ?? 0) > 0 && (
@@ -230,7 +269,7 @@ function CafeCard({
             </>
           )}
         </TouchableOpacity>
-      </View>
+      </Animated.View>
     </View>
   );
 }
@@ -244,6 +283,11 @@ export default function CafeScreen() {
   const defaultCardHeight = screenHeight * 0.62;
   const defaultImageHeight = defaultCardHeight * 0.62;
 
+  const scrollX = useSharedValue(0);
+  const scrollHandler = useAnimatedScrollHandler((event) => {
+    scrollX.value = event.contentOffset.x;
+  });
+
   useFocusEffect(
     useCallback(() => {
       getCafeLogs().then(setLogs);
@@ -252,9 +296,9 @@ export default function CafeScreen() {
 
   return (
     <View className="flex-1 bg-white">
-      <FlatList
+      <AnimatedFlatList
         data={logs}
-        keyExtractor={(item) => String(item.id)}
+        keyExtractor={(item) => String((item as CafeLog).id)}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
@@ -262,9 +306,13 @@ export default function CafeScreen() {
         style={{ flex: 1 }}
         snapToInterval={screenWidth}
         decelerationRate="fast"
-        renderItem={({ item }) => (
+        scrollEventThrottle={16}
+        onScroll={scrollHandler as any}
+        renderItem={({ item, index }) => (
           <CafeCard
-            item={item}
+            item={item as CafeLog}
+            index={index}
+            scrollX={scrollX}
             cardWidth={cardWidth}
             screenWidth={screenWidth}
             screenHeight={screenHeight}
