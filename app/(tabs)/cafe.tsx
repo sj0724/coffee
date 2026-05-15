@@ -56,14 +56,193 @@ function parseNoteColors(notesJson: string | null | undefined): string[] {
 
 const SIDE_PADDING = 28;
 
+type CafeCardProps = {
+  item: CafeLog;
+  cardWidth: number;
+  screenWidth: number;
+  screenHeight: number;
+  defaultCardHeight: number;
+  defaultImageHeight: number;
+};
+
+function CafeCard({
+  item,
+  cardWidth,
+  screenWidth,
+  screenHeight,
+  defaultCardHeight,
+  defaultImageHeight,
+}: CafeCardProps) {
+  const router = useRouter();
+  const [imgRatio, setImgRatio] = useState<number | null>(null);
+  const noteColors = parseNoteColors(item.first_my_notes);
+  const hasPhoto = !!item.photo_uri;
+
+  let actualCardWidth = cardWidth;
+  let actualCardHeight = defaultCardHeight;
+  if (hasPhoto && imgRatio != null) {
+    const naturalHeight = cardWidth / imgRatio;
+    if (naturalHeight > defaultCardHeight) {
+      actualCardHeight = defaultCardHeight;
+      actualCardWidth = defaultCardHeight * imgRatio;
+    } else {
+      actualCardHeight = naturalHeight;
+      actualCardWidth = cardWidth;
+    }
+  }
+
+  const noteGradient =
+    noteColors.length > 0
+      ? ((noteColors.length === 1
+          ? [noteColors[0], noteColors[0]]
+          : noteColors) as [string, string, ...string[]])
+      : null;
+
+  return (
+    <View
+      style={{
+        width: screenWidth,
+        height: screenHeight,
+        paddingHorizontal: hasPhoto ? 0 : SIDE_PADDING,
+        justifyContent: 'center',
+        alignItems: 'center',
+      }}
+    >
+      <View
+        style={{
+          width: actualCardWidth,
+          height: actualCardHeight,
+          borderRadius: 24,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.12,
+          shadowRadius: 12,
+          elevation: 6,
+        }}
+      >
+        <TouchableOpacity
+          className="flex-1 overflow-hidden rounded-[24px]"
+          onPress={() => router.push(`/cafe/${item.id}`)}
+          activeOpacity={0.92}
+        >
+          {hasPhoto ? (
+            <>
+              <Image
+                source={{ uri: item.photo_uri! }}
+                style={{ width: '100%', flex: 1 }}
+                contentFit="cover"
+                onLoad={(e) => setImgRatio(e.source.width / e.source.height)}
+              />
+              <LinearGradient
+                colors={['transparent', 'rgba(0,0,0,0.72)']}
+                style={{
+                  position: 'absolute',
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  paddingHorizontal: 20,
+                  paddingTop: 80,
+                  paddingBottom: 20,
+                }}
+              >
+                <Text
+                  style={{
+                    color: 'rgba(255,255,255,0.72)',
+                    fontSize: 14,
+                    textAlign: 'center',
+                    marginBottom: 2,
+                  }}
+                >
+                  {item.visited_at.replace(/-/g, '.')}
+                </Text>
+                <Text
+                  style={{ color: '#fff', fontSize: 20, fontWeight: 'bold', textAlign: 'center' }}
+                  numberOfLines={1}
+                >
+                  {item.cafe_name}
+                </Text>
+                {(item.menu_count ?? 0) > 0 && (
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      justifyContent: 'center',
+                      gap: 4,
+                      marginTop: 6,
+                    }}
+                  >
+                    {Array.from({ length: item.menu_count! }).map((_, i) => (
+                      <Ionicons key={i} name="cafe" size={18} color="rgba(255,255,255,0.85)" />
+                    ))}
+                  </View>
+                )}
+                {noteGradient && (
+                  <LinearGradient
+                    colors={noteGradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={{ height: 6, borderRadius: 4, marginTop: 10 }}
+                  />
+                )}
+              </LinearGradient>
+            </>
+          ) : (
+            <>
+              <View>
+                <Image
+                  source={DEFAULT_CARD}
+                  style={{ width: cardWidth, height: defaultImageHeight }}
+                  contentFit="cover"
+                />
+                <LinearGradient
+                  colors={['rgba(255,255,255,0)', '#ffffff']}
+                  style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 48 }}
+                />
+              </View>
+              <View
+                className="flex-1 bg-white px-5 pt-3 justify-center gap-1.5"
+                style={{ paddingBottom: noteColors.length > 0 ? 6 : 14 }}
+              >
+                <Text className="text-lg text-center text-gray-400">
+                  {item.visited_at.replace(/-/g, '.')}
+                </Text>
+                <Text
+                  className="text-xl font-bold text-[#222] text-center"
+                  numberOfLines={1}
+                >
+                  {item.cafe_name}
+                </Text>
+                {(item.menu_count ?? 0) > 0 && (
+                  <View className="flex-row justify-center gap-1">
+                    {Array.from({ length: item.menu_count! }).map((_, i) => (
+                      <Ionicons key={i} name="cafe" size={18} color="#6F4E37" />
+                    ))}
+                  </View>
+                )}
+                {noteGradient && (
+                  <LinearGradient
+                    colors={noteGradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={{ height: 6, borderRadius: 4, marginTop: 4 }}
+                  />
+                )}
+              </View>
+            </>
+          )}
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
 export default function CafeScreen() {
   const router = useRouter();
   const [logs, setLogs] = useState<CafeLog[]>([]);
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
 
   const cardWidth = screenWidth - SIDE_PADDING * 2;
-  const cardHeight = screenHeight * 0.62;
-  const imageHeight = cardHeight * 0.62;
+  const defaultCardHeight = screenHeight * 0.62;
+  const defaultImageHeight = defaultCardHeight * 0.62;
 
   useFocusEffect(
     useCallback(() => {
@@ -83,80 +262,16 @@ export default function CafeScreen() {
         style={{ flex: 1 }}
         snapToInterval={screenWidth}
         decelerationRate="fast"
-        renderItem={({ item }) => {
-          const noteColors = parseNoteColors(item.first_my_notes);
-          return (
-            <View
-              style={{
-                width: screenWidth,
-                height: screenHeight,
-                paddingHorizontal: SIDE_PADDING,
-                justifyContent: 'center',
-              }}
-            >
-              <View
-                style={{
-                  width: cardWidth,
-                  height: cardHeight,
-                  borderRadius: 24,
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.12,
-                  shadowRadius: 12,
-                  elevation: 6,
-                }}
-              >
-                <TouchableOpacity
-                  className="flex-1 overflow-hidden rounded-[24px]"
-                  onPress={() => router.push(`/cafe/${item.id}`)}
-                  activeOpacity={0.92}
-                >
-                  <View>
-                    <Image
-                      source={item.photo_uri ? { uri: item.photo_uri } : DEFAULT_CARD}
-                      style={{ width: cardWidth, height: imageHeight }}
-                      contentFit="cover"
-                    />
-                    <LinearGradient
-                      colors={['rgba(255,255,255,0)', '#ffffff']}
-                      style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 48 }}
-                    />
-                  </View>
-                  <View
-                    className="flex-1 bg-white px-5 pt-3 justify-center gap-1.5"
-                    style={{ paddingBottom: noteColors.length > 0 ? 6 : 14 }}
-                  >
-                    <Text className="text-lg text-center text-gray-400">
-                      {item.visited_at.replace(/-/g, '.')}
-                    </Text>
-                    <Text className="text-xl font-bold text-[#222] text-center" numberOfLines={1}>
-                      {item.cafe_name}
-                    </Text>
-                    {(item.menu_count ?? 0) > 0 && (
-                      <View className="flex-row justify-center gap-1">
-                        {Array.from({ length: item.menu_count! }).map((_, i) => (
-                          <Ionicons key={i} name="cafe" size={18} color="#6F4E37" />
-                        ))}
-                      </View>
-                    )}
-                    {noteColors.length > 0 && (
-                      <LinearGradient
-                        colors={
-                          (noteColors.length === 1
-                            ? [noteColors[0], noteColors[0]]
-                            : noteColors) as [string, string, ...string[]]
-                        }
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 0 }}
-                        style={{ height: 6, borderRadius: 4, marginTop: 4 }}
-                      />
-                    )}
-                  </View>
-                </TouchableOpacity>
-              </View>
-            </View>
-          );
-        }}
+        renderItem={({ item }) => (
+          <CafeCard
+            item={item}
+            cardWidth={cardWidth}
+            screenWidth={screenWidth}
+            screenHeight={screenHeight}
+            defaultCardHeight={defaultCardHeight}
+            defaultImageHeight={defaultImageHeight}
+          />
+        )}
         ListEmptyComponent={
           <View style={{ width: screenWidth }} className="items-center pt-20">
             <Text className="text-[15px] text-gray-400">카페 기록이 없어요.</Text>
