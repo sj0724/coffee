@@ -1,4 +1,4 @@
-export const DB_VERSION = 3;
+export const DB_VERSION = 4;
 
 export const CREATE_TABLES_SQL = `
 CREATE TABLE IF NOT EXISTS cafe_logs (
@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS cafe_logs (
   visited_at  TEXT NOT NULL,
   photo_uri   TEXT,
   memo        TEXT,
+  is_favorite INTEGER DEFAULT 0,
   created_at  TEXT DEFAULT (datetime('now'))
 );
 

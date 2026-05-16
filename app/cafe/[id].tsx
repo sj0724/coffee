@@ -11,7 +11,7 @@ import {
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { getCafeLog, deleteCafeLog } from '@/src/db/queries/cafeLogs';
+import { getCafeLog, deleteCafeLog, setFavorite } from '@/src/db/queries/cafeLogs';
 import { getMenuItems, createMenuItem, deleteMenuItem } from '@/src/db/queries/cafeMenuItems';
 import { getTastingNote, upsertTastingNote } from '@/src/db/queries/tastingNotes';
 import { CafeLog, CafeMenuItem, CafeTastingNote, MenuCategory } from '@/src/types';
@@ -73,6 +73,13 @@ export default function CafeDetailScreen() {
       if (note) map[itemId] = note;
     }
     setNotesMap(map);
+  }
+
+  async function handleToggleFavorite() {
+    if (!log) return;
+    const next = log.is_favorite ? 0 : 1;
+    await setFavorite(Number(id), next as 0 | 1);
+    setLog({ ...log, is_favorite: next });
   }
 
   async function handleDeleteLog() {
@@ -171,6 +178,13 @@ export default function CafeDetailScreen() {
           <Text className="text-[22px] font-bold text-[#222]">{log.cafe_name}</Text>
           <Text className="text-[13px] text-gray-400 mt-1">{log.visited_at}</Text>
         </View>
+        <TouchableOpacity onPress={handleToggleFavorite}>
+          <Ionicons
+            name={log.is_favorite ? 'star' : 'star-outline'}
+            size={22}
+            color={log.is_favorite ? '#F5A623' : '#bbb'}
+          />
+        </TouchableOpacity>
         <TouchableOpacity onPress={handleDeleteLog}>
           <Ionicons name="trash-outline" size={22} color="#E76F51" />
         </TouchableOpacity>

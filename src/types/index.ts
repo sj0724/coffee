@@ -6,9 +6,11 @@ export interface CafeLog {
   visited_at: string;
   photo_uri?: string;
   memo?: string;
+  is_favorite?: number;
   created_at?: string;
   menu_count?: number;
-  first_my_notes?: string; // JSON string from DB
+  first_my_notes?: string;
+  all_my_notes_concat?: string; // "||"-separated JSON arrays from all menu items
 }
 
 export interface CafeMenuItem {

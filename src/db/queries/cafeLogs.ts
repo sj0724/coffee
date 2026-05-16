@@ -6,13 +6,18 @@ export async function getCafeLogs(): Promise<CafeLog[]> {
     const db = await getDB();
     return await db.getAllAsync<CafeLog>(
       `SELECT cafe_logs.*,
-         COUNT(cafe_menu_items.id) AS menu_count,
+         COUNT(DISTINCT cafe_menu_items.id) AS menu_count,
          (SELECT ctn.my_notes
           FROM cafe_menu_items cmi
           JOIN cafe_tasting_notes ctn ON ctn.cafe_menu_item_id = cmi.id
           WHERE cmi.cafe_log_id = cafe_logs.id
           ORDER BY cmi.id ASC
-          LIMIT 1) AS first_my_notes
+          LIMIT 1) AS first_my_notes,
+         (SELECT GROUP_CONCAT(ctn2.my_notes, '||')
+          FROM cafe_menu_items cmi2
+          JOIN cafe_tasting_notes ctn2 ON ctn2.cafe_menu_item_id = cmi2.id
+          WHERE cmi2.cafe_log_id = cafe_logs.id
+          AND ctn2.my_notes IS NOT NULL) AS all_my_notes_concat
        FROM cafe_logs
        LEFT JOIN cafe_menu_items ON cafe_menu_items.cafe_log_id = cafe_logs.id
        GROUP BY cafe_logs.id
@@ -47,6 +52,17 @@ export async function createCafeLog(
   } catch (e) {
     console.error('createCafeLog error:', e);
     return null;
+  }
+}
+
+export async function setFavorite(id: number, value: 0 | 1): Promise<boolean> {
+  try {
+    const db = await getDB();
+    await db.runAsync('UPDATE cafe_logs SET is_favorite = ? WHERE id = ?', [value, id]);
+    return true;
+  } catch (e) {
+    console.error('setFavorite error:', e);
+    return false;
   }
 }
 

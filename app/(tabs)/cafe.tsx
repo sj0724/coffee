@@ -1,5 +1,12 @@
-import { useCallback, useRef, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, useWindowDimensions } from 'react-native';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  ScrollView,
+  useWindowDimensions,
+} from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -60,6 +67,17 @@ function parseNoteColors(notesJson: string | null | undefined): string[] {
   } catch {
     return [];
   }
+}
+
+function parseAllNotes(concat: string | null | undefined): string[] {
+  if (!concat) return [];
+  return concat.split('||').flatMap((json) => {
+    try {
+      return JSON.parse(json) as string[];
+    } catch {
+      return [];
+    }
+  });
 }
 
 const SIDE_PADDING = 28;
@@ -170,7 +188,7 @@ function CreateCard({
           activeOpacity={0.88}
           style={{ backgroundColor: '#FFF8F3' }}
         >
-          <View className="flex-1 items-center justify-center gap-4">
+          <View className="items-center justify-center flex-1 gap-4">
             <View
               style={{
                 width: 72,
@@ -183,9 +201,7 @@ function CreateCard({
             >
               <Ionicons name="add" size={40} color="#6F4E37" />
             </View>
-            <Text style={{ fontSize: 17, fontWeight: '600', color: '#6F4E37' }}>
-              새 카페 기록
-            </Text>
+            <Text style={{ fontSize: 17, fontWeight: '600', color: '#6F4E37' }}>새 카페 기록</Text>
           </View>
           {/* subtle top/bottom border hint */}
           <View
@@ -248,9 +264,11 @@ function CafeCard({
 
   const noteGradient =
     noteColors.length > 0
-      ? ((noteColors.length === 1
-          ? [noteColors[0], noteColors[0]]
-          : noteColors) as [string, string, ...string[]])
+      ? ((noteColors.length === 1 ? [noteColors[0], noteColors[0]] : noteColors) as [
+          string,
+          string,
+          ...string[],
+        ])
       : null;
 
   return (
@@ -386,11 +404,12 @@ function CafeCard({
 
 export default function CafeScreen() {
   const [logs, setLogs] = useState<CafeLog[]>([]);
+  const [activeTags, setActiveTags] = useState<string[]>([]);
+  const [favOnly, setFavOnly] = useState(false);
+  const [listHeight, setListHeight] = useState(0);
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
 
   const cardWidth = screenWidth - SIDE_PADDING * 2;
-  const defaultCardHeight = screenHeight * 0.62;
-  const defaultImageHeight = defaultCardHeight * 0.62;
 
   const scrollX = useSharedValue(0);
   const scrollHandler = useAnimatedScrollHandler((event) => {
@@ -400,13 +419,35 @@ export default function CafeScreen() {
   const listRef = useRef<any>(null);
   const initialScrollDone = useRef(false);
 
-  const listData: ListItem[] = ['new', ...logs];
+  const uniqueTags = useMemo(() => {
+    const seen = new Set<string>();
+    for (const log of logs) {
+      parseAllNotes(log.all_my_notes_concat).forEach((t) => seen.add(t));
+    }
+    return Array.from(seen);
+  }, [logs]);
+
+  const filteredLogs = useMemo(() => {
+    return logs.filter((log) => {
+      if (favOnly && !log.is_favorite) return false;
+      if (activeTags.length > 0) {
+        const tags = parseAllNotes(log.all_my_notes_concat);
+        if (!activeTags.some((t) => tags.includes(t))) return false;
+      }
+      return true;
+    });
+  }, [logs, favOnly, activeTags]);
+
+  const listData: ListItem[] = ['new', ...filteredLogs];
+
+  function toggleTag(tag: string) {
+    setActiveTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]));
+  }
 
   useFocusEffect(
     useCallback(() => {
       getCafeLogs().then((data) => {
         setLogs(data);
-        // 로그가 있으면 첫 로그(index 1)부터 보여주고 scrollX도 동기화
         if (!initialScrollDone.current && data.length > 0) {
           initialScrollDone.current = true;
           scrollX.value = screenWidth;
@@ -418,8 +459,81 @@ export default function CafeScreen() {
     }, []),
   );
 
+  // 필터 변경 시 첫 번째 결과로 이동
+  useEffect(() => {
+    if (!initialScrollDone.current) return;
+    const target = filteredLogs.length > 0 ? 1 : 0;
+    scrollX.value = target * screenWidth;
+    requestAnimationFrame(() => {
+      listRef.current?.scrollToIndex({ index: target, animated: false });
+    });
+  }, [activeTags, favOnly]);
+
+  const showFilterBar = logs.length > 0;
+  const cardAreaHeight = listHeight || screenHeight;
+  const defaultCardHeight = cardAreaHeight * 0.72;
+  const defaultImageHeight = defaultCardHeight * 0.62;
+
   return (
     <View className="flex-1 bg-white">
+      {showFilterBar && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingHorizontal: 20, gap: 8 }}
+          style={{ flexGrow: 0, paddingTop: 15 }}
+        >
+          <TouchableOpacity
+            onPress={() => setFavOnly((v) => !v)}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 5,
+              paddingHorizontal: 14,
+              paddingVertical: 7,
+              borderRadius: 20,
+              backgroundColor: favOnly ? '#6F4E37' : '#fff',
+              borderWidth: 1,
+              borderColor: '#ccc',
+            }}
+          >
+            <Ionicons
+              name={favOnly ? 'star' : 'star-outline'}
+              size={14}
+              color={favOnly ? '#FFD166' : '#999'}
+            />
+            <Text style={{ fontSize: 13, fontWeight: '600', color: favOnly ? '#fff' : '#666' }}>
+              즐겨찾기
+            </Text>
+          </TouchableOpacity>
+
+          {uniqueTags.map((tag) => {
+            const isActive = activeTags.includes(tag);
+            const color = FLAVOR_COLORS[tag] ?? '#6F4E37';
+            return (
+              <TouchableOpacity
+                key={tag}
+                onPress={() => toggleTag(tag)}
+                style={{
+                  paddingHorizontal: 14,
+                  paddingVertical: 7,
+                  borderRadius: 20,
+                  backgroundColor: isActive ? color : '#fff',
+                  borderWidth: 1,
+                  borderColor: isActive ? color : '#ccc',
+                }}
+              >
+                <Text
+                  style={{ fontSize: 13, fontWeight: '600', color: isActive ? '#fff' : '#666' }}
+                >
+                  {tag}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      )}
+
       <AnimatedFlatList
         ref={listRef}
         data={listData}
@@ -433,6 +547,7 @@ export default function CafeScreen() {
         decelerationRate="fast"
         scrollEventThrottle={16}
         onScroll={scrollHandler as any}
+        onLayout={(e) => setListHeight(e.nativeEvent.layout.height)}
         getItemLayout={(_data, index) => ({
           length: screenWidth,
           offset: screenWidth * index,
@@ -446,7 +561,7 @@ export default function CafeScreen() {
               cardWidth={cardWidth}
               cardHeight={defaultCardHeight}
               screenWidth={screenWidth}
-              screenHeight={screenHeight}
+              screenHeight={cardAreaHeight}
             />
           ) : (
             <CafeCard
@@ -455,7 +570,7 @@ export default function CafeScreen() {
               scrollX={scrollX}
               cardWidth={cardWidth}
               screenWidth={screenWidth}
-              screenHeight={screenHeight}
+              screenHeight={cardAreaHeight}
               defaultCardHeight={defaultCardHeight}
               defaultImageHeight={defaultImageHeight}
             />
