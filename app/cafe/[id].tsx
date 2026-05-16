@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   Alert,
   TextInput,
-  Image as RNImage,
+  useWindowDimensions,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -37,8 +37,8 @@ function getMenuCategory(menuName: string): MenuCategory {
 export default function CafeDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { width: screenWidth } = useWindowDimensions();
   const [log, setLog] = useState<CafeLog | null>(null);
-  const [photoSize, setPhotoSize] = useState<{ width: number; height: number } | null>(null);
   const [menuItems, setMenuItems] = useState<CafeMenuItem[]>([]);
   const [notesMap, setNotesMap] = useState<Record<number, CafeTastingNote>>({});
   const [addingMenu, setAddingMenu] = useState(false);
@@ -55,13 +55,6 @@ export default function CafeDetailScreen() {
     const [l, items] = await Promise.all([getCafeLog(logId), getMenuItems(logId)]);
     setLog(l);
     setMenuItems(items);
-    if (l?.photo_uri) {
-      RNImage.getSize(
-        l.photo_uri,
-        (w, h) => setPhotoSize({ width: w, height: h }),
-        () => {},
-      );
-    }
     const pairs = await Promise.all(
       items.map(async (item) => {
         const note = await getTastingNote(item.id!);
@@ -150,27 +143,40 @@ export default function CafeDetailScreen() {
 
   if (!log) return <View className="flex-1 bg-coffee-light" />;
 
-  const imgW = photoSize?.width ?? 200;
-  const imgH = photoSize?.height ?? 300;
+  const photoUris: string[] = log.photos
+    ? (() => {
+        try {
+          return JSON.parse(log.photos);
+        } catch {
+          return [];
+        }
+      })()
+    : [];
+  const photoW = screenWidth - 40;
+  const photoH = Math.round(photoW * 1.25);
 
   return (
     <ScrollView
       className="flex-1 bg-coffee-light"
       contentContainerStyle={{ gap: 16, paddingBottom: 40 }}
     >
-      {log.photo_uri && (
-        <Image
-          source={{ uri: log.photo_uri }}
-          style={{
-            width: imgW,
-            height: imgH,
-            alignSelf: 'center',
-            borderRadius: 12,
-            marginTop: 20,
-            marginHorizontal: 20,
-          }}
-          contentFit="cover"
-        />
+      {photoUris.length > 0 && (
+        <ScrollView
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          style={{ marginTop: 20 }}
+          contentContainerStyle={{ gap: 12, paddingHorizontal: 20 }}
+        >
+          {photoUris.map((uri, i) => (
+            <Image
+              key={i}
+              source={{ uri }}
+              style={{ width: photoW, height: photoH, borderRadius: 12 }}
+              contentFit="cover"
+            />
+          ))}
+        </ScrollView>
       )}
 
       <View className="flex-row items-start gap-3 px-5 pt-5">

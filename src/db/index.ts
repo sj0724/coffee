@@ -6,7 +6,7 @@ let db: SQLite.SQLiteDatabase | null = null;
 export async function getDB(): Promise<SQLite.SQLiteDatabase> {
   if (db) return db;
 
-  db = await SQLite.openDatabaseAsync('coffee-note-v4.db');
+  db = await SQLite.openDatabaseAsync('coffee-note-v5.db');
   await db.execAsync('PRAGMA foreign_keys = ON;');
 
   const versionRow = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');

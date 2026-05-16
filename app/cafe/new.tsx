@@ -25,7 +25,8 @@ const CROP_TOOLBAR = {
   cropperStatusBarColor: '#3D2B1F',
 };
 
-type Photo = { uri: string; width: number; height: number };
+const MAX_PHOTOS = 5;
+type Photo = { uri: string };
 
 export default function NewCafeLogScreen() {
   const router = useRouter();
@@ -34,30 +35,32 @@ export default function NewCafeLogScreen() {
   const [showPicker, setShowPicker] = useState(false);
   const [memo, setMemo] = useState('');
   const [saving, setSaving] = useState(false);
-  const [photo, setPhoto] = useState<Photo | null>(null);
+  const [photos, setPhotos] = useState<Photo[]>([]);
 
   const visitedAt = date.toISOString().slice(0, 10);
-
-  const imgDisplayWidth = photo?.width ?? 200;
-  const imgDisplayHeight = photo?.height ?? 300;
 
   function onDateChange(_: unknown, selected?: Date) {
     if (Platform.OS === 'android') setShowPicker(false);
     if (selected) setDate(selected);
   }
 
-  const cropOptions = {
-    width: 300,
-    height: 400,
+  const cameraOptions = {
     cropping: true,
     freeStyleCropEnabled: true,
+    compressImageQuality: 1,
     ...CROP_TOOLBAR,
   };
 
   async function pickFromLibrary() {
+    const remaining = MAX_PHOTOS - photos.length;
+    if (remaining <= 0) return;
     try {
-      const image = await ImageCropPicker.openPicker(cropOptions);
-      setPhoto({ uri: image.path, width: image.width, height: image.height });
+      const images = await ImageCropPicker.openPicker({
+        multiple: true,
+        maxFiles: remaining,
+        compressImageQuality: 1,
+      });
+      setPhotos((prev) => [...prev, ...images.map((img) => ({ uri: img.path }))]);
     } catch (e: unknown) {
       if ((e as { code?: string })?.code !== 'E_PICKER_CANCELLED') {
         Alert.alert('오류', '사진을 불러오지 못했어요.');
@@ -66,14 +69,27 @@ export default function NewCafeLogScreen() {
   }
 
   async function pickFromCamera() {
+    if (photos.length >= MAX_PHOTOS) return;
     try {
-      const image = await ImageCropPicker.openCamera(cropOptions);
-      setPhoto({ uri: image.path, width: image.width, height: image.height });
+      const image = await ImageCropPicker.openCamera(cameraOptions);
+      setPhotos((prev) => [...prev, { uri: image.path }]);
     } catch (e: unknown) {
       if ((e as { code?: string })?.code !== 'E_PICKER_CANCELLED') {
         Alert.alert('오류', '카메라를 열지 못했어요.');
       }
     }
+  }
+
+  function addPhoto() {
+    Alert.alert('사진 추가', undefined, [
+      { text: '카메라', onPress: pickFromCamera },
+      { text: '갤러리에서 선택', onPress: pickFromLibrary },
+      { text: '취소', style: 'cancel' },
+    ]);
+  }
+
+  function removePhoto(index: number) {
+    setPhotos((prev) => prev.filter((_, i) => i !== index));
   }
 
   async function handleSave() {
@@ -85,7 +101,7 @@ export default function NewCafeLogScreen() {
     const id = await createCafeLog({
       cafe_name: cafeName.trim(),
       visited_at: visitedAt,
-      photo_uri: photo?.uri,
+      photos: photos.length > 0 ? JSON.stringify(photos.map((p) => p.uri)) : undefined,
       memo: memo.trim() || undefined,
     });
     setSaving(false);
@@ -105,46 +121,56 @@ export default function NewCafeLogScreen() {
         className="flex-1 bg-coffee-light"
         contentContainerStyle={{ padding: 20, gap: 20 }}
       >
-        <Field label="사진">
-          <View className="gap-3">
-            {photo && (
-              <View className="rounded-xl">
+        <Field label={`사진 (${photos.length}/${MAX_PHOTOS})`}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ gap: 10 }}
+          >
+            {photos.map((p, i) => (
+              <View key={i} style={{ position: 'relative' }}>
                 <Image
-                  source={{ uri: photo.uri }}
-                  style={{
-                    width: imgDisplayWidth,
-                    height: imgDisplayHeight,
-                    alignSelf: 'center',
-                    borderRadius: 12,
-                  }}
+                  source={{ uri: p.uri }}
+                  style={{ width: 110, height: 146, borderRadius: 12 }}
                   contentFit="cover"
                 />
                 <TouchableOpacity
-                  className="absolute top-2 right-2 bg-black/50 rounded-full p-1.5"
-                  onPress={() => setPhoto(null)}
+                  style={{
+                    position: 'absolute',
+                    top: 5,
+                    right: 5,
+                    backgroundColor: 'rgba(0,0,0,0.52)',
+                    borderRadius: 12,
+                    padding: 2,
+                  }}
+                  onPress={() => removePhoto(i)}
                 >
-                  <Ionicons name="close" size={18} color="#fff" />
+                  <Ionicons name="close" size={16} color="#fff" />
                 </TouchableOpacity>
               </View>
-            )}
+            ))}
 
-            <View className="flex-row gap-3">
+            {photos.length < MAX_PHOTOS && (
               <TouchableOpacity
-                className="flex-row items-center justify-center flex-1 gap-2 py-3 bg-white border border-coffee-border rounded-xl"
-                onPress={pickFromCamera}
+                onPress={addPhoto}
+                style={{
+                  width: 110,
+                  height: 146,
+                  borderRadius: 12,
+                  backgroundColor: '#EDE4DC',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 6,
+                  borderWidth: 1.5,
+                  borderColor: '#D6C4B8',
+                  borderStyle: 'dashed',
+                }}
               >
-                <Ionicons name="camera-outline" size={20} color="#6F4E37" />
-                <Text className="text-sm font-semibold text-coffee">카메라</Text>
+                <Ionicons name="add" size={28} color="#6F4E37" />
+                <Text style={{ fontSize: 12, color: '#6F4E37', fontWeight: '600' }}>사진 추가</Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                className="flex-row items-center justify-center flex-1 gap-2 py-3 bg-white border border-coffee-border rounded-xl"
-                onPress={pickFromLibrary}
-              >
-                <Ionicons name="images-outline" size={20} color="#6F4E37" />
-                <Text className="text-sm font-semibold text-coffee">갤러리</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+            )}
+          </ScrollView>
         </Field>
 
         <Field label="카페 이름 *">

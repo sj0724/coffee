@@ -4,7 +4,7 @@ export interface CafeLog {
   id?: number;
   cafe_name: string;
   visited_at: string;
-  photo_uri?: string;
+  photos?: string; // JSON array of URIs: '["uri1","uri2"]'
   memo?: string;
   is_favorite?: number;
   created_at?: string;

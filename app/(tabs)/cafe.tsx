@@ -247,7 +247,16 @@ function CafeCard({
   const router = useRouter();
   const [imgRatio, setImgRatio] = useState<number | null>(null);
   const noteColors = parseNoteColors(item.first_my_notes);
-  const hasPhoto = !!item.photo_uri;
+  const firstPhotoUri: string | undefined = item.photos
+    ? (() => {
+        try {
+          return (JSON.parse(item.photos) as string[])[0];
+        } catch {
+          return undefined;
+        }
+      })()
+    : undefined;
+  const hasPhoto = !!firstPhotoUri;
 
   let actualCardWidth = cardWidth;
   let actualCardHeight = defaultCardHeight;
@@ -296,7 +305,7 @@ function CafeCard({
           {hasPhoto ? (
             <>
               <Image
-                source={{ uri: item.photo_uri! }}
+                source={{ uri: firstPhotoUri! }}
                 style={{ width: '100%', flex: 1 }}
                 contentFit="cover"
                 onLoad={(e) => setImgRatio(e.source.width / e.source.height)}
