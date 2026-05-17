@@ -18,7 +18,8 @@
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "커피 기록 사진을 선택하기 위해 사진 접근 권한이 필요합니다.",
         "NSPhotoLibraryAddUsageDescription": "커피 기록 사진을 저장하기 위해 권한이 필요합니다.",
-        "NSCameraUsageDescription": "커피 카드를 촬영하기 위해 카메라 접근 권한이 필요합니다."
+        "NSCameraUsageDescription": "커피 카드를 촬영하기 위해 카메라 접근 권한이 필요합니다.",
+        "ITSAppUsesNonExemptEncryption": false
       },
       "bundleIdentifier": "com.sj07245.coffee-note"
     },
@@ -46,6 +47,12 @@
       "expo-router",
       "expo-sqlite",
       "@react-native-community/datetimepicker"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "0a8311d3-b1cb-417c-af6a-ad423dd83018"
+      }
+    }
   }
 }
