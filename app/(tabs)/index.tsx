@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { View, Text, FlatList, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { getCafeLogs } from '@/src/db/queries/cafeLogs';
 import { getBrewLogs } from '@/src/db/queries/brewLogs';
@@ -37,34 +38,32 @@ export default function HomeScreen() {
       const log = item.data;
       return (
         <TouchableOpacity
-          className="bg-white rounded-xl p-4 shadow-sm"
+          className="p-4 bg-white shadow-sm rounded-xl"
           onPress={() => router.push(`/cafe/${log.id}`)}
         >
-          <Text className="text-xs text-coffee mb-1">☕ 카페</Text>
-          <Text className="text-base font-semibold text-[#222]">
-            {log.cafe_name} — {log.menu_name}
-          </Text>
-          <Text className="text-xs text-gray-400 mt-1">{log.visited_at}</Text>
+          <Text className="mb-1 text-xs text-coffee">☕ 카페</Text>
+          <Text className="text-base font-semibold text-[#222]">{log.cafe_name}</Text>
+          <Text className="mt-1 text-xs text-gray-400">{log.visited_at}</Text>
         </TouchableOpacity>
       );
     }
     const log = item.data;
     return (
       <TouchableOpacity
-        className="bg-white rounded-xl p-4 shadow-sm"
+        className="p-4 bg-white shadow-sm rounded-xl"
         onPress={() => router.push(`/brew/${log.recipe_id}`)}
       >
-        <Text className="text-xs text-coffee mb-1">🫗 홈브루</Text>
+        <Text className="mb-1 text-xs text-coffee">🫗 홈브루</Text>
         <Text className="text-base font-semibold text-[#222]">추출 기록</Text>
-        <Text className="text-xs text-gray-400 mt-1">{log.brewed_at}</Text>
+        <Text className="mt-1 text-xs text-gray-400">{log.brewed_at}</Text>
       </TouchableOpacity>
     );
   }
 
   return (
-    <View className="flex-1 bg-coffee-light">
+    <SafeAreaView className="flex-1 bg-white" edges={['top']}>
       {items.length === 0 ? (
-        <View className="flex-1 justify-center items-center gap-2">
+        <View className="items-center justify-center flex-1 gap-2">
           <Text className="text-[15px] text-gray-400">아직 기록이 없어요.</Text>
           <Text className="text-[15px] text-gray-400">카페나 홈브루 탭에서 시작해보세요!</Text>
         </View>
@@ -76,6 +75,6 @@ export default function HomeScreen() {
           contentContainerStyle={{ padding: 16, gap: 12 }}
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 }

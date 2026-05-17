@@ -7,6 +7,7 @@ import {
   ScrollView,
   useWindowDimensions,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -484,7 +485,7 @@ export default function CafeScreen() {
   const defaultImageHeight = defaultCardHeight * 0.62;
 
   return (
-    <View className="flex-1 bg-white">
+    <SafeAreaView className="flex-1 bg-white" edges={['top']}>
       {showFilterBar && (
         <ScrollView
           horizontal
@@ -587,6 +588,6 @@ export default function CafeScreen() {
         }
         ListEmptyComponent={null}
       />
-    </View>
+    </SafeAreaView>
   );
 }
