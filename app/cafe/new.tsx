@@ -31,8 +31,7 @@ type Photo = { uri: string };
 
 export default function NewCafeLogScreen() {
   const router = useRouter();
-  const [cafeName, setCafeName] = useState('');
-  const [address, setAddress] = useState('');
+  const [selectedPlace, setSelectedPlace] = useState<{ name: string; address: string } | null>(null);
   const [showAddressSearch, setShowAddressSearch] = useState(false);
   const [date, setDate] = useState(new Date());
   const [showPicker, setShowPicker] = useState(false);
@@ -96,16 +95,16 @@ export default function NewCafeLogScreen() {
   }
 
   async function handleSave() {
-    if (!cafeName.trim()) {
-      Alert.alert('필수 항목', '카페 이름을 입력해주세요.');
+    if (!selectedPlace) {
+      Alert.alert('필수 항목', '카페를 검색해서 선택해주세요.');
       return;
     }
     setSaving(true);
     const id = await createCafeLog({
-      cafe_name: cafeName.trim(),
+      cafe_name: selectedPlace.name,
       visited_at: visitedAt,
       photos: photos.length > 0 ? JSON.stringify(photos.map((p) => p.uri)) : undefined,
-      address: address.trim() || undefined,
+      address: selectedPlace.address || undefined,
       memo: memo.trim() || undefined,
     });
     setSaving(false);
@@ -177,46 +176,68 @@ export default function NewCafeLogScreen() {
           </ScrollView>
         </Field>
 
-        <Field label="카페 이름 *">
-          <TextInput
-            className="border border-coffee-border rounded-lg p-3 text-[15px] text-[#222] bg-white"
-            value={cafeName}
-            onChangeText={setCafeName}
-            placeholder="블루보틀, 스타벅스..."
-            placeholderTextColor="#ccc"
-          />
-        </Field>
-
-        <Field label="주소">
-          <TouchableOpacity
-            onPress={() => setShowAddressSearch(true)}
-            className="flex-row items-center justify-between p-3 bg-white border rounded-lg border-coffee-border"
-          >
-            <Text
-              className="text-[15px] flex-1 mr-2"
-              style={{ color: address ? '#222' : '#ccc' }}
-              numberOfLines={1}
+        <Field label="카페 *">
+          {selectedPlace ? (
+            <View
+              style={{
+                backgroundColor: '#fff',
+                borderRadius: 12,
+                borderWidth: 1.5,
+                borderColor: '#6F4E37',
+                padding: 14,
+                gap: 4,
+              }}
             >
-              {address || '주소 검색...'}
-            </Text>
-            <Ionicons name="search" size={18} color="#6F4E37" />
-          </TouchableOpacity>
-          {address ? (
+              <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 16, fontWeight: '700', color: '#222' }}>
+                    {selectedPlace.name}
+                  </Text>
+                  {selectedPlace.address ? (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}>
+                      <Ionicons name="location-outline" size={13} color="#999" />
+                      <Text style={{ fontSize: 13, color: '#888' }} numberOfLines={2}>
+                        {selectedPlace.address}
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
+                <TouchableOpacity onPress={() => setSelectedPlace(null)} style={{ padding: 2, marginLeft: 8 }}>
+                  <Ionicons name="close-circle" size={20} color="#bbb" />
+                </TouchableOpacity>
+              </View>
+              <TouchableOpacity
+                onPress={() => setShowAddressSearch(true)}
+                style={{ marginTop: 6, alignSelf: 'flex-start' }}
+              >
+                <Text style={{ fontSize: 12, color: '#6F4E37', fontWeight: '600' }}>변경</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
             <TouchableOpacity
-              onPress={() => setAddress('')}
-              style={{ alignSelf: 'flex-end', marginTop: 4 }}
+              onPress={() => setShowAddressSearch(true)}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                padding: 16,
+                backgroundColor: '#fff',
+                borderRadius: 12,
+                borderWidth: 1.5,
+                borderColor: '#D6C4B8',
+                borderStyle: 'dashed',
+              }}
             >
-              <Text style={{ fontSize: 12, color: '#999' }}>지우기</Text>
+              <Ionicons name="search" size={18} color="#6F4E37" />
+              <Text style={{ fontSize: 15, color: '#6F4E37', fontWeight: '600' }}>카페 검색</Text>
             </TouchableOpacity>
-          ) : null}
+          )}
         </Field>
 
         <AddressSearchModal
           visible={showAddressSearch}
-          onSelect={(result) => {
-            setCafeName(result.name);
-            setAddress(result.address);
-          }}
+          onSelect={(result) => setSelectedPlace(result)}
           onClose={() => setShowAddressSearch(false)}
         />
 
