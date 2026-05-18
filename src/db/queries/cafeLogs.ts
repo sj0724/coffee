@@ -45,8 +45,8 @@ export async function createCafeLog(
   try {
     const db = await getDB();
     const result = await db.runAsync(
-      `INSERT INTO cafe_logs (cafe_name, visited_at, photos, memo) VALUES (?, ?, ?, ?)`,
-      [log.cafe_name, log.visited_at, log.photos ?? null, log.memo ?? null],
+      `INSERT INTO cafe_logs (cafe_name, visited_at, photos, address, memo) VALUES (?, ?, ?, ?, ?)`,
+      [log.cafe_name, log.visited_at, log.photos ?? null, log.address ?? null, log.memo ?? null],
     );
     return result.lastInsertRowId;
   } catch (e) {

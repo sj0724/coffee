@@ -16,6 +16,7 @@ import { useRouter } from 'expo-router';
 import ImageCropPicker from 'react-native-image-crop-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { createCafeLog } from '@/src/db/queries/cafeLogs';
+import { AddressSearchModal } from '@/src/components/AddressSearchModal';
 
 const CROP_TOOLBAR = {
   cropperToolbarTitle: '사진 편집',
@@ -31,6 +32,8 @@ type Photo = { uri: string };
 export default function NewCafeLogScreen() {
   const router = useRouter();
   const [cafeName, setCafeName] = useState('');
+  const [address, setAddress] = useState('');
+  const [showAddressSearch, setShowAddressSearch] = useState(false);
   const [date, setDate] = useState(new Date());
   const [showPicker, setShowPicker] = useState(false);
   const [memo, setMemo] = useState('');
@@ -102,6 +105,7 @@ export default function NewCafeLogScreen() {
       cafe_name: cafeName.trim(),
       visited_at: visitedAt,
       photos: photos.length > 0 ? JSON.stringify(photos.map((p) => p.uri)) : undefined,
+      address: address.trim() || undefined,
       memo: memo.trim() || undefined,
     });
     setSaving(false);
@@ -182,6 +186,39 @@ export default function NewCafeLogScreen() {
             placeholderTextColor="#ccc"
           />
         </Field>
+
+        <Field label="주소">
+          <TouchableOpacity
+            onPress={() => setShowAddressSearch(true)}
+            className="flex-row items-center justify-between p-3 bg-white border rounded-lg border-coffee-border"
+          >
+            <Text
+              className="text-[15px] flex-1 mr-2"
+              style={{ color: address ? '#222' : '#ccc' }}
+              numberOfLines={1}
+            >
+              {address || '주소 검색...'}
+            </Text>
+            <Ionicons name="search" size={18} color="#6F4E37" />
+          </TouchableOpacity>
+          {address ? (
+            <TouchableOpacity
+              onPress={() => setAddress('')}
+              style={{ alignSelf: 'flex-end', marginTop: 4 }}
+            >
+              <Text style={{ fontSize: 12, color: '#999' }}>지우기</Text>
+            </TouchableOpacity>
+          ) : null}
+        </Field>
+
+        <AddressSearchModal
+          visible={showAddressSearch}
+          onSelect={(result) => {
+            setCafeName(result.name);
+            setAddress(result.address);
+          }}
+          onClose={() => setShowAddressSearch(false)}
+        />
 
         <Field label="방문 날짜">
           <TouchableOpacity

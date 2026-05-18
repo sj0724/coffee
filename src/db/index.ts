@@ -15,6 +15,9 @@ export async function getDB(): Promise<SQLite.SQLiteDatabase> {
   if (version < DB_VERSION) {
     if (version === 3) {
       await db.execAsync(`ALTER TABLE cafe_logs ADD COLUMN is_favorite INTEGER DEFAULT 0;`);
+      await db.execAsync(`ALTER TABLE cafe_logs ADD COLUMN address TEXT;`);
+    } else if (version === 5) {
+      await db.execAsync(`ALTER TABLE cafe_logs ADD COLUMN address TEXT;`);
     } else {
       await db.execAsync(`
         DROP TABLE IF EXISTS cafe_tasting_notes;

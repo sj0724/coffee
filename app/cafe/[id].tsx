@@ -7,6 +7,7 @@ import {
   Alert,
   TextInput,
   useWindowDimensions,
+  Linking,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -183,6 +184,20 @@ export default function CafeDetailScreen() {
         <View className="flex-1">
           <Text className="text-[22px] font-bold text-[#222]">{log.cafe_name}</Text>
           <Text className="text-[13px] text-gray-400 mt-1">{log.visited_at}</Text>
+          {log.address ? (
+            <TouchableOpacity
+              className="flex-row items-center gap-1 mt-2"
+              onPress={() => {
+                const query = encodeURIComponent(log.address!);
+                Linking.openURL(`https://map.naver.com/v5/search/${query}`);
+              }}
+            >
+              <Ionicons name="location-outline" size={14} color="#6F4E37" />
+              <Text className="text-[13px] text-coffee underline" numberOfLines={1}>
+                {log.address}
+              </Text>
+            </TouchableOpacity>
+          ) : null}
         </View>
         <TouchableOpacity onPress={handleToggleFavorite}>
           <Ionicons
