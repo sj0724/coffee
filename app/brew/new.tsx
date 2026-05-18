@@ -217,7 +217,7 @@ export default function NewBrewScreen() {
           <Text className="text-[15px] font-bold text-[#333]">타이머 단계</Text>
           {steps.map((step, i) => (
             <View key={i} className="bg-white rounded-[10px] p-3 gap-2 shadow-sm">
-              <View className="flex-row justify-between items-center">
+              <View className="flex-row items-center justify-between">
                 <Text className="text-[13px] font-semibold text-coffee">단계 {i + 1}</Text>
                 {steps.length > 1 && (
                   <TouchableOpacity onPress={() => removeStep(i)}>
@@ -250,8 +250,8 @@ export default function NewBrewScreen() {
             </View>
           ))}
           <TouchableOpacity className="flex-row items-center gap-1.5 py-1" onPress={addStep}>
-            <Ionicons name="add-circle-outline" size={20} color="#6F4E37" />
-            <Text className="text-sm text-coffee font-semibold">단계 추가</Text>
+            <Ionicons name="add-circle-outline" size={20} color="#111111" />
+            <Text className="text-sm font-semibold text-coffee">단계 추가</Text>
           </TouchableOpacity>
         </View>
 
@@ -260,7 +260,7 @@ export default function NewBrewScreen() {
           onPress={handleSave}
           disabled={saving}
         >
-          <Text className="text-white text-base font-bold">{saving ? '저장 중...' : '저장'}</Text>
+          <Text className="text-base font-bold text-white">{saving ? '저장 중...' : '저장'}</Text>
         </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>

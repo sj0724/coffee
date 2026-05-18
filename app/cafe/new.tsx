@@ -20,10 +20,10 @@ import { AddressSearchModal } from '@/src/components/AddressSearchModal';
 
 const CROP_TOOLBAR = {
   cropperToolbarTitle: '사진 편집',
-  cropperToolbarColor: '#3D2B1F',
+  cropperToolbarColor: '#000000',
   cropperToolbarWidgetColor: '#ffffff',
-  cropperActiveWidgetColor: '#F4A261',
-  cropperStatusBarColor: '#3D2B1F',
+  cropperActiveWidgetColor: '#555555',
+  cropperStatusBarColor: '#000000',
 };
 
 const MAX_PHOTOS = 5;
@@ -31,7 +31,9 @@ type Photo = { uri: string };
 
 export default function NewCafeLogScreen() {
   const router = useRouter();
-  const [selectedPlace, setSelectedPlace] = useState<{ name: string; address: string } | null>(null);
+  const [selectedPlace, setSelectedPlace] = useState<{ name: string; address: string } | null>(
+    null,
+  );
   const [showAddressSearch, setShowAddressSearch] = useState(false);
   const [date, setDate] = useState(new Date());
   const [showPicker, setShowPicker] = useState(false);
@@ -160,17 +162,17 @@ export default function NewCafeLogScreen() {
                   width: 110,
                   height: 146,
                   borderRadius: 12,
-                  backgroundColor: '#EDE4DC',
+                  backgroundColor: '#EFEFEF',
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: 6,
                   borderWidth: 1.5,
-                  borderColor: '#D6C4B8',
+                  borderColor: '#DDDDDD',
                   borderStyle: 'dashed',
                 }}
               >
-                <Ionicons name="add" size={28} color="#6F4E37" />
-                <Text style={{ fontSize: 12, color: '#6F4E37', fontWeight: '600' }}>사진 추가</Text>
+                <Ionicons name="add" size={28} color="#111111" />
+                <Text style={{ fontSize: 12, color: '#111111', fontWeight: '600' }}>사진 추가</Text>
               </TouchableOpacity>
             )}
           </ScrollView>
@@ -183,7 +185,7 @@ export default function NewCafeLogScreen() {
                 backgroundColor: '#fff',
                 borderRadius: 12,
                 borderWidth: 1.5,
-                borderColor: '#6F4E37',
+                borderColor: '#111111',
                 padding: 14,
                 gap: 4,
               }}
@@ -194,7 +196,9 @@ export default function NewCafeLogScreen() {
                     {selectedPlace.name}
                   </Text>
                   {selectedPlace.address ? (
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}>
+                    <View
+                      style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}
+                    >
                       <Ionicons name="location-outline" size={13} color="#999" />
                       <Text style={{ fontSize: 13, color: '#888' }} numberOfLines={2}>
                         {selectedPlace.address}
@@ -202,7 +206,10 @@ export default function NewCafeLogScreen() {
                     </View>
                   ) : null}
                 </View>
-                <TouchableOpacity onPress={() => setSelectedPlace(null)} style={{ padding: 2, marginLeft: 8 }}>
+                <TouchableOpacity
+                  onPress={() => setSelectedPlace(null)}
+                  style={{ padding: 2, marginLeft: 8 }}
+                >
                   <Ionicons name="close-circle" size={20} color="#bbb" />
                 </TouchableOpacity>
               </View>
@@ -210,7 +217,7 @@ export default function NewCafeLogScreen() {
                 onPress={() => setShowAddressSearch(true)}
                 style={{ marginTop: 6, alignSelf: 'flex-start' }}
               >
-                <Text style={{ fontSize: 12, color: '#6F4E37', fontWeight: '600' }}>변경</Text>
+                <Text style={{ fontSize: 12, color: '#111111', fontWeight: '600' }}>변경</Text>
               </TouchableOpacity>
             </View>
           ) : (
@@ -225,12 +232,12 @@ export default function NewCafeLogScreen() {
                 backgroundColor: '#fff',
                 borderRadius: 12,
                 borderWidth: 1.5,
-                borderColor: '#D6C4B8',
+                borderColor: '#DDDDDD',
                 borderStyle: 'dashed',
               }}
             >
-              <Ionicons name="search" size={18} color="#6F4E37" />
-              <Text style={{ fontSize: 15, color: '#6F4E37', fontWeight: '600' }}>카페 검색</Text>
+              <Ionicons name="search" size={18} color="#111111" />
+              <Text style={{ fontSize: 15, color: '#111111', fontWeight: '600' }}>카페 검색</Text>
             </TouchableOpacity>
           )}
         </Field>
@@ -270,7 +277,7 @@ export default function NewCafeLogScreen() {
                   onChange={onDateChange}
                   maximumDate={new Date()}
                   locale="ko-KR"
-                  accentColor="#6F4E37"
+                  accentColor="#111111"
                   style={{ width: '100%' }}
                 />
                 <TouchableOpacity

@@ -102,7 +102,7 @@ export default function TimerScreen() {
         <Text className="text-coffee-soft text-base text-center mt-[100px]">
           등록된 단계가 없어요.
         </Text>
-        <TouchableOpacity className="mt-5 self-center" onPress={() => router.back()}>
+        <TouchableOpacity className="self-center mt-5" onPress={() => router.back()}>
           <Text className="text-accent text-[15px]">돌아가기</Text>
         </TouchableOpacity>
       </SafeAreaView>
@@ -111,7 +111,7 @@ export default function TimerScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-coffee-dark">
-      <View className="flex-row justify-between items-center px-5 pt-4 pb-3">
+      <View className="flex-row items-center justify-between px-5 pt-4 pb-3">
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="close" size={28} color="#fff" />
         </TouchableOpacity>
@@ -131,7 +131,7 @@ export default function TimerScreen() {
         </Text>
       </View>
 
-      <View className="flex-1 justify-center items-center px-8 gap-4">
+      <View className="items-center justify-center flex-1 gap-4 px-8">
         {isDone ? (
           <View className="items-center gap-3">
             <Text className="text-[80px]">☕</Text>
@@ -143,7 +143,7 @@ export default function TimerScreen() {
               {currentStep?.title}
             </Text>
             {currentStep?.description ? (
-              <Text className="text-base text-coffee-soft text-center leading-6">
+              <Text className="text-base leading-6 text-center text-coffee-soft">
                 {currentStep.description}
               </Text>
             ) : null}
@@ -160,17 +160,17 @@ export default function TimerScreen() {
             )}
 
             {!hasTimer && (
-              <Text className="text-sm text-coffee-tan mt-2">완료 후 다음 단계를 눌러주세요</Text>
+              <Text className="mt-2 text-sm text-coffee-tan">완료 후 다음 단계를 눌러주세요</Text>
             )}
           </>
         )}
       </View>
 
       {!isDone && (
-        <View className="px-8 pb-6 gap-4 items-center">
+        <View className="items-center gap-4 px-8 pb-6">
           {hasTimer && (
             <TouchableOpacity
-              className="w-20 h-20 rounded-full bg-coffee justify-center items-center shadow-md"
+              className="items-center justify-center w-20 h-20 rounded-full shadow-md bg-coffee"
               onPress={isRunning ? pauseTimer : startTimer}
             >
               <Ionicons name={isRunning ? 'pause' : 'play'} size={36} color="#fff" />
@@ -181,18 +181,18 @@ export default function TimerScreen() {
             onPress={handleStepPress}
           >
             <Text className="text-coffee text-[15px] font-bold">다음 단계</Text>
-            <Ionicons name="arrow-forward" size={20} color="#6F4E37" />
+            <Ionicons name="arrow-forward" size={20} color="#111111" />
           </TouchableOpacity>
         </View>
       )}
 
       {isDone && (
-        <View className="px-8 pb-6 items-center">
+        <View className="items-center px-8 pb-6">
           <TouchableOpacity
             className="bg-coffee rounded-[24px] px-12 py-4"
             onPress={() => router.back()}
           >
-            <Text className="text-white text-base font-bold">완료</Text>
+            <Text className="text-base font-bold text-white">완료</Text>
           </TouchableOpacity>
         </View>
       )}

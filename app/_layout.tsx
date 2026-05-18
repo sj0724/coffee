@@ -13,15 +13,15 @@ export default function RootLayout() {
 
   if (!dbReady) {
     return (
-      <View className="flex-1 justify-center items-center">
+      <View className="items-center justify-center flex-1">
         <ActivityIndicator size="large" />
       </View>
     );
   }
 
   const headerOpts = {
-    headerStyle: { backgroundColor: '#6F4E37' },
-    headerTintColor: '#fff',
+    headerStyle: { backgroundColor: '#fff' },
+    headerTintColor: '#111111',
     headerTitleStyle: { fontWeight: '700' as const },
   };
 

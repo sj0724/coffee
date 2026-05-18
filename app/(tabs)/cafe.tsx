@@ -187,7 +187,7 @@ function CreateCard({
           className="flex-1 overflow-hidden rounded-[24px]"
           onPress={() => router.push('/cafe/new')}
           activeOpacity={0.88}
-          style={{ backgroundColor: '#FFF8F3' }}
+          style={{ backgroundColor: '#F8F8F8' }}
         >
           <View className="items-center justify-center flex-1 gap-4">
             <View
@@ -195,14 +195,14 @@ function CreateCard({
                 width: 72,
                 height: 72,
                 borderRadius: 36,
-                backgroundColor: '#F2E9E1',
+                backgroundColor: '#EFEFEF',
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
             >
-              <Ionicons name="add" size={40} color="#6F4E37" />
+              <Ionicons name="add" size={40} color="#111111" />
             </View>
-            <Text style={{ fontSize: 17, fontWeight: '600', color: '#6F4E37' }}>새 카페 기록</Text>
+            <Text style={{ fontSize: 17, fontWeight: '600', color: '#111111' }}>새 카페 기록</Text>
           </View>
           {/* subtle top/bottom border hint */}
           <View
@@ -214,7 +214,7 @@ function CreateCard({
               bottom: 0,
               borderRadius: 24,
               borderWidth: 1.5,
-              borderColor: '#E8D8CC',
+              borderColor: '#E0E0E0',
             }}
             pointerEvents="none"
           />
@@ -389,7 +389,7 @@ function CafeCard({
                 {(item.menu_count ?? 0) > 0 && (
                   <View className="flex-row justify-center gap-1">
                     {Array.from({ length: item.menu_count! }).map((_, i) => (
-                      <Ionicons key={i} name="cafe" size={18} color="#6F4E37" />
+                      <Ionicons key={i} name="cafe" size={18} color="#111111" />
                     ))}
                   </View>
                 )}
@@ -502,7 +502,7 @@ export default function CafeScreen() {
               paddingHorizontal: 14,
               paddingVertical: 7,
               borderRadius: 20,
-              backgroundColor: favOnly ? '#6F4E37' : '#fff',
+              backgroundColor: favOnly ? '#111111' : '#fff',
               borderWidth: 1,
               borderColor: '#ccc',
             }}
@@ -519,7 +519,7 @@ export default function CafeScreen() {
 
           {uniqueTags.map((tag) => {
             const isActive = activeTags.includes(tag);
-            const color = FLAVOR_COLORS[tag] ?? '#6F4E37';
+            const color = FLAVOR_COLORS[tag] ?? '#111111';
             return (
               <TouchableOpacity
                 key={tag}

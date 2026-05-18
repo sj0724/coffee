@@ -1,6 +1,6 @@
 import { View, Text, TouchableOpacity } from 'react-native';
 
-const COFFEE = '#6F4E37';
+const COFFEE = '#111111';
 const EMPTY = '#E5E7EB';
 
 export function SliderRow({

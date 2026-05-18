@@ -119,12 +119,12 @@ export function AddressSearchModal({ visible, onSelect, onClose }: Props) {
               margin: 16,
               paddingHorizontal: 14,
               paddingVertical: 10,
-              backgroundColor: '#F5F0EB',
+              backgroundColor: '#F5F5F5',
               borderRadius: 12,
               gap: 8,
             }}
           >
-            <Ionicons name="search" size={18} color="#6F4E37" />
+            <Ionicons name="search" size={18} color="#111111" />
             <TextInput
               ref={inputRef}
               style={{ flex: 1, fontSize: 15, color: '#222' }}
@@ -137,7 +137,13 @@ export function AddressSearchModal({ visible, onSelect, onClose }: Props) {
               autoFocus
             />
             {query.length > 0 && (
-              <TouchableOpacity onPress={() => { setQuery(''); setResults([]); setSearched(false); }}>
+              <TouchableOpacity
+                onPress={() => {
+                  setQuery('');
+                  setResults([]);
+                  setSearched(false);
+                }}
+              >
                 <Ionicons name="close-circle" size={18} color="#aaa" />
               </TouchableOpacity>
             )}
@@ -145,7 +151,15 @@ export function AddressSearchModal({ visible, onSelect, onClose }: Props) {
 
           {/* 에러 */}
           {errorMsg ? (
-            <View style={{ marginHorizontal: 16, marginBottom: 8, padding: 10, backgroundColor: '#FFF0F0', borderRadius: 8 }}>
+            <View
+              style={{
+                marginHorizontal: 16,
+                marginBottom: 8,
+                padding: 10,
+                backgroundColor: '#FFF0F0',
+                borderRadius: 8,
+              }}
+            >
               <Text style={{ color: '#c00', fontSize: 13 }}>{errorMsg}</Text>
             </View>
           ) : null}
@@ -153,7 +167,7 @@ export function AddressSearchModal({ visible, onSelect, onClose }: Props) {
           {/* 결과 */}
           {loading ? (
             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-              <ActivityIndicator size="large" color="#6F4E37" />
+              <ActivityIndicator size="large" color="#111111" />
             </View>
           ) : (
             <FlatList

@@ -192,7 +192,7 @@ export default function CafeDetailScreen() {
                 Linking.openURL(`https://map.naver.com/v5/search/${query}`);
               }}
             >
-              <Ionicons name="location-outline" size={14} color="#6F4E37" />
+              <Ionicons name="location-outline" size={14} color="#111111" />
               <Text className="text-[13px] text-coffee underline" numberOfLines={1}>
                 {log.address}
               </Text>
@@ -231,7 +231,7 @@ export default function CafeDetailScreen() {
             <Ionicons
               name={addingMenu ? 'close-outline' : 'add-circle-outline'}
               size={22}
-              color="#6F4E37"
+              color="#111111"
             />
             {!addingMenu && <Text className="text-sm font-semibold text-coffee">추가</Text>}
           </TouchableOpacity>
@@ -304,7 +304,7 @@ export default function CafeDetailScreen() {
                       <Ionicons
                         name={isEditing ? 'close-outline' : 'pencil-outline'}
                         size={18}
-                        color="#6F4E37"
+                        color="#111111"
                       />
                     </TouchableOpacity>
                   )}
