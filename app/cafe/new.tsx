@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
+  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   Modal,
@@ -13,18 +14,11 @@ import {
 import { Image } from 'expo-image';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useRouter } from 'expo-router';
-import ImageCropPicker from 'react-native-image-crop-picker';
+import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { createCafeLog } from '@/src/db/queries/cafeLogs';
 import { AddressSearchModal } from '@/src/components/AddressSearchModal';
-
-const CROP_TOOLBAR = {
-  cropperToolbarTitle: '사진 편집',
-  cropperToolbarColor: '#000000',
-  cropperToolbarWidgetColor: '#ffffff',
-  cropperActiveWidgetColor: '#555555',
-  cropperStatusBarColor: '#000000',
-};
+import { detectAndCrop } from '@/modules/document-scanner';
 
 const MAX_PHOTOS = 5;
 type Photo = { uri: string };
@@ -39,6 +33,7 @@ export default function NewCafeLogScreen() {
   const [showPicker, setShowPicker] = useState(false);
   const [memo, setMemo] = useState('');
   const [saving, setSaving] = useState(false);
+  const [scanning, setScanning] = useState(false);
   const [photos, setPhotos] = useState<Photo[]>([]);
 
   const visitedAt = date.toISOString().slice(0, 10);
@@ -48,38 +43,52 @@ export default function NewCafeLogScreen() {
     if (selected) setDate(selected);
   }
 
-  const cameraOptions = {
-    cropping: true,
-    freeStyleCropEnabled: true,
-    compressImageQuality: 1,
-    ...CROP_TOOLBAR,
-  };
-
   async function pickFromLibrary() {
     const remaining = MAX_PHOTOS - photos.length;
     if (remaining <= 0) return;
-    try {
-      const images = await ImageCropPicker.openPicker({
-        multiple: true,
-        maxFiles: remaining,
-        compressImageQuality: 1,
-      });
-      setPhotos((prev) => [...prev, ...images.map((img) => ({ uri: img.path }))]);
-    } catch (e: unknown) {
-      if ((e as { code?: string })?.code !== 'E_PICKER_CANCELLED') {
-        Alert.alert('오류', '사진을 불러오지 못했어요.');
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('권한 필요', '사진 접근 권한이 필요해요.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsMultipleSelection: true,
+      selectionLimit: remaining,
+      quality: 1,
+    });
+    if (!result.canceled) {
+      setScanning(true);
+      try {
+        const cropped = await Promise.all(
+          result.assets.map((a) => detectAndCrop(a.uri).catch(() => a.uri))
+        );
+        setPhotos((prev) => [...prev, ...cropped.map((uri) => ({ uri }))]);
+      } finally {
+        setScanning(false);
       }
     }
   }
 
   async function pickFromCamera() {
     if (photos.length >= MAX_PHOTOS) return;
-    try {
-      const image = await ImageCropPicker.openCamera(cameraOptions);
-      setPhotos((prev) => [...prev, { uri: image.path }]);
-    } catch (e: unknown) {
-      if ((e as { code?: string })?.code !== 'E_PICKER_CANCELLED') {
-        Alert.alert('오류', '카메라를 열지 못했어요.');
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('권한 필요', '카메라 권한이 필요해요.');
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({ quality: 1 });
+    if (!result.canceled) {
+      const rawUri = result.assets[0].uri;
+      setScanning(true);
+      try {
+        const croppedUri = await detectAndCrop(rawUri);
+        setPhotos((prev) => [...prev, { uri: croppedUri }]);
+      } catch (e) {
+        console.warn('detectAndCrop 실패, 원본 사용:', e);
+        setPhotos((prev) => [...prev, { uri: rawUri }]);
+      } finally {
+        setScanning(false);
       }
     }
   }
@@ -155,7 +164,22 @@ export default function NewCafeLogScreen() {
               </View>
             ))}
 
-            {photos.length < MAX_PHOTOS && (
+            {scanning ? (
+              <View
+                style={{
+                  width: 110,
+                  height: 146,
+                  borderRadius: 12,
+                  backgroundColor: '#EFEFEF',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 6,
+                }}
+              >
+                <ActivityIndicator color="#111111" />
+                <Text style={{ fontSize: 11, color: '#666', fontWeight: '500' }}>스캔 중...</Text>
+              </View>
+            ) : photos.length < MAX_PHOTOS ? (
               <TouchableOpacity
                 onPress={addPhoto}
                 style={{
@@ -174,7 +198,7 @@ export default function NewCafeLogScreen() {
                 <Ionicons name="add" size={28} color="#111111" />
                 <Text style={{ fontSize: 12, color: '#111111', fontWeight: '600' }}>사진 추가</Text>
               </TouchableOpacity>
-            )}
+            ) : null}
           </ScrollView>
         </Field>
 
