@@ -82,7 +82,6 @@ function parseAllNotes(concat: string | null | undefined): string[] {
 }
 
 const SIDE_PADDING = 28;
-type ListItem = 'new' | CafeLog;
 const AnimatedFlatList = Animated.createAnimatedComponent(FlatList) as typeof FlatList;
 
 // ─── Coverflow animated wrapper ──────────────────────────────────────────────
@@ -146,81 +145,6 @@ function CoverflowWrapper({
     >
       {children}
     </Animated.View>
-  );
-}
-
-// ─── Create card ─────────────────────────────────────────────────────────────
-
-function CreateCard({
-  index,
-  scrollX,
-  cardWidth,
-  cardHeight,
-  screenWidth,
-  screenHeight,
-}: {
-  index: number;
-  scrollX: SharedValue<number>;
-  cardWidth: number;
-  cardHeight: number;
-  screenWidth: number;
-  screenHeight: number;
-}) {
-  const router = useRouter();
-  return (
-    <View
-      style={{
-        width: screenWidth,
-        height: screenHeight,
-        justifyContent: 'center',
-        alignItems: 'center',
-      }}
-    >
-      <CoverflowWrapper
-        index={index}
-        scrollX={scrollX}
-        screenWidth={screenWidth}
-        cardWidth={cardWidth}
-        cardHeight={cardHeight}
-      >
-        <TouchableOpacity
-          className="flex-1 overflow-hidden rounded-[24px]"
-          onPress={() => router.push('/cafe/new')}
-          activeOpacity={0.88}
-          style={{ backgroundColor: '#F8F8F8' }}
-        >
-          <View className="items-center justify-center flex-1 gap-4">
-            <View
-              style={{
-                width: 72,
-                height: 72,
-                borderRadius: 36,
-                backgroundColor: '#EFEFEF',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <Ionicons name="add" size={40} color="#111111" />
-            </View>
-            <Text style={{ fontSize: 17, fontWeight: '600', color: '#111111' }}>새 카페 기록</Text>
-          </View>
-          {/* subtle top/bottom border hint */}
-          <View
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              borderRadius: 24,
-              borderWidth: 1.5,
-              borderColor: '#E0E0E0',
-            }}
-            pointerEvents="none"
-          />
-        </TouchableOpacity>
-      </CoverflowWrapper>
-    </View>
   );
 }
 
@@ -410,16 +334,129 @@ function CafeCard({
   );
 }
 
+// ─── Grid card ───────────────────────────────────────────────────────────────
+
+const GRID_GAP = 10;
+const GRID_PADDING = 16;
+
+function CafeGridCard({ item }: { item: CafeLog }) {
+  const router = useRouter();
+  const [imgRatio, setImgRatio] = useState<number | null>(null); // width / height
+  const noteColors = parseNoteColors(item.first_my_notes);
+  const firstPhotoUri: string | undefined = item.photos
+    ? (() => { try { return (JSON.parse(item.photos) as string[])[0]; } catch { return undefined; } })()
+    : undefined;
+
+  const noteGradient =
+    noteColors.length > 0
+      ? ((noteColors.length === 1 ? [noteColors[0], noteColors[0]] : noteColors) as [string, string, ...string[]])
+      : null;
+
+  return (
+    <View style={{
+      width: '100%',
+      borderRadius: 16,
+      backgroundColor: '#fff',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 3 },
+      shadowOpacity: 0.12,
+      shadowRadius: 8,
+      elevation: 4,
+    }}>
+      <TouchableOpacity
+        onPress={() => router.push(`/cafe/${item.id}`)}
+        activeOpacity={0.9}
+        style={{ borderRadius: 16, overflow: 'hidden' }}
+      >
+        {firstPhotoUri ? (
+          // 실제 이미지 비율 반영 — onLoad 전에는 3:4 portrait 기본값
+          <View style={{ aspectRatio: imgRatio ?? (3 / 4) }}>
+            <Image
+              source={{ uri: firstPhotoUri }}
+              style={{ width: '100%', height: '100%' }}
+              contentFit="cover"
+              onLoad={(e) => setImgRatio(e.source.width / e.source.height)}
+            />
+            <LinearGradient
+              colors={['transparent', 'rgba(0,0,0,0.75)']}
+              style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: 12, paddingTop: 50 }}
+            >
+              <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 10, marginBottom: 2 }}>
+                {item.visited_at.replace(/-/g, '.')}
+              </Text>
+              <Text style={{ color: '#fff', fontSize: 13, fontWeight: '700' }} numberOfLines={1}>
+                {item.cafe_name}
+              </Text>
+              {noteGradient && (
+                <LinearGradient colors={noteGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                  style={{ height: 3, borderRadius: 2, marginTop: 6 }} />
+              )}
+            </LinearGradient>
+          </View>
+        ) : (
+          <>
+            <View style={{ aspectRatio: 4 / 3 }}>
+              <Image source={DEFAULT_CARD} style={{ width: '100%', height: '100%' }} contentFit="cover" />
+              <LinearGradient
+                colors={['rgba(255,255,255,0)', '#fff']}
+                style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 32 }}
+              />
+            </View>
+            <View style={{ padding: 12, backgroundColor: '#fff' }}>
+              <Text style={{ color: '#bbb', fontSize: 11, marginBottom: 3 }}>
+                {item.visited_at.replace(/-/g, '.')}
+              </Text>
+              <Text style={{ color: '#222', fontSize: 13, fontWeight: '700', lineHeight: 19 }} numberOfLines={2}>
+                {item.cafe_name}
+              </Text>
+              {(item.menu_count ?? 0) > 0 && (
+                <View style={{ flexDirection: 'row', gap: 3, marginTop: 7 }}>
+                  {Array.from({ length: item.menu_count! }).map((_, i) => (
+                    <Ionicons key={i} name="cafe" size={13} color="#111111" />
+                  ))}
+                </View>
+              )}
+              {noteGradient && (
+                <LinearGradient colors={noteGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                  style={{ height: 3, borderRadius: 2, marginTop: 7 }} />
+              )}
+            </View>
+          </>
+        )}
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+// Greedy masonry: assign each item to the shorter column.
+// Photo cards default to 3:4 portrait for estimation; no-photo cards = image(4:3) + text area.
+function splitIntoMasonryColumns(items: CafeLog[], cardWidth: number): [CafeLog[], CafeLog[]] {
+  const photoH = cardWidth * (4 / 3);   // 3:4 portrait default
+  const noPhotoH = cardWidth * (3 / 4) + 72; // 4:3 thumbnail + text
+  const left: CafeLog[] = [];
+  const right: CafeLog[] = [];
+  let lh = 0, rh = 0;
+  for (const item of items) {
+    const h = item.photos ? photoH : noPhotoH;
+    if (lh <= rh) { left.push(item); lh += h + GRID_GAP; }
+    else { right.push(item); rh += h + GRID_GAP; }
+  }
+  return [left, right];
+}
+
 // ─── Screen ──────────────────────────────────────────────────────────────────
 
 export default function CafeScreen() {
   const [logs, setLogs] = useState<CafeLog[]>([]);
   const [activeTags, setActiveTags] = useState<string[]>([]);
   const [favOnly, setFavOnly] = useState(false);
+  const [viewMode, setViewMode] = useState<'coverflow' | 'grid'>('coverflow');
   const [listHeight, setListHeight] = useState(0);
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  const router = useRouter();
 
   const cardWidth = screenWidth - SIDE_PADDING * 2;
+  const gridCardWidth = (screenWidth - GRID_PADDING * 2 - GRID_GAP) / 2;
 
   const scrollX = useSharedValue(0);
   const scrollHandler = useAnimatedScrollHandler((event) => {
@@ -448,7 +485,10 @@ export default function CafeScreen() {
     });
   }, [logs, favOnly, activeTags]);
 
-  const listData: ListItem[] = ['new', ...filteredLogs];
+  const [masonryLeft, masonryRight] = useMemo(
+    () => splitIntoMasonryColumns(filteredLogs, gridCardWidth),
+    [filteredLogs, gridCardWidth],
+  );
 
   function toggleTag(tag: string) {
     setActiveTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]));
@@ -460,22 +500,20 @@ export default function CafeScreen() {
         setLogs(data);
         if (!initialScrollDone.current && data.length > 0) {
           initialScrollDone.current = true;
-          scrollX.value = screenWidth;
+          scrollX.value = 0;
           requestAnimationFrame(() => {
-            listRef.current?.scrollToIndex({ index: 1, animated: false });
+            listRef.current?.scrollToIndex({ index: 0, animated: false });
           });
         }
       });
     }, []),
   );
 
-  // 필터 변경 시 첫 번째 결과로 이동
   useEffect(() => {
     if (!initialScrollDone.current) return;
-    const target = filteredLogs.length > 0 ? 1 : 0;
-    scrollX.value = target * screenWidth;
+    scrollX.value = 0;
     requestAnimationFrame(() => {
-      listRef.current?.scrollToIndex({ index: target, animated: false });
+      listRef.current?.scrollToIndex({ index: 0, animated: false });
     });
   }, [activeTags, favOnly]);
 
@@ -486,35 +524,48 @@ export default function CafeScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-white" edges={['top']}>
+      {/* 헤더 */}
+      <View style={{
+        flexDirection: 'row', alignItems: 'center',
+        paddingHorizontal: 20, paddingVertical: 12,
+      }}>
+        <Text style={{ flex: 1, fontSize: 24, fontWeight: '800', color: '#111' }}>카페</Text>
+        <TouchableOpacity
+          onPress={() => setViewMode(v => v === 'coverflow' ? 'grid' : 'coverflow')}
+          style={{ padding: 6, marginRight: 4 }}
+        >
+          <Ionicons
+            name={viewMode === 'coverflow' ? 'grid-outline' : 'albums-outline'}
+            size={22} color="#111"
+          />
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => router.push('/cafe/new')}
+          style={{ padding: 6 }}
+        >
+          <Ionicons name="add" size={26} color="#111" />
+        </TouchableOpacity>
+      </View>
+
+      {/* 필터 바 */}
       {showFilterBar && (
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{ paddingHorizontal: 20, gap: 8 }}
-          style={{ flexGrow: 0, paddingTop: 15 }}
+          style={{ flexGrow: 0, paddingBottom: 10 }}
         >
           <TouchableOpacity
             onPress={() => setFavOnly((v) => !v)}
             style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 5,
-              paddingHorizontal: 14,
-              paddingVertical: 7,
-              borderRadius: 20,
+              flexDirection: 'row', alignItems: 'center', gap: 5,
+              paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20,
               backgroundColor: favOnly ? '#111111' : '#fff',
-              borderWidth: 1,
-              borderColor: '#ccc',
+              borderWidth: 1, borderColor: '#ccc',
             }}
           >
-            <Ionicons
-              name={favOnly ? 'star' : 'star-outline'}
-              size={14}
-              color={favOnly ? '#FFD166' : '#999'}
-            />
-            <Text style={{ fontSize: 13, fontWeight: '600', color: favOnly ? '#fff' : '#666' }}>
-              즐겨찾기
-            </Text>
+            <Ionicons name={favOnly ? 'star' : 'star-outline'} size={14} color={favOnly ? '#FFD166' : '#999'} />
+            <Text style={{ fontSize: 13, fontWeight: '600', color: favOnly ? '#fff' : '#666' }}>즐겨찾기</Text>
           </TouchableOpacity>
 
           {uniqueTags.map((tag) => {
@@ -525,55 +576,69 @@ export default function CafeScreen() {
                 key={tag}
                 onPress={() => toggleTag(tag)}
                 style={{
-                  paddingHorizontal: 14,
-                  paddingVertical: 7,
-                  borderRadius: 20,
+                  paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20,
                   backgroundColor: isActive ? color : '#fff',
-                  borderWidth: 1,
-                  borderColor: isActive ? color : '#ccc',
+                  borderWidth: 1, borderColor: isActive ? color : '#ccc',
                 }}
               >
-                <Text
-                  style={{ fontSize: 13, fontWeight: '600', color: isActive ? '#fff' : '#666' }}
-                >
-                  {tag}
-                </Text>
+                <Text style={{ fontSize: 13, fontWeight: '600', color: isActive ? '#fff' : '#666' }}>{tag}</Text>
               </TouchableOpacity>
             );
           })}
         </ScrollView>
       )}
 
-      <AnimatedFlatList
-        ref={listRef}
-        data={listData}
-        keyExtractor={(item) => (item === 'new' ? '__new__' : String((item as CafeLog).id))}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ alignItems: 'center' }}
-        style={{ flex: 1 }}
-        snapToInterval={screenWidth}
-        decelerationRate="fast"
-        scrollEventThrottle={16}
-        onScroll={scrollHandler as any}
-        onLayout={(e) => setListHeight(e.nativeEvent.layout.height)}
-        getItemLayout={(_data, index) => ({
-          length: screenWidth,
-          offset: screenWidth * index,
-          index,
-        })}
-        renderItem={({ item, index }) =>
-          item === 'new' ? (
-            <CreateCard
-              index={index}
-              scrollX={scrollX}
-              cardWidth={cardWidth}
-              cardHeight={defaultCardHeight}
-              screenWidth={screenWidth}
-              screenHeight={cardAreaHeight}
-            />
-          ) : (
+      {/* 콘텐츠 */}
+      {viewMode === 'grid' ? (
+        filteredLogs.length === 0 ? (
+          <View style={{ alignItems: 'center', paddingTop: 80 }}>
+            <Text style={{ color: '#bbb', fontSize: 15 }}>기록이 없어요.</Text>
+          </View>
+        ) : (
+          <ScrollView
+            style={{ flex: 1 }}
+            contentContainerStyle={{ padding: GRID_PADDING, paddingBottom: 40 }}
+          >
+            <View style={{ flexDirection: 'row', gap: GRID_GAP }}>
+              <View style={{ flex: 1, gap: GRID_GAP }}>
+                {masonryLeft.map((item) => (
+                  <CafeGridCard key={item.id} item={item} />
+                ))}
+              </View>
+              <View style={{ flex: 1, gap: GRID_GAP }}>
+                {masonryRight.map((item) => (
+                  <CafeGridCard key={item.id} item={item} />
+                ))}
+              </View>
+            </View>
+          </ScrollView>
+        )
+      ) : (
+        <AnimatedFlatList
+          ref={listRef}
+          data={filteredLogs}
+          keyExtractor={(item) => String((item as CafeLog).id)}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ alignItems: 'center' }}
+          style={{ flex: 1 }}
+          snapToInterval={screenWidth}
+          decelerationRate="fast"
+          scrollEventThrottle={16}
+          onScroll={scrollHandler as any}
+          onLayout={(e) => setListHeight(e.nativeEvent.layout.height)}
+          getItemLayout={(_data, index) => ({
+            length: screenWidth,
+            offset: screenWidth * index,
+            index,
+          })}
+          ListEmptyComponent={
+            <View style={{ width: screenWidth, justifyContent: 'center', alignItems: 'center', flex: 1 }}>
+              <Text style={{ color: '#bbb', fontSize: 15 }}>+ 버튼으로 첫 카페를 기록해보세요.</Text>
+            </View>
+          }
+          renderItem={({ item, index }) => (
             <CafeCard
               item={item as CafeLog}
               index={index}
@@ -584,10 +649,9 @@ export default function CafeScreen() {
               defaultCardHeight={defaultCardHeight}
               defaultImageHeight={defaultImageHeight}
             />
-          )
-        }
-        ListEmptyComponent={null}
-      />
+          )}
+        />
+      )}
     </SafeAreaView>
   );
 }

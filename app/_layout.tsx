@@ -1,7 +1,8 @@
 import '../global.css';
 import { useEffect, useState } from 'react';
 import { Stack } from 'expo-router';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, TouchableOpacity, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { getDB } from '@/src/db';
 
 export default function RootLayout() {
@@ -19,14 +20,20 @@ export default function RootLayout() {
     );
   }
 
-  const headerOpts = {
-    headerStyle: { backgroundColor: '#fff' },
-    headerTintColor: '#111111',
-    headerTitleStyle: { fontWeight: '700' as const },
-  };
-
   return (
-    <Stack screenOptions={headerOpts}>
+    <Stack
+      screenOptions={({ navigation }) => ({
+        headerStyle: { backgroundColor: '#fff' },
+        headerTintColor: '#111111',
+        headerTitleStyle: { fontWeight: '700' as const },
+        headerLeft: ({ canGoBack }) =>
+          canGoBack ? (
+            <TouchableOpacity onPress={navigation.goBack} style={{ padding: 4, marginLeft: -4 }}>
+              <Ionicons name="chevron-back" size={26} color="#111111" />
+            </TouchableOpacity>
+          ) : null,
+      })}
+    >
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="cafe/new" options={{ title: '카페 기록 추가', presentation: 'modal' }} />
       <Stack.Screen name="cafe/[id]" options={{ title: '카페 기록' }} />

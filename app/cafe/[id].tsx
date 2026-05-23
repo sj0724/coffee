@@ -5,12 +5,14 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
+  ActionSheetIOS,
+  Platform,
   TextInput,
   useWindowDimensions,
   Linking,
 } from 'react-native';
 import { Image } from 'expo-image';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { getCafeLog, deleteCafeLog, setFavorite } from '@/src/db/queries/cafeLogs';
 import { getMenuItems, createMenuItem, deleteMenuItem } from '@/src/db/queries/cafeMenuItems';
@@ -90,6 +92,17 @@ export default function CafeDetailScreen() {
     ]);
   }
 
+  function showMoreOptions() {
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        { options: ['취소', '삭제'], cancelButtonIndex: 0, destructiveButtonIndex: 1 },
+        (index) => { if (index === 1) handleDeleteLog(); },
+      );
+    } else {
+      handleDeleteLog();
+    }
+  }
+
   async function handleAddMenu(menuName: string) {
     const newId = await createMenuItem({ cafe_log_id: Number(id), menu_name: menuName });
     setAddingMenu(false);
@@ -144,6 +157,8 @@ export default function CafeDetailScreen() {
 
   if (!log) return <View className="flex-1 bg-coffee-light" />;
 
+  const isFav = !!log.is_favorite;
+
   const photoUris: string[] = log.photos
     ? (() => {
         try {
@@ -157,6 +172,25 @@ export default function CafeDetailScreen() {
   const photoH = Math.round(photoW * 1.25);
 
   return (
+    <>
+    <Stack.Screen
+      options={{
+        headerRight: () => (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+            <TouchableOpacity onPress={handleToggleFavorite} style={{ padding: 6 }}>
+              <Ionicons
+                name={isFav ? 'star' : 'star-outline'}
+                size={22}
+                color={isFav ? '#F5A623' : '#888'}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={showMoreOptions} style={{ padding: 6 }}>
+              <Ionicons name="ellipsis-horizontal" size={22} color="#111" />
+            </TouchableOpacity>
+          </View>
+        ),
+      }}
+    />
     <ScrollView
       className="flex-1 bg-coffee-light"
       contentContainerStyle={{ gap: 16, paddingBottom: 40 }}
@@ -180,35 +214,23 @@ export default function CafeDetailScreen() {
         </ScrollView>
       )}
 
-      <View className="flex-row items-start gap-3 px-5 pt-5">
-        <View className="flex-1">
-          <Text className="text-[22px] font-bold text-[#222]">{log.cafe_name}</Text>
-          <Text className="text-[13px] text-gray-400 mt-1">{log.visited_at}</Text>
-          {log.address ? (
-            <TouchableOpacity
-              className="flex-row items-center gap-1 mt-2"
-              onPress={() => {
-                const query = encodeURIComponent(log.address!);
-                Linking.openURL(`https://map.naver.com/v5/search/${query}`);
-              }}
-            >
-              <Ionicons name="location-outline" size={14} color="#111111" />
-              <Text className="text-[13px] text-coffee underline" numberOfLines={1}>
-                {log.address}
-              </Text>
-            </TouchableOpacity>
-          ) : null}
-        </View>
-        <TouchableOpacity onPress={handleToggleFavorite}>
-          <Ionicons
-            name={log.is_favorite ? 'star' : 'star-outline'}
-            size={22}
-            color={log.is_favorite ? '#F5A623' : '#bbb'}
-          />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={handleDeleteLog}>
-          <Ionicons name="trash-outline" size={22} color="#E76F51" />
-        </TouchableOpacity>
+      <View className="px-5 pt-5">
+        <Text className="text-[22px] font-bold text-[#222]">{log.cafe_name}</Text>
+        <Text className="text-[13px] text-gray-400 mt-1">{log.visited_at}</Text>
+        {log.address ? (
+          <TouchableOpacity
+            className="flex-row items-center gap-1 mt-2"
+            onPress={() => {
+              const query = encodeURIComponent(`${log.cafe_name} ${log.address}`);
+              Linking.openURL(`https://map.naver.com/v5/search/${query}`);
+            }}
+          >
+            <Ionicons name="location-outline" size={14} color="#111111" />
+            <Text className="text-[13px] text-coffee underline" numberOfLines={1}>
+              {log.address}
+            </Text>
+          </TouchableOpacity>
+        ) : null}
       </View>
 
       {log.memo ? (
@@ -332,5 +354,6 @@ export default function CafeDetailScreen() {
         })}
       </View>
     </ScrollView>
+    </>
   );
 }
