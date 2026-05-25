@@ -17,9 +17,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { getCafeLog, deleteCafeLog, setFavorite } from '@/src/db/queries/cafeLogs';
 import { getMenuItems, createMenuItem, deleteMenuItem } from '@/src/db/queries/cafeMenuItems';
 import { getTastingNote, upsertTastingNote } from '@/src/db/queries/tastingNotes';
-import { CafeLog, CafeMenuItem, CafeTastingNote, MenuCategory } from '@/src/types';
+import { getEspressoNote, upsertEspressoNote } from '@/src/db/queries/espressoNotes';
+import { CafeLog, CafeMenuItem, HanddripNote, EspressoNote, MenuCategory } from '@/src/types';
 import { NoteForm } from '@/src/components/cafe/NoteForm';
 import { NoteView } from '@/src/components/cafe/NoteView';
+import { EspressoNoteForm } from '@/src/components/cafe/EspressoNoteForm';
+import { EspressoNoteView } from '@/src/components/cafe/EspressoNoteView';
 
 const COFFEE_OPTIONS = [
   '에스프레소',
@@ -43,11 +46,13 @@ export default function CafeDetailScreen() {
   const { width: screenWidth } = useWindowDimensions();
   const [log, setLog] = useState<CafeLog | null>(null);
   const [menuItems, setMenuItems] = useState<CafeMenuItem[]>([]);
-  const [notesMap, setNotesMap] = useState<Record<number, CafeTastingNote>>({});
+  const [handripNotesMap, setHandripNotesMap] = useState<Record<number, HanddripNote>>({});
+  const [espressoNotesMap, setEspressoNotesMap] = useState<Record<number, EspressoNote>>({});
   const [addingMenu, setAddingMenu] = useState(false);
   const [customMenuInput, setCustomMenuInput] = useState('');
   const [editingMenuId, setEditingMenuId] = useState<number | null>(null);
-  const [noteForm, setNoteForm] = useState<Partial<CafeTastingNote>>({});
+  const [handripForm, setHandripForm] = useState<Partial<HanddripNote>>({});
+  const [espressoTags, setEspressoTags] = useState<string[]>([]);
 
   useEffect(() => {
     loadAll();
@@ -58,17 +63,25 @@ export default function CafeDetailScreen() {
     const [l, items] = await Promise.all([getCafeLog(logId), getMenuItems(logId)]);
     setLog(l);
     setMenuItems(items);
-    const pairs = await Promise.all(
+
+    const handripMap: Record<number, HanddripNote> = {};
+    const espressoMap: Record<number, EspressoNote> = {};
+
+    await Promise.all(
       items.map(async (item) => {
-        const note = await getTastingNote(item.id!);
-        return [item.id!, note] as [number, CafeTastingNote | null];
+        const category = getMenuCategory(item.menu_name);
+        if (category === 'handdip') {
+          const note = await getTastingNote(item.id!);
+          if (note) handripMap[item.id!] = note;
+        } else if (category === 'espresso') {
+          const note = await getEspressoNote(item.id!);
+          if (note) espressoMap[item.id!] = note;
+        }
       }),
     );
-    const map: Record<number, CafeTastingNote> = {};
-    for (const [itemId, note] of pairs) {
-      if (note) map[itemId] = note;
-    }
-    setNotesMap(map);
+
+    setHandripNotesMap(handripMap);
+    setEspressoNotesMap(espressoMap);
   }
 
   async function handleToggleFavorite() {
@@ -109,7 +122,8 @@ export default function CafeDetailScreen() {
     if (newId) {
       await loadAll();
       setEditingMenuId(newId);
-      setNoteForm({});
+      setHandripForm({});
+      setEspressoTags([]);
     }
   }
 
@@ -127,32 +141,26 @@ export default function CafeDetailScreen() {
     ]);
   }
 
-  async function handleSaveNote(menuId: number) {
-    await upsertTastingNote({ ...noteForm, cafe_menu_item_id: menuId } as CafeTastingNote);
+  async function handleSaveNote(menuId: number, category: MenuCategory) {
+    if (category === 'handdip') {
+      await upsertTastingNote({ ...handripForm, cafe_menu_item_id: menuId } as HanddripNote);
+    } else if (category === 'espresso') {
+      await upsertEspressoNote({ cafe_menu_item_id: menuId, tags: espressoTags });
+    }
     setEditingMenuId(null);
     loadAll();
   }
 
   function startEditing(item: CafeMenuItem) {
-    const existing = notesMap[item.id!];
-    setNoteForm(
-      existing
-        ? {
-            origin: existing.origin,
-            variety: existing.variety,
-            process: existing.process,
-            roast_level: existing.roast_level,
-            official_notes: existing.official_notes,
-            my_notes: existing.my_notes,
-            temperature: existing.temperature,
-            acidity: existing.acidity,
-            nuttiness: existing.nuttiness,
-            richness: existing.richness,
-            smoothness: existing.smoothness,
-          }
-        : {},
-    );
+    const category = getMenuCategory(item.menu_name);
     setEditingMenuId(item.id!);
+    if (category === 'handdip') {
+      const existing = handripNotesMap[item.id!];
+      setHandripForm(existing ? { ...existing } : {});
+    } else if (category === 'espresso') {
+      const existing = espressoNotesMap[item.id!];
+      setEspressoTags(existing ? [...existing.tags] : []);
+    }
   }
 
   if (!log) return <View className="flex-1 bg-coffee-light" />;
@@ -306,17 +314,14 @@ export default function CafeDetailScreen() {
         )}
 
         {menuItems.map((item) => {
-          const note = notesMap[item.id!];
           const category = getMenuCategory(item.menu_name);
           const isEditing = editingMenuId === item.id;
 
           return (
             <View key={item.id} className="p-4 mb-3 bg-white shadow-sm rounded-xl">
               <View className="flex-row items-center justify-between mb-2">
-                <View className="flex-row items-center gap-2">
-                  <View className="px-3 py-1 rounded-full bg-coffee-cream">
-                    <Text className="text-[13px] font-bold text-coffee">{item.menu_name}</Text>
-                  </View>
+                <View className="px-3 py-1 rounded-full bg-coffee-cream">
+                  <Text className="text-[13px] font-bold text-coffee">{item.menu_name}</Text>
                 </View>
                 <View className="flex-row gap-3">
                   {category !== 'simple' && (
@@ -336,19 +341,33 @@ export default function CafeDetailScreen() {
                 </View>
               </View>
 
-              {category !== 'simple' &&
-                (isEditing ? (
+              {category === 'handdip' && (
+                isEditing ? (
                   <NoteForm
-                    category={category}
-                    form={noteForm}
-                    onChange={setNoteForm}
-                    onSave={() => handleSaveNote(item.id!)}
+                    form={handripForm}
+                    onChange={setHandripForm}
+                    onSave={() => handleSaveNote(item.id!, category)}
                   />
-                ) : note ? (
-                  <NoteView note={note} category={category} />
+                ) : handripNotesMap[item.id!] ? (
+                  <NoteView note={handripNotesMap[item.id!]} />
                 ) : (
                   <Text className="py-1 text-xs text-gray-300">노트를 추가해보세요.</Text>
-                ))}
+                )
+              )}
+
+              {category === 'espresso' && (
+                isEditing ? (
+                  <EspressoNoteForm
+                    tags={espressoTags}
+                    onChange={setEspressoTags}
+                    onSave={() => handleSaveNote(item.id!, category)}
+                  />
+                ) : espressoNotesMap[item.id!] ? (
+                  <EspressoNoteView note={espressoNotesMap[item.id!]} />
+                ) : (
+                  <Text className="py-1 text-xs text-gray-300">특징을 추가해보세요.</Text>
+                )
+              )}
             </View>
           );
         })}

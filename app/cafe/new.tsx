@@ -17,8 +17,19 @@ import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { createCafeLog } from '@/src/db/queries/cafeLogs';
+import { createMenuItem } from '@/src/db/queries/cafeMenuItems';
 import { AddressSearchModal } from '@/src/components/AddressSearchModal';
 import { detectAndCrop } from '@/modules/document-scanner';
+
+const COFFEE_OPTIONS = [
+  '에스프레소',
+  '아메리카노',
+  '라떼',
+  '카푸치노',
+  '플랫화이트',
+  '핸드드립',
+  '콜드브루',
+];
 
 const MAX_PHOTOS = 5;
 type Photo = { uri: string };
@@ -35,6 +46,8 @@ export default function NewCafeLogScreen() {
   const [saving, setSaving] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [photos, setPhotos] = useState<Photo[]>([]);
+  const [menuNames, setMenuNames] = useState<string[]>([]);
+  const [customMenuInput, setCustomMenuInput] = useState('');
 
   const visitedAt = date.toISOString().slice(0, 10);
 
@@ -118,6 +131,11 @@ export default function NewCafeLogScreen() {
       address: selectedPlace.address || undefined,
       memo: memo.trim() || undefined,
     });
+    if (id != null && menuNames.length > 0) {
+      await Promise.all(
+        menuNames.map((name) => createMenuItem({ cafe_log_id: id, menu_name: name })),
+      );
+    }
     setSaving(false);
     if (id != null) {
       router.replace(`/cafe/${id}`);
@@ -336,6 +354,101 @@ export default function NewCafeLogScreen() {
             multiline
             numberOfLines={3}
           />
+        </Field>
+
+        <Field label="메뉴">
+          <View className="p-4 bg-white rounded-xl gap-3">
+            <View>
+              <Text className="text-[13px] font-semibold text-[#444] mb-2">커피</Text>
+              <View className="flex-row flex-wrap gap-2">
+                {COFFEE_OPTIONS.map((option) => {
+                  const selected = menuNames.includes(option);
+                  return (
+                    <TouchableOpacity
+                      key={option}
+                      onPress={() =>
+                        setMenuNames((prev) =>
+                          selected ? prev.filter((n) => n !== option) : [...prev, option],
+                        )
+                      }
+                      style={{
+                        paddingHorizontal: 14,
+                        paddingVertical: 7,
+                        borderRadius: 999,
+                        borderWidth: 1.5,
+                        borderColor: selected ? '#111' : '#DDD',
+                        backgroundColor: selected ? '#111' : '#fff',
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontSize: 13,
+                          fontWeight: '600',
+                          color: selected ? '#fff' : '#888',
+                        }}
+                      >
+                        {option}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+            <View>
+              <Text className="text-[13px] font-semibold text-[#444] mb-2">논커피 / 기타</Text>
+              <View className="flex-row gap-2">
+                <TextInput
+                  className="flex-1 border border-coffee-border rounded-lg px-3 py-2 text-sm text-[#222] bg-white"
+                  value={customMenuInput}
+                  onChangeText={setCustomMenuInput}
+                  placeholder="말차 라떼, 자몽 에이드..."
+                  placeholderTextColor="#ccc"
+                  returnKeyType="done"
+                  onSubmitEditing={() => {
+                    const name = customMenuInput.trim();
+                    if (name && !menuNames.includes(name)) {
+                      setMenuNames((prev) => [...prev, name]);
+                    }
+                    setCustomMenuInput('');
+                  }}
+                />
+                <TouchableOpacity
+                  className="items-center justify-center px-4 rounded-lg bg-coffee"
+                  onPress={() => {
+                    const name = customMenuInput.trim();
+                    if (name && !menuNames.includes(name)) {
+                      setMenuNames((prev) => [...prev, name]);
+                    }
+                    setCustomMenuInput('');
+                  }}
+                >
+                  <Text className="text-sm font-semibold text-white">추가</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+            {menuNames.length > 0 && (
+              <View className="flex-row flex-wrap gap-2 pt-1 border-t border-coffee-border">
+                {menuNames.map((name) => (
+                  <TouchableOpacity
+                    key={name}
+                    onPress={() => setMenuNames((prev) => prev.filter((n) => n !== name))}
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 4,
+                      paddingHorizontal: 12,
+                      paddingVertical: 6,
+                      borderRadius: 999,
+                      backgroundColor: '#111',
+                    }}
+                  >
+                    <Text style={{ fontSize: 13, fontWeight: '600', color: '#fff' }}>{name}</Text>
+                    <Ionicons name="close" size={13} color="#fff" />
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+          </View>
         </Field>
 
         <TouchableOpacity

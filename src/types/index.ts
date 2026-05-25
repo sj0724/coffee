@@ -21,20 +21,36 @@ export interface CafeMenuItem {
   created_at?: string;
 }
 
-export interface CafeTastingNote {
+export interface HanddripNoteBean {
   id?: number;
-  cafe_menu_item_id: number;
+  note_id?: number;
   origin?: string;
   variety?: string;
   process?: string;
+  ratio?: number; // %, optional
+}
+
+export interface HanddripNote {
+  id?: number;
+  cafe_menu_item_id: number;
+  is_blend?: number; // 0 = 싱글 오리진, 1 = 블랜드
+  origin?: string;   // 싱글 오리진 전용
+  variety?: string;  // 싱글 오리진 전용
+  process?: string;  // 싱글 오리진 전용
   roast_level?: string;
   official_notes?: string[];
   my_notes?: string[];
-  temperature?: string;
   acidity?: number;
   nuttiness?: number;
   richness?: number;
   smoothness?: number;
+  beans?: HanddripNoteBean[]; // 블랜드 전용
+}
+
+export interface EspressoNote {
+  id?: number;
+  cafe_menu_item_id: number;
+  tags: string[]; // e.g. ["진함", "산미있음"]
 }
 
 export interface Recipe {
