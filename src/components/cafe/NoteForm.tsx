@@ -4,6 +4,7 @@ import { NoteInput } from './NoteInput';
 import { TagsInput } from './TagsInput';
 import { MyNotesInput } from './MyNotesInput';
 import { SliderRow } from './SliderRow';
+import { CardScanSection } from './CardScanSection';
 
 function BeanEditor({
   bean,
@@ -84,8 +85,23 @@ export function NoteForm({
     onChange({ ...form, beans: next });
   }
 
+  function handleAnalyzed(data: Partial<HanddripNote>) {
+    // 분석 결과를 기존 폼에 머지 (사용자가 이미 입력한 값은 덮어쓰지 않음)
+    onChange({
+      ...data,
+      ...Object.fromEntries(
+        Object.entries(form).filter(([, v]) =>
+          v !== undefined && v !== null && !(Array.isArray(v) && v.length === 0),
+        ),
+      ),
+    } as Partial<HanddripNote>);
+  }
+
   return (
     <View className="gap-3 mt-1">
+      {/* 원두 카드 스캔 */}
+      <CardScanSection onAnalyzed={handleAnalyzed} />
+
       {/* 싱글 오리진 / 블랜드 토글 */}
       <View className="flex-row rounded-lg border border-gray-200 overflow-hidden">
         <TouchableOpacity

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { View, Text, TextInput } from 'react-native';
 
 export function TagsInput({
@@ -11,6 +11,10 @@ export function TagsInput({
   onChange: (tags: string[]) => void;
 }) {
   const [raw, setRaw] = useState(value?.join(', ') ?? '');
+
+  useEffect(() => {
+    setRaw(value?.join(', ') ?? '');
+  }, [value]);
 
   return (
     <View>
