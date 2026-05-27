@@ -11,6 +11,7 @@
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
     "@react-native-community/datetimepicker": "8.4.4",
+    "@react-native-ml-kit/text-recognition": "^2.0.0",
     "@shopify/flash-list": "2.0.2",
     "expo": "~54.0.33",
     "expo-camera": "~17.0.10",

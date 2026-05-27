@@ -9,6 +9,7 @@
  */
 import * as FileSystem from 'expo-file-system/legacy';
 import { initLlama, RNLLAMA_MTMD_DEFAULT_MEDIA_MARKER } from 'llama.rn';
+import TextRecognition from '@react-native-ml-kit/text-recognition';
 import type { HanddripNote } from '../types';
 
 const MODEL_URL =
@@ -144,6 +145,23 @@ export async function releaseModel() {
     setState('not_downloaded');
   }
 }
+
+async function extractOCRText(uris: string[]): Promise<string> {
+  const results = await Promise.all(
+    uris.map(async (uri, i) => {
+      try {
+        const result = await TextRecognition.recognize(uri);
+        const text = result.text.trim();
+        return text ? `[카드 ${i + 1}]\n${text}` : '';
+      } catch (e) {
+        console.warn('[OCR] 실패:', e);
+        return '';
+      }
+    }),
+  );
+  return results.filter(Boolean).join('\n\n');
+}
+
 const PROMPT = `
 여러 장의 이미지는 동일한 커피 원두 카드의 앞면/뒷면일 수 있습니다.
 모든 이미지 정보를 종합하여 하나의 JSON 객체만 반환하세요.
@@ -157,9 +175,11 @@ const PROMPT = `
 - 확인 가능한 정보만 추출
 - 영어/한국어 모두 읽기
 
-중요:
-- 국가명 + 지역명 + 품종명이 함께 있어도 싱글 오리진일 수 있습니다.
-- 서로 다른 원산지 원두가 2개 이상일 때만 블렌드입니다.
+중요 — 블렌드 판단 기준:
+- 한 원두의 국가명/지역명/농장명/품종명이 여럿 적혀 있어도 싱글 오리진입니다.
+- 예) "Colombia Piendamo Cauca Geisha" → 싱글 오리진 (is_blend=0)
+- 블렌드는 서로 다른 나라 또는 완전히 다른 원두 이름이 "+" 또는 "/" 또는 별도 줄로 나열된 경우만 해당합니다.
+- 확신할 수 없으면 is_blend=0으로 처리하세요.
 
 절대 규칙:
 - is_blend가 0이면 beans는 []
@@ -184,10 +204,18 @@ export async function analyzeCardImages(uris: string[]): Promise<Partial<Handdri
   }
 
   try {
+    const ocrText = await extractOCRText(uris);
+    console.log('[OCR] 추출 텍스트:', ocrText);
+
     // media_paths는 file:// 접두사 없는 순수 파일시스템 경로를 요구함
     const filePaths = uris.map((uri) => uri.replace(/^file:\/\//, ''));
     const mediaMarkers = filePaths.map(() => RNLLAMA_MTMD_DEFAULT_MEDIA_MARKER).join('\n');
-    const prompt = `<start_of_turn>user\n${mediaMarkers}\n${PROMPT}<end_of_turn>\n<start_of_turn>model\n`;
+
+    const ocrSection = ocrText
+      ? `아래는 카드 이미지에서 OCR로 추출한 텍스트입니다. 이 텍스트를 우선 참고하여 필드를 채우세요:\n\`\`\`\n${ocrText}\n\`\`\`\n\n`
+      : '';
+
+    const prompt = `<start_of_turn>user\n${mediaMarkers}\n${ocrSection}${PROMPT}<end_of_turn>\n<start_of_turn>model\n`;
 
     const result = await context!.completion({
       prompt,
@@ -227,8 +255,8 @@ export async function analyzeCardImages(uris: string[]): Promise<Partial<Handdri
       is_blend: typeof p.is_blend === 'number' ? p.is_blend : 0,
       origin: typeof p.origin === 'string' ? p.origin : undefined,
       variety: typeof p.variety === 'string' ? p.variety : undefined,
-      process: typeof p.process === 'string' ? p.process : undefined,
-      roast_level: typeof p.roast_level === 'string' ? p.roast_level : undefined,
+      process: typeof p.process_raw === 'string' ? p.process_raw : undefined,
+      roast_level: typeof p.roast_level_raw === 'string' ? p.roast_level_raw : undefined,
       official_notes: Array.isArray(p.official_notes) ? (p.official_notes as string[]) : [],
       beans: Array.isArray(p.beans) ? (p.beans as HanddripNote['beans']) : [],
     };

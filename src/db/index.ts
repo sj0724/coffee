@@ -13,7 +13,14 @@ export async function getDB(): Promise<SQLite.SQLiteDatabase> {
   let version = versionRow?.user_version ?? 0;
 
   if (version < DB_VERSION) {
-    if (version !== 3 && version !== 5 && version !== 6 && version !== 7 && version !== 8) {
+    if (
+      version !== 3 &&
+      version !== 5 &&
+      version !== 6 &&
+      version !== 7 &&
+      version !== 8 &&
+      version !== 9
+    ) {
       await db.execAsync(`
         DROP TABLE IF EXISTS cafe_tasting_note_beans;
         DROP TABLE IF EXISTS espresso_notes;
@@ -47,7 +54,9 @@ export async function getDB(): Promise<SQLite.SQLiteDatabase> {
       }
       if (version === 7) {
         try {
-          await db.execAsync(`ALTER TABLE cafe_tasting_notes ADD COLUMN is_blend INTEGER DEFAULT 0;`);
+          await db.execAsync(
+            `ALTER TABLE cafe_tasting_notes ADD COLUMN is_blend INTEGER DEFAULT 0;`,
+          );
         } catch {
           // column already exists
         }
@@ -75,6 +84,17 @@ export async function getDB(): Promise<SQLite.SQLiteDatabase> {
             ratio   INTEGER
           );
         `);
+        version = 9;
+      }
+      if (version === 9) {
+        // is_blend가 없는 구버전 DB 보정
+        try {
+          await db.execAsync(
+            `ALTER TABLE cafe_tasting_notes ADD COLUMN is_blend INTEGER DEFAULT 0;`,
+          );
+        } catch {
+          // column already exists
+        }
       }
     }
 

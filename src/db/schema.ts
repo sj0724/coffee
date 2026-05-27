@@ -1,4 +1,4 @@
-export const DB_VERSION = 9;
+export const DB_VERSION = 10;
 
 export const CREATE_TABLES_SQL = `
 CREATE TABLE IF NOT EXISTS cafe_logs (
