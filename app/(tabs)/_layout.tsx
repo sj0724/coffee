@@ -8,16 +8,14 @@ export default function TabLayout() {
         headerShown: false,
         tabBarActiveTintColor: '#111111',
         tabBarInactiveTintColor: '#999',
-        tabBarStyle: { backgroundColor: '#fff' },
+        tabBarStyle: { display: 'none' },
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
           title: '홈',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home-outline" size={size} color={color} />
-          ),
+          tabBarButton: () => null,
         }}
       />
       <Tabs.Screen
@@ -33,9 +31,7 @@ export default function TabLayout() {
         name="brew"
         options={{
           title: '홈브루',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="flask-outline" size={size} color={color} />
-          ),
+          tabBarButton: () => null,
         }}
       />
     </Tabs>

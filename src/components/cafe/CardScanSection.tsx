@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   View,
   Text,
@@ -10,15 +10,7 @@ import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { detectAndCrop } from '@/modules/document-scanner';
-import {
-  getModelState,
-  onModelStateChange,
-  isModelDownloaded,
-  downloadModel,
-  loadModel,
-  analyzeCardImages,
-  ModelState,
-} from '@/src/services/visionLLM';
+import { analyzeCardImages } from '@/src/services/visionLLM';
 import type { HanddripNote } from '@/src/types';
 
 const MAX_CARDS = 2;
@@ -30,27 +22,16 @@ type Props = {
 export function CardScanSection({ onAnalyzed }: Props) {
   const [cards, setCards] = useState<string[]>([]);
   const [scanning, setScanning] = useState(false);
-  const [modelState, setModelState] = useState<ModelState>(getModelState());
-  const [downloadPct, setDownloadPct] = useState(0);
   const [analyzing, setAnalyzing] = useState(false);
 
-  useEffect(() => {
-    // 컴포넌트 마운트 시 다운로드 여부 확인
-    isModelDownloaded().then((downloaded) => {
-      if (downloaded && getModelState() === 'not_downloaded') {
-        // 파일은 있지만 아직 로드 안 된 상태
-        setModelState('not_downloaded'); // 로드는 분석 요청 시 자동으로
-      }
-    });
-    return onModelStateChange(setModelState);
-  }, []);
+  const isBusy = scanning || analyzing;
 
   async function pickImage() {
     if (cards.length >= MAX_CARDS) return;
 
     Alert.alert('카드 사진 추가', undefined, [
-      { text: '카메라', onPress: () => pickFromCamera() },
-      { text: '갤러리', onPress: () => pickFromLibrary() },
+      { text: '카메라', onPress: pickFromCamera },
+      { text: '갤러리', onPress: pickFromLibrary },
       { text: '취소', style: 'cancel' },
     ]);
   }
@@ -62,9 +43,7 @@ export function CardScanSection({ onAnalyzed }: Props) {
       return;
     }
     const result = await ImagePicker.launchCameraAsync({ quality: 1 });
-    if (!result.canceled) {
-      addCard(result.assets[0].uri);
-    }
+    if (!result.canceled) addCard(result.assets[0].uri);
   }
 
   async function pickFromLibrary() {
@@ -77,9 +56,7 @@ export function CardScanSection({ onAnalyzed }: Props) {
       mediaTypes: ['images'],
       quality: 1,
     });
-    if (!result.canceled) {
-      addCard(result.assets[0].uri);
-    }
+    if (!result.canceled) addCard(result.assets[0].uri);
   }
 
   async function addCard(rawUri: string) {
@@ -98,44 +75,8 @@ export function CardScanSection({ onAnalyzed }: Props) {
 
   async function handleAnalyze() {
     if (cards.length === 0) return;
-
-    const downloaded = await isModelDownloaded();
-
-    if (!downloaded) {
-      Alert.alert(
-        'AI 모델 다운로드',
-        'Gemma 4 E2B 모델을 다운로드해야 해요.\n약 1.7GB, Wi-Fi 연결을 권장해요.',
-        [
-          { text: '취소', style: 'cancel' },
-          { text: '다운로드', onPress: startDownloadAndAnalyze },
-        ],
-      );
-      return;
-    }
-
-    runAnalysis();
-  }
-
-  async function startDownloadAndAnalyze() {
-    setDownloadPct(0);
-    const ok = await downloadModel((pct) => setDownloadPct(pct));
-    if (!ok) {
-      Alert.alert('오류', '모델 다운로드에 실패했어요. 네트워크를 확인해주세요.');
-      return;
-    }
-    runAnalysis();
-  }
-
-  async function runAnalysis() {
     setAnalyzing(true);
     try {
-      if (modelState !== 'ready') {
-        const ok = await loadModel();
-        if (!ok) {
-          Alert.alert('오류', '모델 로드에 실패했어요.');
-          return;
-        }
-      }
       const result = await analyzeCardImages(cards);
       if (result) {
         onAnalyzed(result);
@@ -147,10 +88,6 @@ export function CardScanSection({ onAnalyzed }: Props) {
     }
   }
 
-  const isDownloading = modelState === 'downloading';
-  const isLoading = modelState === 'loading';
-  const isBusy = scanning || analyzing || isDownloading || isLoading;
-
   return (
     <View className="gap-2 p-3 rounded-xl bg-coffee-cream border border-coffee-border">
       <View className="flex-row items-center gap-1.5">
@@ -159,7 +96,6 @@ export function CardScanSection({ onAnalyzed }: Props) {
         <Text className="text-[11px] text-gray-400">(선택 · 최대 2장)</Text>
       </View>
 
-      {/* 이미지 슬롯 */}
       <View className="flex-row gap-2">
         {cards.map((uri, i) => (
           <View key={i} style={{ position: 'relative' }}>
@@ -229,32 +165,10 @@ export function CardScanSection({ onAnalyzed }: Props) {
         )}
       </View>
 
-      {/* 상태 메시지 / 분석 버튼 */}
-      {isDownloading && (
-        <View className="gap-1">
-          <View className="h-1.5 rounded-full bg-gray-200 overflow-hidden">
-            <View
-              className="h-full rounded-full bg-coffee"
-              style={{ width: `${downloadPct}%` }}
-            />
-          </View>
-          <Text className="text-[11px] text-gray-400 text-center">
-            모델 다운로드 중... {downloadPct}%
-          </Text>
-        </View>
-      )}
-
-      {isLoading && (
-        <View className="flex-row items-center justify-center gap-2 py-1">
-          <ActivityIndicator size="small" color="#8B5E3C" />
-          <Text className="text-[12px] text-coffee">모델 로딩 중...</Text>
-        </View>
-      )}
-
       {analyzing && (
         <View className="flex-row items-center justify-center gap-2 py-1">
           <ActivityIndicator size="small" color="#8B5E3C" />
-          <Text className="text-[12px] text-coffee">Gemma 분석 중...</Text>
+          <Text className="text-[12px] text-coffee">Gemini 분석 중...</Text>
         </View>
       )}
 
