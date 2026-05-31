@@ -30,6 +30,16 @@ import { MyNotesInput } from '@/src/components/cafe/MyNotesInput';
 import { SliderRow } from '@/src/components/cafe/SliderRow';
 import type { HanddripNoteBean } from '@/src/types';
 
+const KAKAO_API_KEY = process.env.EXPO_PUBLIC_KAKAO_REST_API_KEY ?? '';
+
+interface NearbyPlace {
+  id: string;
+  place_name: string;
+  road_address_name: string;
+  address_name: string;
+  distance?: string;
+}
+
 const TOTAL_STEPS = 4;
 const STEP_LABELS = ['사진', '카페', '정보', '메모'];
 
@@ -47,6 +57,9 @@ export default function NewCafeLogScreen() {
   const [scanningCafe, setScanningCafe] = useState(false);
 
   // Step 2 - 카페
+  const [photoCoords, setPhotoCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [nearbyPlaces, setNearbyPlaces] = useState<NearbyPlace[]>([]);
+  const [nearbyLoading, setNearbyLoading] = useState(false);
   const [selectedPlace, setSelectedPlace] = useState<{ name: string; address: string } | null>(
     null,
   );
@@ -85,6 +98,30 @@ export default function NewCafeLogScreen() {
       useNativeDriver: false,
     }).start();
   }, [step]);
+
+  // Step 2 진입 시 근처 카페 자동 검색
+  useEffect(() => {
+    if (step === 2 && photoCoords && nearbyPlaces.length === 0 && !nearbyLoading) {
+      fetchNearby();
+    }
+  }, [step]);
+
+  async function fetchNearby() {
+    if (!photoCoords) return;
+    setNearbyLoading(true);
+    try {
+      const res = await fetch(
+        `https://dapi.kakao.com/v2/local/search/category.json?category_group_code=CE7&x=${photoCoords.lng}&y=${photoCoords.lat}&radius=500&sort=distance&size=10`,
+        { headers: { Authorization: `KakaoAK ${KAKAO_API_KEY}` } },
+      );
+      const json = await res.json();
+      setNearbyPlaces(json.documents ?? []);
+    } catch {
+      setNearbyPlaces([]);
+    } finally {
+      setNearbyLoading(false);
+    }
+  }
 
   // Step 3 진입 시 Gemini 분석 자동 실행
   useEffect(() => {
@@ -177,14 +214,27 @@ export default function NewCafeLogScreen() {
     ]);
   }
 
+  function extractCoordsFromExif(exif: Record<string, unknown> | null | undefined) {
+    if (!exif) return;
+    const lat = exif.GPSLatitude;
+    const lng = exif.GPSLongitude;
+    if (typeof lat !== 'number' || typeof lng !== 'number') return;
+    const latSigned = exif.GPSLatitudeRef === 'S' ? -Math.abs(lat) : Math.abs(lat);
+    const lngSigned = exif.GPSLongitudeRef === 'W' ? -Math.abs(lng) : Math.abs(lng);
+    setPhotoCoords((prev) => prev ?? { lat: latSigned, lng: lngSigned });
+  }
+
   async function pickCafeFromCamera() {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
       Alert.alert('권한 필요', '카메라 권한이 필요해요.');
       return;
     }
-    const result = await ImagePicker.launchCameraAsync({ quality: 1 });
-    if (!result.canceled) addCafePhoto(result.assets[0].uri);
+    const result = await ImagePicker.launchCameraAsync({ quality: 1, exif: true });
+    if (!result.canceled) {
+      extractCoordsFromExif(result.assets[0].exif as Record<string, unknown>);
+      addCafePhoto(result.assets[0].uri);
+    }
   }
 
   async function pickCafeFromLibrary() {
@@ -199,12 +249,18 @@ export default function NewCafeLogScreen() {
       allowsMultipleSelection: true,
       selectionLimit: remaining,
       quality: 1,
+      exif: true,
     });
     if (!result.canceled) {
+      extractCoordsFromExif(result.assets[0].exif as Record<string, unknown>);
       setScanningCafe(true);
       const uris = await Promise.all(
         result.assets.map(async (a) => {
-          try { return await detectAndCrop(a.uri); } catch { return a.uri; }
+          try {
+            return await detectAndCrop(a.uri);
+          } catch {
+            return a.uri;
+          }
         }),
       );
       setCafePhotos((prev) => [...prev, ...uris]);
@@ -244,9 +300,15 @@ export default function NewCafeLogScreen() {
       }
 
       const hasInfo =
-        origin || farm || variety || process || roastLevel ||
-        officialNotes.length > 0 || myNotes.length > 0 ||
-        acidity != null || (isBlend && beans.length > 0);
+        origin ||
+        farm ||
+        variety ||
+        process ||
+        roastLevel ||
+        officialNotes.length > 0 ||
+        myNotes.length > 0 ||
+        acidity != null ||
+        (isBlend && beans.length > 0);
 
       if (menuName.trim() || hasInfo) {
         const menuId = await createMenuItem({
@@ -287,217 +349,235 @@ export default function NewCafeLogScreen() {
   // ── 렌더 ──────────────────────────────────────────────
   return (
     <View style={{ flex: 1, backgroundColor: '#F7F3EF', paddingTop: insets.top }}>
-        {/* 헤더 */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 }}>
-          <TouchableOpacity onPress={goBack} style={{ padding: 4, marginRight: 8 }}>
-            <Ionicons name="chevron-back" size={24} color="#222" />
-          </TouchableOpacity>
-          <Text style={{ flex: 1, fontSize: 17, fontWeight: '700', color: '#222' }}>새 카페 기록</Text>
-          <Text style={{ fontSize: 13, color: '#999', fontWeight: '500' }}>
-            {step}/{TOTAL_STEPS} {STEP_LABELS[step - 1]}
-          </Text>
-        </View>
+      {/* 헤더 */}
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          paddingHorizontal: 16,
+          paddingVertical: 12,
+        }}
+      >
+        <TouchableOpacity onPress={goBack} style={{ padding: 4, marginRight: 8 }}>
+          <Ionicons name="chevron-back" size={24} color="#222" />
+        </TouchableOpacity>
+        <Text style={{ flex: 1, fontSize: 17, fontWeight: '700', color: '#222' }}>
+          새 카페 기록
+        </Text>
+        <Text style={{ fontSize: 13, color: '#999', fontWeight: '500' }}>
+          {step}/{TOTAL_STEPS} {STEP_LABELS[step - 1]}
+        </Text>
+      </View>
 
-        {/* 진행률 바 */}
-        <View
+      {/* 진행률 바 */}
+      <View
+        style={{
+          height: 3,
+          backgroundColor: '#E5DDD5',
+          marginHorizontal: 16,
+          borderRadius: 2,
+          marginVertical: 16,
+        }}
+      >
+        <Animated.View
           style={{
             height: 3,
-            backgroundColor: '#E5DDD5',
-            marginHorizontal: 16,
+            backgroundColor: '#5C3D2E',
             borderRadius: 2,
-            marginVertical: 16,
+            width: progressAnim.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }),
+          }}
+        />
+      </View>
+
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={0}
+      >
+        {/* 스텝 컨텐츠 */}
+        <ScrollView
+          key={step}
+          style={{ flex: 1 }}
+          contentContainerStyle={{ padding: 20, paddingBottom: 24, gap: 24 }}
+          keyboardShouldPersistTaps="handled"
+        >
+          {step === 1 && (
+            <Step1
+              notePhotos={notePhotos}
+              cafePhotos={cafePhotos}
+              scanningNote={scanningNote}
+              scanningCafe={scanningCafe}
+              onAddNotePhoto={pickNotePhoto}
+              onRemoveNotePhoto={(i) => setNotePhotos((p) => p.filter((_, idx) => idx !== i))}
+              onAddCafePhoto={pickCafePhoto}
+              onRemoveCafePhoto={(i) => setCafePhotos((p) => p.filter((_, idx) => idx !== i))}
+            />
+          )}
+          {step === 2 && (
+            <Step2
+              selectedPlace={selectedPlace}
+              visitedAt={visitedAt}
+              nearbyPlaces={nearbyPlaces}
+              nearbyLoading={nearbyLoading}
+              hasCoords={photoCoords !== null}
+              onSelectNearby={(p) =>
+                setSelectedPlace({
+                  name: p.place_name,
+                  address: p.road_address_name || p.address_name,
+                })
+              }
+              onOpenSearch={() => setShowAddressSearch(true)}
+              onClearPlace={() => setSelectedPlace(null)}
+              onOpenDatePicker={() => setShowDatePicker(true)}
+            />
+          )}
+          {step === 3 && (
+            <Step3
+              analyzing={analyzing}
+              analyzed={analyzed}
+              onReanalyze={notePhotos.length > 0 ? runAnalysis : undefined}
+              menuName={menuName}
+              onMenuName={setMenuName}
+              isBlend={isBlend}
+              onIsBlend={setIsBlend}
+              origin={origin}
+              onOrigin={setOrigin}
+              farm={farm}
+              onFarm={setFarm}
+              variety={variety}
+              onVariety={setVariety}
+              process={process}
+              onProcess={setProcess}
+              roastLevel={roastLevel}
+              onRoastLevel={setRoastLevel}
+              officialNotes={officialNotes}
+              onOfficialNotes={setOfficialNotes}
+              myNotes={myNotes}
+              onMyNotes={setMyNotes}
+              acidity={acidity}
+              onAcidity={setAcidity}
+              nuttiness={nuttiness}
+              onNuttiness={setNuttiness}
+              richness={richness}
+              onRichness={setRichness}
+              smoothness={smoothness}
+              onSmoothness={setSmoothness}
+              beans={beans}
+              onBeans={setBeans}
+            />
+          )}
+          {step === 4 && <Step4 memo={memo} onMemo={setMemo} />}
+        </ScrollView>
+
+        {/* 하단 버튼 */}
+        <View
+          style={{
+            paddingHorizontal: 20,
+            paddingBottom: insets.bottom + 16,
+            paddingTop: 12,
+            borderTopWidth: 1,
+            borderTopColor: '#EDE8E3',
+            backgroundColor: '#F7F3EF',
           }}
         >
-          <Animated.View
-            style={{
-              height: 3,
-              backgroundColor: '#5C3D2E',
-              borderRadius: 2,
-              width: progressAnim.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }),
-            }}
-          />
-        </View>
-
-        <KeyboardAvoidingView
-          style={{ flex: 1 }}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          keyboardVerticalOffset={0}
-        >
-          {/* 스텝 컨텐츠 */}
-          <ScrollView
-            key={step}
-            style={{ flex: 1 }}
-            contentContainerStyle={{ padding: 20, paddingBottom: 24, gap: 24 }}
-            keyboardShouldPersistTaps="handled"
-          >
-            {step === 1 && (
-              <Step1
-                notePhotos={notePhotos}
-                cafePhotos={cafePhotos}
-                scanningNote={scanningNote}
-                scanningCafe={scanningCafe}
-                onAddNotePhoto={pickNotePhoto}
-                onRemoveNotePhoto={(i) => setNotePhotos((p) => p.filter((_, idx) => idx !== i))}
-                onAddCafePhoto={pickCafePhoto}
-                onRemoveCafePhoto={(i) => setCafePhotos((p) => p.filter((_, idx) => idx !== i))}
-              />
-            )}
-            {step === 2 && (
-              <Step2
-                selectedPlace={selectedPlace}
-                visitedAt={visitedAt}
-                onOpenSearch={() => setShowAddressSearch(true)}
-                onClearPlace={() => setSelectedPlace(null)}
-                onOpenDatePicker={() => setShowDatePicker(true)}
-              />
-            )}
-            {step === 3 && (
-              <Step3
-                analyzing={analyzing}
-                analyzed={analyzed}
-                onReanalyze={notePhotos.length > 0 ? runAnalysis : undefined}
-                menuName={menuName}
-                onMenuName={setMenuName}
-                isBlend={isBlend}
-                onIsBlend={setIsBlend}
-                origin={origin}
-                onOrigin={setOrigin}
-                farm={farm}
-                onFarm={setFarm}
-                variety={variety}
-                onVariety={setVariety}
-                process={process}
-                onProcess={setProcess}
-                roastLevel={roastLevel}
-                onRoastLevel={setRoastLevel}
-                officialNotes={officialNotes}
-                onOfficialNotes={setOfficialNotes}
-                myNotes={myNotes}
-                onMyNotes={setMyNotes}
-                acidity={acidity}
-                onAcidity={setAcidity}
-                nuttiness={nuttiness}
-                onNuttiness={setNuttiness}
-                richness={richness}
-                onRichness={setRichness}
-                smoothness={smoothness}
-                onSmoothness={setSmoothness}
-                beans={beans}
-                onBeans={setBeans}
-              />
-            )}
-            {step === 4 && <Step4 memo={memo} onMemo={setMemo} />}
-          </ScrollView>
-
-          {/* 하단 버튼 */}
-          <View
-            style={{
-              paddingHorizontal: 20,
-              paddingBottom: insets.bottom + 16,
-              paddingTop: 12,
-              borderTopWidth: 1,
-              borderTopColor: '#EDE8E3',
-              backgroundColor: '#F7F3EF',
-            }}
-          >
-            {step < TOTAL_STEPS ? (
-              <TouchableOpacity
-                onPress={goNext}
-                disabled={step === 2 && !selectedPlace}
-                style={{
-                  backgroundColor: step === 2 && !selectedPlace ? '#C5B8AE' : '#5C3D2E',
-                  borderRadius: 14,
-                  paddingVertical: 15,
-                  alignItems: 'center',
-                }}
-              >
-                <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>다음</Text>
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity
-                onPress={handleSave}
-                disabled={saving || !selectedPlace}
-                style={{
-                  backgroundColor: saving || !selectedPlace ? '#C5B8AE' : '#5C3D2E',
-                  borderRadius: 14,
-                  paddingVertical: 15,
-                  alignItems: 'center',
-                }}
-              >
-                {saving ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>등록 완료</Text>
-                )}
-              </TouchableOpacity>
-            )}
-          </View>
-        </KeyboardAvoidingView>
-
-        {/* 카페 검색 모달 */}
-        <AddressSearchModal
-          visible={showAddressSearch}
-          onSelect={(result) => setSelectedPlace(result)}
-          onClose={() => setShowAddressSearch(false)}
-        />
-
-        {/* 날짜 피커 (iOS 모달) */}
-        {Platform.OS === 'ios' && (
-          <Modal transparent animationType="fade" visible={showDatePicker}>
+          {step < TOTAL_STEPS ? (
             <TouchableOpacity
+              onPress={goNext}
+              disabled={step === 2 && !selectedPlace}
               style={{
-                flex: 1,
-                backgroundColor: 'rgba(0,0,0,0.4)',
-                justifyContent: 'center',
+                backgroundColor: step === 2 && !selectedPlace ? '#C5B8AE' : '#5C3D2E',
+                borderRadius: 14,
+                paddingVertical: 15,
                 alignItems: 'center',
               }}
-              activeOpacity={1}
-              onPress={() => setShowDatePicker(false)}
             >
-              <View
-                style={{
-                  backgroundColor: '#fff',
-                  borderRadius: 20,
-                  padding: 16,
-                  width: '90%',
-                  alignItems: 'center',
-                }}
-              >
-                <DateTimePicker
-                  value={date}
-                  mode="date"
-                  display="inline"
-                  onChange={onDateChange}
-                  maximumDate={new Date()}
-                  locale="ko-KR"
-                  accentColor="#5C3D2E"
-                  style={{ width: '100%' }}
-                />
-                <TouchableOpacity
-                  style={{
-                    marginTop: 8,
-                    backgroundColor: '#5C3D2E',
-                    borderRadius: 10,
-                    paddingVertical: 10,
-                    paddingHorizontal: 32,
-                  }}
-                  onPress={() => setShowDatePicker(false)}
-                >
-                  <Text style={{ color: '#fff', fontSize: 15, fontWeight: '600' }}>확인</Text>
-                </TouchableOpacity>
-              </View>
+              <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>다음</Text>
             </TouchableOpacity>
-          </Modal>
-        )}
-        {Platform.OS === 'android' && showDatePicker && (
-          <DateTimePicker
-            value={date}
-            mode="date"
-            display="calendar"
-            onChange={onDateChange}
-            maximumDate={new Date()}
-          />
-        )}
+          ) : (
+            <TouchableOpacity
+              onPress={handleSave}
+              disabled={saving || !selectedPlace}
+              style={{
+                backgroundColor: saving || !selectedPlace ? '#C5B8AE' : '#5C3D2E',
+                borderRadius: 14,
+                paddingVertical: 15,
+                alignItems: 'center',
+              }}
+            >
+              {saving ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>등록 완료</Text>
+              )}
+            </TouchableOpacity>
+          )}
+        </View>
+      </KeyboardAvoidingView>
+
+      {/* 카페 검색 모달 */}
+      <AddressSearchModal
+        visible={showAddressSearch}
+        onSelect={(result) => setSelectedPlace(result)}
+        onClose={() => setShowAddressSearch(false)}
+      />
+
+      {/* 날짜 피커 (iOS 모달) */}
+      {Platform.OS === 'ios' && (
+        <Modal transparent animationType="fade" visible={showDatePicker}>
+          <TouchableOpacity
+            style={{
+              flex: 1,
+              backgroundColor: 'rgba(0,0,0,0.4)',
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+            activeOpacity={1}
+            onPress={() => setShowDatePicker(false)}
+          >
+            <View
+              style={{
+                backgroundColor: '#fff',
+                borderRadius: 20,
+                padding: 16,
+                width: '90%',
+                alignItems: 'center',
+              }}
+            >
+              <DateTimePicker
+                value={date}
+                mode="date"
+                display="inline"
+                onChange={onDateChange}
+                maximumDate={new Date()}
+                locale="ko-KR"
+                accentColor="#5C3D2E"
+                style={{ width: '100%' }}
+              />
+              <TouchableOpacity
+                style={{
+                  marginTop: 8,
+                  backgroundColor: '#5C3D2E',
+                  borderRadius: 10,
+                  paddingVertical: 10,
+                  paddingHorizontal: 32,
+                }}
+                onPress={() => setShowDatePicker(false)}
+              >
+                <Text style={{ color: '#fff', fontSize: 15, fontWeight: '600' }}>확인</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </Modal>
+      )}
+      {Platform.OS === 'android' && showDatePicker && (
+        <DateTimePicker
+          value={date}
+          mode="date"
+          display="calendar"
+          onChange={onDateChange}
+          maximumDate={new Date()}
+        />
+      )}
     </View>
   );
 }
@@ -683,20 +763,35 @@ function Step1({
 function Step2({
   selectedPlace,
   visitedAt,
+  nearbyPlaces,
+  nearbyLoading,
+  hasCoords,
+  onSelectNearby,
   onOpenSearch,
   onClearPlace,
   onOpenDatePicker,
 }: {
   selectedPlace: { name: string; address: string } | null;
   visitedAt: string;
+  nearbyPlaces: NearbyPlace[];
+  nearbyLoading: boolean;
+  hasCoords: boolean;
+  onSelectNearby: (p: NearbyPlace) => void;
   onOpenSearch: () => void;
   onClearPlace: () => void;
   onOpenDatePicker: () => void;
 }) {
+  function formatDistance(d?: string) {
+    if (!d) return '';
+    const n = Number(d);
+    return n < 1000 ? `${n}m` : `${(n / 1000).toFixed(1)}km`;
+  }
+
   return (
     <View style={{ gap: 24 }}>
       <Section label="카페 *">
         {selectedPlace ? (
+          /* 선택된 카페 카드 */
           <View
             style={{
               backgroundColor: '#fff',
@@ -731,10 +826,89 @@ function Step2({
               onPress={onOpenSearch}
               style={{ marginTop: 6, alignSelf: 'flex-start' }}
             >
-              <Text style={{ fontSize: 12, color: '#5C3D2E', fontWeight: '600' }}>변경</Text>
+              <Text style={{ fontSize: 12, color: '#5C3D2E', fontWeight: '600' }}>직접 검색</Text>
+            </TouchableOpacity>
+          </View>
+        ) : hasCoords ? (
+          /* 근처 카페 목록 */
+          <View style={{ gap: 8 }}>
+            {nearbyLoading ? (
+              <View
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 16 }}
+              >
+                <ActivityIndicator size="small" color="#5C3D2E" />
+                <Text style={{ fontSize: 13, color: '#999' }}>
+                  사진 위치로 근처 카페 검색 중...
+                </Text>
+              </View>
+            ) : nearbyPlaces.length > 0 ? (
+              <>
+                <View
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 2 }}
+                >
+                  <Ionicons name="location" size={13} color="#5C3D2E" />
+                  <Text style={{ fontSize: 12, color: '#5C3D2E', fontWeight: '600' }}>
+                    반경 500m 근처 카페
+                  </Text>
+                </View>
+                {nearbyPlaces.map((p) => (
+                  <TouchableOpacity
+                    key={p.id}
+                    onPress={() => onSelectNearby(p)}
+                    style={{
+                      backgroundColor: '#fff',
+                      borderRadius: 12,
+                      borderWidth: 1,
+                      borderColor: '#E5DDD5',
+                      padding: 14,
+                    }}
+                  >
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <Text style={{ flex: 1, fontSize: 15, fontWeight: '600', color: '#222' }}>
+                        {p.place_name}
+                      </Text>
+                      {p.distance ? (
+                        <Text style={{ fontSize: 12, color: '#5C3D2E', fontWeight: '500' }}>
+                          {formatDistance(p.distance)}
+                        </Text>
+                      ) : null}
+                    </View>
+                    {p.road_address_name || p.address_name ? (
+                      <Text style={{ fontSize: 12, color: '#999', marginTop: 3 }} numberOfLines={1}>
+                        {p.road_address_name || p.address_name}
+                      </Text>
+                    ) : null}
+                  </TouchableOpacity>
+                ))}
+              </>
+            ) : (
+              <Text
+                style={{ fontSize: 13, color: '#aaa', textAlign: 'center', paddingVertical: 12 }}
+              >
+                근처 카페를 찾지 못했어요.
+              </Text>
+            )}
+            <TouchableOpacity
+              onPress={onOpenSearch}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 6,
+                paddingVertical: 12,
+                borderRadius: 10,
+                borderWidth: 1,
+                borderColor: '#D6C4B0',
+                borderStyle: 'dashed',
+                marginTop: 4,
+              }}
+            >
+              <Ionicons name="search" size={15} color="#8B5E3C" />
+              <Text style={{ fontSize: 13, color: '#8B5E3C', fontWeight: '600' }}>직접 검색</Text>
             </TouchableOpacity>
           </View>
         ) : (
+          /* GPS 없음 - 직접 검색 버튼 */
           <TouchableOpacity
             onPress={onOpenSearch}
             style={{
