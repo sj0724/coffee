@@ -19,7 +19,8 @@ export async function getDB(): Promise<SQLite.SQLiteDatabase> {
       version !== 6 &&
       version !== 7 &&
       version !== 8 &&
-      version !== 9
+      version !== 9 &&
+      version !== 10
     ) {
       await db.execAsync(`
         DROP TABLE IF EXISTS cafe_tasting_note_beans;
@@ -95,6 +96,12 @@ export async function getDB(): Promise<SQLite.SQLiteDatabase> {
         } catch {
           // column already exists
         }
+        version = 10;
+      }
+      if (version === 10) {
+        try { await db.execAsync(`ALTER TABLE cafe_tasting_notes ADD COLUMN farm TEXT;`); } catch {}
+        try { await db.execAsync(`ALTER TABLE cafe_tasting_note_beans ADD COLUMN farm TEXT;`); } catch {}
+        try { await db.execAsync(`ALTER TABLE cafe_logs ADD COLUMN note_photos TEXT;`); } catch {}
       }
     }
 

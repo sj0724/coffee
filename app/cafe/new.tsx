@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -10,55 +10,139 @@ import {
   KeyboardAvoidingView,
   Platform,
   Modal,
+  Animated,
 } from 'react-native';
 import { Image } from 'expo-image';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { createCafeLog } from '@/src/db/queries/cafeLogs';
 import { createMenuItem } from '@/src/db/queries/cafeMenuItems';
+import { upsertTastingNote } from '@/src/db/queries/tastingNotes';
 import { AddressSearchModal } from '@/src/components/AddressSearchModal';
 import { detectAndCrop } from '@/modules/document-scanner';
+import { analyzeCardImages } from '@/src/services/visionLLM';
+import { NoteInput } from '@/src/components/cafe/NoteInput';
+import { TagsInput } from '@/src/components/cafe/TagsInput';
+import { MyNotesInput } from '@/src/components/cafe/MyNotesInput';
+import { SliderRow } from '@/src/components/cafe/SliderRow';
+import type { HanddripNoteBean } from '@/src/types';
 
-const COFFEE_OPTIONS = [
-  '에스프레소',
-  '아메리카노',
-  '라떼',
-  '카푸치노',
-  '플랫화이트',
-  '핸드드립',
-  '콜드브루',
-];
-
-const MAX_PHOTOS = 5;
-type Photo = { uri: string };
+const TOTAL_STEPS = 4;
+const STEP_LABELS = ['사진', '카페', '정보', '메모'];
 
 export default function NewCafeLogScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const progressAnim = useRef(new Animated.Value(1 / TOTAL_STEPS)).current;
+
+  const [step, setStep] = useState(1);
+
+  // Step 1 - 사진
+  const [notePhotos, setNotePhotos] = useState<string[]>([]);
+  const [cafePhotos, setCafePhotos] = useState<string[]>([]);
+  const [scanningNote, setScanningNote] = useState(false);
+  const [scanningCafe, setScanningCafe] = useState(false);
+
+  // Step 2 - 카페
   const [selectedPlace, setSelectedPlace] = useState<{ name: string; address: string } | null>(
     null,
   );
-  const [showAddressSearch, setShowAddressSearch] = useState(false);
   const [date, setDate] = useState(new Date());
-  const [showPicker, setShowPicker] = useState(false);
+  const [showAddressSearch, setShowAddressSearch] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+
+  // Step 3 - 정보
+  const [analyzing, setAnalyzing] = useState(false);
+  const [analyzed, setAnalyzed] = useState(false);
+  const [menuName, setMenuName] = useState('');
+  const [isBlend, setIsBlend] = useState(0);
+  const [origin, setOrigin] = useState('');
+  const [farm, setFarm] = useState('');
+  const [variety, setVariety] = useState('');
+  const [process, setProcess] = useState('');
+  const [roastLevel, setRoastLevel] = useState('');
+  const [officialNotes, setOfficialNotes] = useState<string[]>([]);
+  const [myNotes, setMyNotes] = useState<string[]>([]);
+  const [acidity, setAcidity] = useState<number | undefined>();
+  const [nuttiness, setNuttiness] = useState<number | undefined>();
+  const [richness, setRichness] = useState<number | undefined>();
+  const [smoothness, setSmoothness] = useState<number | undefined>();
+  const [beans, setBeans] = useState<HanddripNoteBean[]>([]);
+
+  // Step 4 - 메모
   const [memo, setMemo] = useState('');
   const [saving, setSaving] = useState(false);
-  const [scanning, setScanning] = useState(false);
-  const [photos, setPhotos] = useState<Photo[]>([]);
-  const [menuNames, setMenuNames] = useState<string[]>([]);
-  const [customMenuInput, setCustomMenuInput] = useState('');
 
   const visitedAt = date.toISOString().slice(0, 10);
 
-  function onDateChange(_: unknown, selected?: Date) {
-    if (Platform.OS === 'android') setShowPicker(false);
-    if (selected) setDate(selected);
+  useEffect(() => {
+    Animated.timing(progressAnim, {
+      toValue: step / TOTAL_STEPS,
+      duration: 250,
+      useNativeDriver: false,
+    }).start();
+  }, [step]);
+
+  // Step 3 진입 시 Gemini 분석 자동 실행
+  useEffect(() => {
+    if (step === 3 && !analyzed && notePhotos.length > 0) {
+      runAnalysis();
+    }
+  }, [step]);
+
+  async function runAnalysis() {
+    setAnalyzing(true);
+    try {
+      const result = await analyzeCardImages(notePhotos);
+      if (result) {
+        if (result.is_blend !== undefined) setIsBlend(result.is_blend);
+        if (result.origin) setOrigin(result.origin);
+        if (result.farm) setFarm(result.farm);
+        if (result.variety) setVariety(result.variety);
+        if (result.process) setProcess(result.process);
+        if (result.roast_level) setRoastLevel(result.roast_level);
+        if (result.official_notes?.length) setOfficialNotes(result.official_notes);
+        if (result.beans?.length) setBeans(result.beans);
+      }
+    } finally {
+      setAnalyzing(false);
+      setAnalyzed(true);
+    }
   }
 
-  async function pickFromLibrary() {
-    const remaining = MAX_PHOTOS - photos.length;
-    if (remaining <= 0) return;
+  function goNext() {
+    if (step < TOTAL_STEPS) setStep((s) => s + 1);
+  }
+
+  function goBack() {
+    if (step > 1) setStep((s) => s - 1);
+    else router.back();
+  }
+
+  // ── 사진 피커 ──────────────────────────────────────────
+  async function pickNotePhoto() {
+    if (notePhotos.length >= 2) return;
+    Alert.alert('노트 사진', undefined, [
+      { text: '카메라', onPress: () => pickNoteFromCamera() },
+      { text: '갤러리', onPress: () => pickNoteFromLibrary() },
+      { text: '취소', style: 'cancel' },
+    ]);
+  }
+
+  async function pickNoteFromCamera() {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('권한 필요', '카메라 권한이 필요해요.');
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({ quality: 1 });
+    if (!result.canceled) addNotePhoto(result.assets[0].uri);
+  }
+
+  async function pickNoteFromLibrary() {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
       Alert.alert('권한 필요', '사진 접근 권한이 필요해요.');
@@ -66,241 +150,300 @@ export default function NewCafeLogScreen() {
     }
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
-      allowsMultipleSelection: true,
-      selectionLimit: remaining,
       quality: 1,
     });
-    if (!result.canceled) {
-      setScanning(true);
-      try {
-        const cropped = await Promise.all(
-          result.assets.map((a) => detectAndCrop(a.uri).catch(() => a.uri))
-        );
-        setPhotos((prev) => [...prev, ...cropped.map((uri) => ({ uri }))]);
-      } finally {
-        setScanning(false);
-      }
-    }
+    if (!result.canceled) addNotePhoto(result.assets[0].uri);
   }
 
-  async function pickFromCamera() {
-    if (photos.length >= MAX_PHOTOS) return;
+  async function addNotePhoto(rawUri: string) {
+    setScanningNote(true);
+    let uri = rawUri;
+    try {
+      uri = await detectAndCrop(rawUri);
+    } catch {
+      // detectAndCrop 실패 시 원본 사용
+    }
+    setNotePhotos((prev) => [...prev, uri]);
+    setAnalyzed(false);
+    setScanningNote(false);
+  }
+
+  async function pickCafePhoto() {
+    if (cafePhotos.length >= 10) return;
+    Alert.alert('사진 추가', undefined, [
+      { text: '카메라', onPress: () => pickCafeFromCamera() },
+      { text: '갤러리', onPress: () => pickCafeFromLibrary() },
+      { text: '취소', style: 'cancel' },
+    ]);
+  }
+
+  async function pickCafeFromCamera() {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
       Alert.alert('권한 필요', '카메라 권한이 필요해요.');
       return;
     }
     const result = await ImagePicker.launchCameraAsync({ quality: 1 });
-    if (!result.canceled) {
-      const rawUri = result.assets[0].uri;
-      setScanning(true);
-      try {
-        const croppedUri = await detectAndCrop(rawUri);
-        setPhotos((prev) => [...prev, { uri: croppedUri }]);
-      } catch (e) {
-        console.warn('detectAndCrop 실패, 원본 사용:', e);
-        setPhotos((prev) => [...prev, { uri: rawUri }]);
-      } finally {
-        setScanning(false);
-      }
-    }
+    if (!result.canceled) addCafePhoto(result.assets[0].uri);
   }
 
-  function addPhoto() {
-    Alert.alert('사진 추가', undefined, [
-      { text: '카메라', onPress: pickFromCamera },
-      { text: '갤러리에서 선택', onPress: pickFromLibrary },
-      { text: '취소', style: 'cancel' },
-    ]);
-  }
-
-  function removePhoto(index: number) {
-    setPhotos((prev) => prev.filter((_, i) => i !== index));
-  }
-
-  async function handleSave() {
-    if (!selectedPlace) {
-      Alert.alert('필수 항목', '카페를 검색해서 선택해주세요.');
+  async function pickCafeFromLibrary() {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('권한 필요', '사진 접근 권한이 필요해요.');
       return;
     }
-    setSaving(true);
-    const id = await createCafeLog({
-      cafe_name: selectedPlace.name,
-      visited_at: visitedAt,
-      photos: photos.length > 0 ? JSON.stringify(photos.map((p) => p.uri)) : undefined,
-      address: selectedPlace.address || undefined,
-      memo: memo.trim() || undefined,
+    const remaining = 10 - cafePhotos.length;
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsMultipleSelection: true,
+      selectionLimit: remaining,
+      quality: 1,
     });
-    if (id != null && menuNames.length > 0) {
-      await Promise.all(
-        menuNames.map((name) => createMenuItem({ cafe_log_id: id, menu_name: name })),
+    if (!result.canceled) {
+      setScanningCafe(true);
+      const uris = await Promise.all(
+        result.assets.map(async (a) => {
+          try { return await detectAndCrop(a.uri); } catch { return a.uri; }
+        }),
       );
-    }
-    setSaving(false);
-    if (id != null) {
-      router.replace(`/cafe/${id}`);
-    } else {
-      Alert.alert('오류', '저장에 실패했어요.');
+      setCafePhotos((prev) => [...prev, ...uris]);
+      setScanningCafe(false);
     }
   }
 
+  async function addCafePhoto(rawUri: string) {
+    setScanningCafe(true);
+    let uri = rawUri;
+    try {
+      uri = await detectAndCrop(rawUri);
+    } catch {
+      // detectAndCrop 실패 시 원본 사용
+    }
+    setCafePhotos((prev) => [...prev, uri]);
+    setScanningCafe(false);
+  }
+
+  // ── 저장 ──────────────────────────────────────────────
+  async function handleSave() {
+    if (!selectedPlace) return;
+    setSaving(true);
+    try {
+      const logId = await createCafeLog({
+        cafe_name: selectedPlace.name,
+        visited_at: visitedAt,
+        photos: cafePhotos.length > 0 ? JSON.stringify(cafePhotos) : undefined,
+        note_photos: notePhotos.length > 0 ? JSON.stringify(notePhotos) : undefined,
+        address: selectedPlace.address || undefined,
+        memo: memo.trim() || undefined,
+      });
+
+      if (logId == null) {
+        Alert.alert('오류', '저장에 실패했어요.');
+        return;
+      }
+
+      const hasInfo =
+        origin || farm || variety || process || roastLevel ||
+        officialNotes.length > 0 || myNotes.length > 0 ||
+        acidity != null || (isBlend && beans.length > 0);
+
+      if (menuName.trim() || hasInfo) {
+        const menuId = await createMenuItem({
+          cafe_log_id: logId,
+          menu_name: menuName.trim() || (notePhotos.length > 0 ? '핸드드립' : '커피'),
+        });
+        if (menuId != null && hasInfo) {
+          await upsertTastingNote({
+            cafe_menu_item_id: menuId,
+            is_blend: isBlend,
+            origin: isBlend ? undefined : origin || undefined,
+            farm: isBlend ? undefined : farm || undefined,
+            variety: isBlend ? undefined : variety || undefined,
+            process: isBlend ? undefined : process || undefined,
+            roast_level: roastLevel || undefined,
+            official_notes: officialNotes,
+            my_notes: myNotes,
+            acidity,
+            nuttiness,
+            richness,
+            smoothness,
+            beans: isBlend ? beans : [],
+          });
+        }
+      }
+
+      router.replace(`/cafe/${logId}`);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function onDateChange(_: unknown, selected?: Date) {
+    if (Platform.OS === 'android') setShowDatePicker(false);
+    if (selected) setDate(selected);
+  }
+
+  // ── 렌더 ──────────────────────────────────────────────
   return (
-    <KeyboardAvoidingView
-      className="flex-1"
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <ScrollView
-        className="flex-1 bg-coffee-light"
-        contentContainerStyle={{ padding: 20, gap: 20 }}
-      >
-        <Field label={`사진 (${photos.length}/${MAX_PHOTOS})`}>
+    <View style={{ flex: 1, backgroundColor: '#F7F3EF', paddingTop: insets.top }}>
+        {/* 헤더 */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 }}>
+          <TouchableOpacity onPress={goBack} style={{ padding: 4, marginRight: 8 }}>
+            <Ionicons name="chevron-back" size={24} color="#222" />
+          </TouchableOpacity>
+          <Text style={{ flex: 1, fontSize: 17, fontWeight: '700', color: '#222' }}>새 카페 기록</Text>
+          <Text style={{ fontSize: 13, color: '#999', fontWeight: '500' }}>
+            {step}/{TOTAL_STEPS} {STEP_LABELS[step - 1]}
+          </Text>
+        </View>
+
+        {/* 진행률 바 */}
+        <View
+          style={{
+            height: 3,
+            backgroundColor: '#E5DDD5',
+            marginHorizontal: 16,
+            borderRadius: 2,
+            marginVertical: 16,
+          }}
+        >
+          <Animated.View
+            style={{
+              height: 3,
+              backgroundColor: '#5C3D2E',
+              borderRadius: 2,
+              width: progressAnim.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }),
+            }}
+          />
+        </View>
+
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          keyboardVerticalOffset={0}
+        >
+          {/* 스텝 컨텐츠 */}
           <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ gap: 10 }}
+            key={step}
+            style={{ flex: 1 }}
+            contentContainerStyle={{ padding: 20, paddingBottom: 24, gap: 24 }}
+            keyboardShouldPersistTaps="handled"
           >
-            {photos.map((p, i) => (
-              <View key={i} style={{ position: 'relative' }}>
-                <Image
-                  source={{ uri: p.uri }}
-                  style={{ width: 110, height: 146, borderRadius: 12 }}
-                  contentFit="cover"
-                />
-                <TouchableOpacity
-                  style={{
-                    position: 'absolute',
-                    top: 5,
-                    right: 5,
-                    backgroundColor: 'rgba(0,0,0,0.52)',
-                    borderRadius: 12,
-                    padding: 2,
-                  }}
-                  onPress={() => removePhoto(i)}
-                >
-                  <Ionicons name="close" size={16} color="#fff" />
-                </TouchableOpacity>
-              </View>
-            ))}
-
-            {scanning ? (
-              <View
-                style={{
-                  width: 110,
-                  height: 146,
-                  borderRadius: 12,
-                  backgroundColor: '#EFEFEF',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 6,
-                }}
-              >
-                <ActivityIndicator color="#111111" />
-                <Text style={{ fontSize: 11, color: '#666', fontWeight: '500' }}>스캔 중...</Text>
-              </View>
-            ) : photos.length < MAX_PHOTOS ? (
-              <TouchableOpacity
-                onPress={addPhoto}
-                style={{
-                  width: 110,
-                  height: 146,
-                  borderRadius: 12,
-                  backgroundColor: '#EFEFEF',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 6,
-                  borderWidth: 1.5,
-                  borderColor: '#DDDDDD',
-                  borderStyle: 'dashed',
-                }}
-              >
-                <Ionicons name="add" size={28} color="#111111" />
-                <Text style={{ fontSize: 12, color: '#111111', fontWeight: '600' }}>사진 추가</Text>
-              </TouchableOpacity>
-            ) : null}
+            {step === 1 && (
+              <Step1
+                notePhotos={notePhotos}
+                cafePhotos={cafePhotos}
+                scanningNote={scanningNote}
+                scanningCafe={scanningCafe}
+                onAddNotePhoto={pickNotePhoto}
+                onRemoveNotePhoto={(i) => setNotePhotos((p) => p.filter((_, idx) => idx !== i))}
+                onAddCafePhoto={pickCafePhoto}
+                onRemoveCafePhoto={(i) => setCafePhotos((p) => p.filter((_, idx) => idx !== i))}
+              />
+            )}
+            {step === 2 && (
+              <Step2
+                selectedPlace={selectedPlace}
+                visitedAt={visitedAt}
+                onOpenSearch={() => setShowAddressSearch(true)}
+                onClearPlace={() => setSelectedPlace(null)}
+                onOpenDatePicker={() => setShowDatePicker(true)}
+              />
+            )}
+            {step === 3 && (
+              <Step3
+                analyzing={analyzing}
+                analyzed={analyzed}
+                onReanalyze={notePhotos.length > 0 ? runAnalysis : undefined}
+                menuName={menuName}
+                onMenuName={setMenuName}
+                isBlend={isBlend}
+                onIsBlend={setIsBlend}
+                origin={origin}
+                onOrigin={setOrigin}
+                farm={farm}
+                onFarm={setFarm}
+                variety={variety}
+                onVariety={setVariety}
+                process={process}
+                onProcess={setProcess}
+                roastLevel={roastLevel}
+                onRoastLevel={setRoastLevel}
+                officialNotes={officialNotes}
+                onOfficialNotes={setOfficialNotes}
+                myNotes={myNotes}
+                onMyNotes={setMyNotes}
+                acidity={acidity}
+                onAcidity={setAcidity}
+                nuttiness={nuttiness}
+                onNuttiness={setNuttiness}
+                richness={richness}
+                onRichness={setRichness}
+                smoothness={smoothness}
+                onSmoothness={setSmoothness}
+                beans={beans}
+                onBeans={setBeans}
+              />
+            )}
+            {step === 4 && <Step4 memo={memo} onMemo={setMemo} />}
           </ScrollView>
-        </Field>
 
-        <Field label="카페 *">
-          {selectedPlace ? (
-            <View
-              style={{
-                backgroundColor: '#fff',
-                borderRadius: 12,
-                borderWidth: 1.5,
-                borderColor: '#111111',
-                padding: 14,
-                gap: 4,
-              }}
-            >
-              <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 16, fontWeight: '700', color: '#222' }}>
-                    {selectedPlace.name}
-                  </Text>
-                  {selectedPlace.address ? (
-                    <View
-                      style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}
-                    >
-                      <Ionicons name="location-outline" size={13} color="#999" />
-                      <Text style={{ fontSize: 13, color: '#888' }} numberOfLines={2}>
-                        {selectedPlace.address}
-                      </Text>
-                    </View>
-                  ) : null}
-                </View>
-                <TouchableOpacity
-                  onPress={() => setSelectedPlace(null)}
-                  style={{ padding: 2, marginLeft: 8 }}
-                >
-                  <Ionicons name="close-circle" size={20} color="#bbb" />
-                </TouchableOpacity>
-              </View>
+          {/* 하단 버튼 */}
+          <View
+            style={{
+              paddingHorizontal: 20,
+              paddingBottom: insets.bottom + 16,
+              paddingTop: 12,
+              borderTopWidth: 1,
+              borderTopColor: '#EDE8E3',
+              backgroundColor: '#F7F3EF',
+            }}
+          >
+            {step < TOTAL_STEPS ? (
               <TouchableOpacity
-                onPress={() => setShowAddressSearch(true)}
-                style={{ marginTop: 6, alignSelf: 'flex-start' }}
+                onPress={goNext}
+                disabled={step === 2 && !selectedPlace}
+                style={{
+                  backgroundColor: step === 2 && !selectedPlace ? '#C5B8AE' : '#5C3D2E',
+                  borderRadius: 14,
+                  paddingVertical: 15,
+                  alignItems: 'center',
+                }}
               >
-                <Text style={{ fontSize: 12, color: '#111111', fontWeight: '600' }}>변경</Text>
+                <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>다음</Text>
               </TouchableOpacity>
-            </View>
-          ) : (
-            <TouchableOpacity
-              onPress={() => setShowAddressSearch(true)}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-                padding: 16,
-                backgroundColor: '#fff',
-                borderRadius: 12,
-                borderWidth: 1.5,
-                borderColor: '#DDDDDD',
-                borderStyle: 'dashed',
-              }}
-            >
-              <Ionicons name="search" size={18} color="#111111" />
-              <Text style={{ fontSize: 15, color: '#111111', fontWeight: '600' }}>카페 검색</Text>
-            </TouchableOpacity>
-          )}
-        </Field>
+            ) : (
+              <TouchableOpacity
+                onPress={handleSave}
+                disabled={saving || !selectedPlace}
+                style={{
+                  backgroundColor: saving || !selectedPlace ? '#C5B8AE' : '#5C3D2E',
+                  borderRadius: 14,
+                  paddingVertical: 15,
+                  alignItems: 'center',
+                }}
+              >
+                {saving ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>등록 완료</Text>
+                )}
+              </TouchableOpacity>
+            )}
+          </View>
+        </KeyboardAvoidingView>
 
+        {/* 카페 검색 모달 */}
         <AddressSearchModal
           visible={showAddressSearch}
           onSelect={(result) => setSelectedPlace(result)}
           onClose={() => setShowAddressSearch(false)}
         />
 
-        <Field label="방문 날짜">
-          <TouchableOpacity
-            className="flex-row items-center justify-between p-3 bg-white border rounded-lg border-coffee-border"
-            onPress={() => setShowPicker(true)}
-          >
-            <Text className="text-[15px] text-[#222]">{visitedAt}</Text>
-          </TouchableOpacity>
-        </Field>
-
+        {/* 날짜 피커 (iOS 모달) */}
         {Platform.OS === 'ios' && (
-          <Modal transparent animationType="fade" visible={showPicker}>
+          <Modal transparent animationType="fade" visible={showDatePicker}>
             <TouchableOpacity
               style={{
                 flex: 1,
@@ -309,9 +452,17 @@ export default function NewCafeLogScreen() {
                 alignItems: 'center',
               }}
               activeOpacity={1}
-              onPress={() => setShowPicker(false)}
+              onPress={() => setShowDatePicker(false)}
             >
-              <View className="bg-white rounded-2xl p-4 w-[90%] items-center">
+              <View
+                style={{
+                  backgroundColor: '#fff',
+                  borderRadius: 20,
+                  padding: 16,
+                  width: '90%',
+                  alignItems: 'center',
+                }}
+              >
                 <DateTimePicker
                   value={date}
                   mode="date"
@@ -319,21 +470,26 @@ export default function NewCafeLogScreen() {
                   onChange={onDateChange}
                   maximumDate={new Date()}
                   locale="ko-KR"
-                  accentColor="#111111"
+                  accentColor="#5C3D2E"
                   style={{ width: '100%' }}
                 />
                 <TouchableOpacity
-                  className="mt-2 bg-coffee rounded-[10px] py-2.5 px-8"
-                  onPress={() => setShowPicker(false)}
+                  style={{
+                    marginTop: 8,
+                    backgroundColor: '#5C3D2E',
+                    borderRadius: 10,
+                    paddingVertical: 10,
+                    paddingHorizontal: 32,
+                  }}
+                  onPress={() => setShowDatePicker(false)}
                 >
-                  <Text className="text-white text-[15px] font-semibold">확인</Text>
+                  <Text style={{ color: '#fff', fontSize: 15, fontWeight: '600' }}>확인</Text>
                 </TouchableOpacity>
               </View>
             </TouchableOpacity>
           </Modal>
         )}
-
-        {Platform.OS === 'android' && showPicker && (
+        {Platform.OS === 'android' && showDatePicker && (
           <DateTimePicker
             value={date}
             mode="date"
@@ -342,131 +498,597 @@ export default function NewCafeLogScreen() {
             maximumDate={new Date()}
           />
         )}
-
-        <Field label="메모">
-          <TextInput
-            className="border border-coffee-border rounded-lg p-3 text-[15px] text-[#222] bg-white"
-            style={{ height: 80, textAlignVertical: 'top' }}
-            value={memo}
-            onChangeText={setMemo}
-            placeholder="오늘의 커피 한 줄 감상..."
-            placeholderTextColor="#ccc"
-            multiline
-            numberOfLines={3}
-          />
-        </Field>
-
-        <Field label="메뉴">
-          <View className="p-4 bg-white rounded-xl gap-3">
-            <View>
-              <Text className="text-[13px] font-semibold text-[#444] mb-2">커피</Text>
-              <View className="flex-row flex-wrap gap-2">
-                {COFFEE_OPTIONS.map((option) => {
-                  const selected = menuNames.includes(option);
-                  return (
-                    <TouchableOpacity
-                      key={option}
-                      onPress={() =>
-                        setMenuNames((prev) =>
-                          selected ? prev.filter((n) => n !== option) : [...prev, option],
-                        )
-                      }
-                      style={{
-                        paddingHorizontal: 14,
-                        paddingVertical: 7,
-                        borderRadius: 999,
-                        borderWidth: 1.5,
-                        borderColor: selected ? '#111' : '#DDD',
-                        backgroundColor: selected ? '#111' : '#fff',
-                      }}
-                    >
-                      <Text
-                        style={{
-                          fontSize: 13,
-                          fontWeight: '600',
-                          color: selected ? '#fff' : '#888',
-                        }}
-                      >
-                        {option}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            </View>
-            <View>
-              <Text className="text-[13px] font-semibold text-[#444] mb-2">논커피 / 기타</Text>
-              <View className="flex-row gap-2">
-                <TextInput
-                  className="flex-1 border border-coffee-border rounded-lg px-3 py-2 text-sm text-[#222] bg-white"
-                  value={customMenuInput}
-                  onChangeText={setCustomMenuInput}
-                  placeholder="말차 라떼, 자몽 에이드..."
-                  placeholderTextColor="#ccc"
-                  returnKeyType="done"
-                  onSubmitEditing={() => {
-                    const name = customMenuInput.trim();
-                    if (name && !menuNames.includes(name)) {
-                      setMenuNames((prev) => [...prev, name]);
-                    }
-                    setCustomMenuInput('');
-                  }}
-                />
-                <TouchableOpacity
-                  className="items-center justify-center px-4 rounded-lg bg-coffee"
-                  onPress={() => {
-                    const name = customMenuInput.trim();
-                    if (name && !menuNames.includes(name)) {
-                      setMenuNames((prev) => [...prev, name]);
-                    }
-                    setCustomMenuInput('');
-                  }}
-                >
-                  <Text className="text-sm font-semibold text-white">추가</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-            {menuNames.length > 0 && (
-              <View className="flex-row flex-wrap gap-2 pt-1 border-t border-coffee-border">
-                {menuNames.map((name) => (
-                  <TouchableOpacity
-                    key={name}
-                    onPress={() => setMenuNames((prev) => prev.filter((n) => n !== name))}
-                    style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      gap: 4,
-                      paddingHorizontal: 12,
-                      paddingVertical: 6,
-                      borderRadius: 999,
-                      backgroundColor: '#111',
-                    }}
-                  >
-                    <Text style={{ fontSize: 13, fontWeight: '600', color: '#fff' }}>{name}</Text>
-                    <Ionicons name="close" size={13} color="#fff" />
-                  </TouchableOpacity>
-                ))}
-              </View>
-            )}
-          </View>
-        </Field>
-
-        <TouchableOpacity
-          className={`bg-coffee rounded-xl p-4 items-center mt-2 ${saving ? 'opacity-60' : ''}`}
-          onPress={handleSave}
-          disabled={saving}
-        >
-          <Text className="text-base font-bold text-white">{saving ? '저장 중...' : '저장'}</Text>
-        </TouchableOpacity>
-      </ScrollView>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+// ── Step 1: 사진 ──────────────────────────────────────
+function Step1({
+  notePhotos,
+  cafePhotos,
+  scanningNote,
+  scanningCafe,
+  onAddNotePhoto,
+  onRemoveNotePhoto,
+  onAddCafePhoto,
+  onRemoveCafePhoto,
+}: {
+  notePhotos: string[];
+  cafePhotos: string[];
+  scanningNote: boolean;
+  scanningCafe: boolean;
+  onAddNotePhoto: () => void;
+  onRemoveNotePhoto: (i: number) => void;
+  onAddCafePhoto: () => void;
+  onRemoveCafePhoto: (i: number) => void;
+}) {
+  const noteSlots = [0, 1];
+
   return (
-    <View className="gap-1.5">
-      <Text className="text-sm font-semibold text-[#444]">{label}</Text>
+    <View style={{ gap: 24 }}>
+      {/* 노트 사진 */}
+      <Section label="노트 사진" hint="원두 카드 앞면/뒷면 · 최대 2장 · 선택">
+        <View style={{ flexDirection: 'row', gap: 12 }}>
+          {noteSlots.map((i) => {
+            const uri = notePhotos[i];
+            if (uri) {
+              return (
+                <View key={i} style={{ position: 'relative' }}>
+                  <Image
+                    source={{ uri }}
+                    style={{ width: 120, height: 160, borderRadius: 12 }}
+                    contentFit="cover"
+                  />
+                  <TouchableOpacity
+                    style={{
+                      position: 'absolute',
+                      top: 6,
+                      right: 6,
+                      backgroundColor: 'rgba(0,0,0,0.52)',
+                      borderRadius: 12,
+                      padding: 2,
+                    }}
+                    onPress={() => onRemoveNotePhoto(i)}
+                  >
+                    <Ionicons name="close" size={15} color="#fff" />
+                  </TouchableOpacity>
+                  <View
+                    style={{
+                      position: 'absolute',
+                      bottom: 6,
+                      left: 6,
+                      backgroundColor: 'rgba(0,0,0,0.45)',
+                      borderRadius: 6,
+                      paddingHorizontal: 6,
+                      paddingVertical: 2,
+                    }}
+                  >
+                    <Text style={{ color: '#fff', fontSize: 10, fontWeight: '600' }}>
+                      {i === 0 ? '앞면' : '뒷면'}
+                    </Text>
+                  </View>
+                </View>
+              );
+            }
+            if (i === 0 || notePhotos.length >= 1) {
+              return (
+                <TouchableOpacity
+                  key={i}
+                  onPress={onAddNotePhoto}
+                  disabled={scanningNote}
+                  style={{
+                    width: 120,
+                    height: 160,
+                    borderRadius: 12,
+                    backgroundColor: '#F0EBE5',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 6,
+                    borderWidth: 1.5,
+                    borderColor: '#D6C4B0',
+                    borderStyle: 'dashed',
+                    opacity: scanningNote ? 0.5 : 1,
+                  }}
+                >
+                  {scanningNote && i === notePhotos.length ? (
+                    <ActivityIndicator color="#8B5E3C" />
+                  ) : (
+                    <>
+                      <Ionicons name="add" size={26} color="#8B5E3C" />
+                      <Text style={{ fontSize: 12, color: '#8B5E3C', fontWeight: '600' }}>
+                        {i === 0 ? '앞면' : '뒷면'}
+                      </Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              );
+            }
+            return null;
+          })}
+        </View>
+      </Section>
+
+      {/* 카페/메뉴 사진 */}
+      <Section label="카페 · 메뉴 사진" hint={`최대 10장 · 선택 (${cafePhotos.length}/10)`}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ gap: 10 }}
+        >
+          {cafePhotos.map((uri, i) => (
+            <View key={i} style={{ position: 'relative' }}>
+              <Image
+                source={{ uri }}
+                style={{ width: 100, height: 133, borderRadius: 10 }}
+                contentFit="cover"
+              />
+              <TouchableOpacity
+                style={{
+                  position: 'absolute',
+                  top: 5,
+                  right: 5,
+                  backgroundColor: 'rgba(0,0,0,0.52)',
+                  borderRadius: 12,
+                  padding: 2,
+                }}
+                onPress={() => onRemoveCafePhoto(i)}
+              >
+                <Ionicons name="close" size={14} color="#fff" />
+              </TouchableOpacity>
+            </View>
+          ))}
+          {scanningCafe && (
+            <View
+              style={{
+                width: 100,
+                height: 133,
+                borderRadius: 10,
+                backgroundColor: '#EFEFEF',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 4,
+              }}
+            >
+              <ActivityIndicator color="#5C3D2E" />
+              <Text style={{ fontSize: 10, color: '#888' }}>스캔 중</Text>
+            </View>
+          )}
+          {!scanningCafe && cafePhotos.length < 10 && (
+            <TouchableOpacity
+              onPress={onAddCafePhoto}
+              style={{
+                width: 100,
+                height: 133,
+                borderRadius: 10,
+                backgroundColor: '#F0EBE5',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 6,
+                borderWidth: 1.5,
+                borderColor: '#D6C4B0',
+                borderStyle: 'dashed',
+              }}
+            >
+              <Ionicons name="add" size={24} color="#5C3D2E" />
+              <Text style={{ fontSize: 11, color: '#5C3D2E', fontWeight: '600' }}>사진 추가</Text>
+            </TouchableOpacity>
+          )}
+        </ScrollView>
+      </Section>
+    </View>
+  );
+}
+
+// ── Step 2: 카페 ──────────────────────────────────────
+function Step2({
+  selectedPlace,
+  visitedAt,
+  onOpenSearch,
+  onClearPlace,
+  onOpenDatePicker,
+}: {
+  selectedPlace: { name: string; address: string } | null;
+  visitedAt: string;
+  onOpenSearch: () => void;
+  onClearPlace: () => void;
+  onOpenDatePicker: () => void;
+}) {
+  return (
+    <View style={{ gap: 24 }}>
+      <Section label="카페 *">
+        {selectedPlace ? (
+          <View
+            style={{
+              backgroundColor: '#fff',
+              borderRadius: 12,
+              borderWidth: 1.5,
+              borderColor: '#5C3D2E',
+              padding: 14,
+              gap: 4,
+            }}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 16, fontWeight: '700', color: '#222' }}>
+                  {selectedPlace.name}
+                </Text>
+                {selectedPlace.address ? (
+                  <View
+                    style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}
+                  >
+                    <Ionicons name="location-outline" size={13} color="#999" />
+                    <Text style={{ fontSize: 13, color: '#888' }} numberOfLines={2}>
+                      {selectedPlace.address}
+                    </Text>
+                  </View>
+                ) : null}
+              </View>
+              <TouchableOpacity onPress={onClearPlace} style={{ padding: 2, marginLeft: 8 }}>
+                <Ionicons name="close-circle" size={20} color="#bbb" />
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity
+              onPress={onOpenSearch}
+              style={{ marginTop: 6, alignSelf: 'flex-start' }}
+            >
+              <Text style={{ fontSize: 12, color: '#5C3D2E', fontWeight: '600' }}>변경</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <TouchableOpacity
+            onPress={onOpenSearch}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              padding: 18,
+              backgroundColor: '#fff',
+              borderRadius: 12,
+              borderWidth: 1.5,
+              borderColor: '#D6C4B0',
+              borderStyle: 'dashed',
+            }}
+          >
+            <Ionicons name="search" size={18} color="#5C3D2E" />
+            <Text style={{ fontSize: 15, color: '#5C3D2E', fontWeight: '600' }}>카페 검색</Text>
+          </TouchableOpacity>
+        )}
+      </Section>
+
+      <Section label="방문 날짜">
+        <TouchableOpacity
+          onPress={onOpenDatePicker}
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: 14,
+            backgroundColor: '#fff',
+            borderRadius: 12,
+            borderWidth: 1,
+            borderColor: '#E5DDD5',
+          }}
+        >
+          <Text style={{ fontSize: 15, color: '#222' }}>{visitedAt}</Text>
+          <Ionicons name="calendar-outline" size={18} color="#999" />
+        </TouchableOpacity>
+      </Section>
+    </View>
+  );
+}
+
+// ── Step 3: 커피 정보 ─────────────────────────────────
+function Step3({
+  analyzing,
+  analyzed,
+  onReanalyze,
+  menuName,
+  onMenuName,
+  isBlend,
+  onIsBlend,
+  origin,
+  onOrigin,
+  farm,
+  onFarm,
+  variety,
+  onVariety,
+  process,
+  onProcess,
+  roastLevel,
+  onRoastLevel,
+  officialNotes,
+  onOfficialNotes,
+  myNotes,
+  onMyNotes,
+  acidity,
+  onAcidity,
+  nuttiness,
+  onNuttiness,
+  richness,
+  onRichness,
+  smoothness,
+  onSmoothness,
+  beans,
+  onBeans,
+}: {
+  analyzing: boolean;
+  analyzed: boolean;
+  onReanalyze?: () => void;
+  menuName: string;
+  onMenuName: (v: string) => void;
+  isBlend: number;
+  onIsBlend: (v: number) => void;
+  origin: string;
+  onOrigin: (v: string) => void;
+  farm: string;
+  onFarm: (v: string) => void;
+  variety: string;
+  onVariety: (v: string) => void;
+  process: string;
+  onProcess: (v: string) => void;
+  roastLevel: string;
+  onRoastLevel: (v: string) => void;
+  officialNotes: string[];
+  onOfficialNotes: (v: string[]) => void;
+  myNotes: string[];
+  onMyNotes: (v: string[]) => void;
+  acidity?: number;
+  onAcidity: (v?: number) => void;
+  nuttiness?: number;
+  onNuttiness: (v?: number) => void;
+  richness?: number;
+  onRichness: (v?: number) => void;
+  smoothness?: number;
+  onSmoothness: (v?: number) => void;
+  beans: HanddripNoteBean[];
+  onBeans: (v: HanddripNoteBean[]) => void;
+}) {
+  return (
+    <View style={{ gap: 20 }}>
+      {/* 분석 상태 배너 */}
+      {analyzing && (
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 10,
+            padding: 14,
+            backgroundColor: '#F0EBE5',
+            borderRadius: 12,
+          }}
+        >
+          <ActivityIndicator size="small" color="#8B5E3C" />
+          <Text style={{ fontSize: 14, color: '#8B5E3C', fontWeight: '500' }}>
+            노트 사진 분석 중...
+          </Text>
+        </View>
+      )}
+      {analyzed && !analyzing && onReanalyze && (
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: 12,
+            backgroundColor: '#F0EBE5',
+            borderRadius: 12,
+          }}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Ionicons name="sparkles-outline" size={15} color="#8B5E3C" />
+            <Text style={{ fontSize: 13, color: '#8B5E3C', fontWeight: '500' }}>
+              자동 분석 완료
+            </Text>
+          </View>
+          <TouchableOpacity onPress={onReanalyze}>
+            <Text style={{ fontSize: 12, color: '#8B5E3C', fontWeight: '600' }}>재분석</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* 메뉴명 */}
+      <NoteInput label="메뉴명" value={menuName} onChange={onMenuName} />
+
+      {/* 싱글/블랜드 토글 */}
+      <View>
+        <Text style={{ fontSize: 13, color: '#666', marginBottom: 8 }}>원두 종류</Text>
+        <View
+          style={{
+            flexDirection: 'row',
+            borderRadius: 10,
+            borderWidth: 1,
+            borderColor: '#E5DDD5',
+            overflow: 'hidden',
+          }}
+        >
+          <TouchableOpacity
+            style={{
+              flex: 1,
+              paddingVertical: 10,
+              alignItems: 'center',
+              backgroundColor: isBlend === 0 ? '#5C3D2E' : '#fff',
+            }}
+            onPress={() => onIsBlend(0)}
+          >
+            <Text
+              style={{ fontSize: 13, fontWeight: '600', color: isBlend === 0 ? '#fff' : '#999' }}
+            >
+              싱글 오리진
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={{
+              flex: 1,
+              paddingVertical: 10,
+              alignItems: 'center',
+              backgroundColor: isBlend === 1 ? '#5C3D2E' : '#fff',
+            }}
+            onPress={() => onIsBlend(1)}
+          >
+            <Text
+              style={{ fontSize: 13, fontWeight: '600', color: isBlend === 1 ? '#fff' : '#999' }}
+            >
+              블랜드
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* 원두 정보 */}
+      {isBlend === 1 ? (
+        <View style={{ gap: 12 }}>
+          {beans.map((bean, idx) => (
+            <BeanEditor
+              key={idx}
+              bean={bean}
+              index={idx}
+              onChange={(b) => onBeans(beans.map((x, i) => (i === idx ? b : x)))}
+              onRemove={() => onBeans(beans.filter((_, i) => i !== idx))}
+            />
+          ))}
+          <TouchableOpacity
+            style={{
+              borderWidth: 1,
+              borderStyle: 'dashed',
+              borderColor: '#C5B8AE',
+              borderRadius: 10,
+              paddingVertical: 12,
+              alignItems: 'center',
+            }}
+            onPress={() => onBeans([...beans, {}])}
+          >
+            <Text style={{ fontSize: 13, color: '#999' }}>+ 원두 추가</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <View style={{ gap: 14 }}>
+          <NoteInput label="원산지" value={origin} onChange={onOrigin} />
+          <NoteInput label="농장" value={farm} onChange={onFarm} />
+          <NoteInput label="품종" value={variety} onChange={onVariety} />
+          <NoteInput label="가공법" value={process} onChange={onProcess} />
+        </View>
+      )}
+
+      <NoteInput label="로스팅" value={roastLevel} onChange={onRoastLevel} />
+      <TagsInput label="공식 노트 (쉼표 구분)" value={officialNotes} onChange={onOfficialNotes} />
+      <MyNotesInput value={myNotes} onChange={onMyNotes} />
+
+      <View style={{ gap: 4 }}>
+        <SliderRow label="산미" value={acidity} onChange={onAcidity} />
+        <SliderRow label="고소함" value={nuttiness} onChange={onNuttiness} />
+        <SliderRow label="진함" value={richness} onChange={onRichness} />
+        <SliderRow label="부드러움" value={smoothness} onChange={onSmoothness} />
+      </View>
+    </View>
+  );
+}
+
+// ── Step 4: 메모 ──────────────────────────────────────
+function Step4({ memo, onMemo }: { memo: string; onMemo: (v: string) => void }) {
+  return (
+    <View style={{ gap: 8 }}>
+      <Text style={{ fontSize: 13, color: '#666' }}>한 줄 감상</Text>
+      <TextInput
+        style={{
+          backgroundColor: '#fff',
+          borderRadius: 12,
+          borderWidth: 1,
+          borderColor: '#E5DDD5',
+          padding: 14,
+          fontSize: 15,
+          color: '#222',
+          minHeight: 120,
+          textAlignVertical: 'top',
+        }}
+        value={memo}
+        onChangeText={onMemo}
+        placeholder="오늘의 커피 한 줄 감상..."
+        placeholderTextColor="#C5B8AE"
+        multiline
+        numberOfLines={5}
+      />
+    </View>
+  );
+}
+
+// ── BeanEditor (블랜드 전용) ───────────────────────────
+function BeanEditor({
+  bean,
+  index,
+  onChange,
+  onRemove,
+}: {
+  bean: HanddripNoteBean;
+  index: number;
+  onChange: (b: HanddripNoteBean) => void;
+  onRemove: () => void;
+}) {
+  return (
+    <View
+      style={{ borderWidth: 1, borderColor: '#E5DDD5', borderRadius: 12, padding: 14, gap: 12 }}
+    >
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Text style={{ fontSize: 13, fontWeight: '600', color: '#666' }}>원두 {index + 1}</Text>
+        <TouchableOpacity onPress={onRemove}>
+          <Text style={{ fontSize: 13, color: '#E07070' }}>삭제</Text>
+        </TouchableOpacity>
+      </View>
+      <NoteInput
+        label="원산지"
+        value={bean.origin}
+        onChange={(v) => onChange({ ...bean, origin: v })}
+      />
+      <NoteInput label="농장" value={bean.farm} onChange={(v) => onChange({ ...bean, farm: v })} />
+      <NoteInput
+        label="품종"
+        value={bean.variety}
+        onChange={(v) => onChange({ ...bean, variety: v })}
+      />
+      <NoteInput
+        label="가공법"
+        value={bean.process}
+        onChange={(v) => onChange({ ...bean, process: v })}
+      />
+      <View>
+        <Text style={{ fontSize: 13, color: '#666', marginBottom: 6 }}>비율 (%)</Text>
+        <TextInput
+          style={{
+            borderWidth: 1,
+            borderColor: '#E5DDD5',
+            borderRadius: 10,
+            padding: 10,
+            fontSize: 14,
+            color: '#222',
+            backgroundColor: '#fff',
+          }}
+          keyboardType="numeric"
+          value={bean.ratio != null ? String(bean.ratio) : ''}
+          onChangeText={(v) => onChange({ ...bean, ratio: v ? Number(v) : undefined })}
+          placeholder="선택"
+          placeholderTextColor="#C5B8AE"
+        />
+      </View>
+    </View>
+  );
+}
+
+// ── Section 레이아웃 헬퍼 ─────────────────────────────
+function Section({
+  label,
+  hint,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <View style={{ gap: 10 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6 }}>
+        <Text style={{ fontSize: 15, fontWeight: '700', color: '#333' }}>{label}</Text>
+        {hint && <Text style={{ fontSize: 12, color: '#AAA' }}>{hint}</Text>}
+      </View>
       {children}
     </View>
   );

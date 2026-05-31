@@ -22,6 +22,7 @@ const PROMPT = `
 - process_raw: 영어면 한국어로 번역 (예: "Washed" → "워시드", "Natural" → "내추럴", "Honey" → "허니")
 - roast_level_raw: 영어면 한국어로 번역 (예: "Light Roast" → "라이트 로스팅", "Medium" → "미디엄")
 - origin, variety: 커피 업계에서 통용되는 한국어 표기로 변환 (예: "Ethiopia" → "에티오피아", "Colombia" → "콜롬비아", "Geisha" → "게이샤", "Yirgacheffe" → "예가체프")
+- farm: 농장명은 원문 그대로 유지 (예: "Finca El Paraiso" → "Finca El Paraiso")
 
 중요 — 블렌드 판단 기준:
 - 한 원두의 국가명/지역명/농장명/품종명이 여럿 적혀 있어도 싱글 오리진입니다.
@@ -37,6 +38,7 @@ const PROMPT = `
 {
   "is_blend": 0,
   "origin": null,
+  "farm": null,
   "variety": null,
   "process_raw": null,
   "roast_level_raw": null,
@@ -44,6 +46,29 @@ const PROMPT = `
   "beans": []
 }
 `;
+
+function extractLastJSON(text: string): Record<string, unknown> | null {
+  // 뒤에서부터 스캔해 마지막으로 완성된 { } 블록을 찾아 파싱
+  let depth = 0;
+  let end = -1;
+  for (let i = text.length - 1; i >= 0; i--) {
+    if (text[i] === '}') {
+      if (depth === 0) end = i;
+      depth++;
+    } else if (text[i] === '{') {
+      depth--;
+      if (depth === 0 && end !== -1) {
+        const candidate = text.slice(i, end + 1).replace(/,\s*([\]}])/g, '$1');
+        try {
+          return JSON.parse(candidate) as Record<string, unknown>;
+        } catch {
+          end = -1; // 다음 블록 시도
+        }
+      }
+    }
+  }
+  return null;
+}
 
 async function imageToBase64(uri: string): Promise<{ data: string; mimeType: string }> {
   const data = await FileSystem.readAsStringAsync(uri, {
@@ -75,7 +100,8 @@ export async function analyzeCardImages(uris: string[]): Promise<Partial<Handdri
         contents: [{ role: 'user', parts }],
         generationConfig: {
           temperature: 0.1,
-          maxOutputTokens: 1024,
+          maxOutputTokens: 4096,
+          responseMimeType: 'application/json',
         },
       }),
     });
@@ -95,23 +121,14 @@ export async function analyzeCardImages(uris: string[]): Promise<Partial<Handdri
       .replace(/```/g, '')
       .trim();
 
-    const objMatch = stripped.match(/\{[\s\S]*\}/);
-    const arrMatch = stripped.match(/\[[\s\S]*\]/);
-    let jsonStr: string | null = null;
-    if (objMatch) {
-      jsonStr = objMatch[0];
-    } else if (arrMatch) {
-      const arr = JSON.parse(arrMatch[0]);
-      jsonStr = JSON.stringify(Array.isArray(arr) && arr.length > 0 ? arr[0] : arr);
-    }
-    if (!jsonStr) return null;
-
-    const cleaned = jsonStr.replace(/,\s*([\]}])/g, '$1');
-    const p = JSON.parse(cleaned) as Record<string, unknown>;
+    // 마지막으로 나오는 유효한 JSON 객체 추출 (모델이 추론 과정을 출력할 때를 대비)
+    const p = extractLastJSON(stripped);
+    if (!p) return null;
 
     return {
       is_blend: typeof p.is_blend === 'number' ? p.is_blend : 0,
       origin: typeof p.origin === 'string' ? p.origin : undefined,
+      farm: typeof p.farm === 'string' ? p.farm : undefined,
       variety: typeof p.variety === 'string' ? p.variety : undefined,
       process: typeof p.process_raw === 'string' ? p.process_raw : undefined,
       roast_level: typeof p.roast_level_raw === 'string' ? p.roast_level_raw : undefined,

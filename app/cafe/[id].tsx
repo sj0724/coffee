@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -10,7 +10,9 @@ import {
   TextInput,
   useWindowDimensions,
   Linking,
+  Animated,
 } from 'react-native';
+import DEFAULT_CARD from '@/assets/default-card.jpg';
 import { Image } from 'expo-image';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -167,15 +169,12 @@ export default function CafeDetailScreen() {
 
   const isFav = !!log.is_favorite;
 
-  const photoUris: string[] = log.photos
-    ? (() => {
-        try {
-          return JSON.parse(log.photos);
-        } catch {
-          return [];
-        }
-      })()
-    : [];
+  const cafePhotoUris: string[] = (() => {
+    try { return log.photos ? JSON.parse(log.photos) : []; } catch { return []; }
+  })();
+  const notePhotoUris: string[] = (() => {
+    try { return log.note_photos ? JSON.parse(log.note_photos) : []; } catch { return []; }
+  })();
   const photoW = screenWidth - 40;
   const photoH = Math.round(photoW * 1.25);
 
@@ -203,23 +202,39 @@ export default function CafeDetailScreen() {
       className="flex-1 bg-coffee-light"
       contentContainerStyle={{ gap: 16, paddingBottom: 40 }}
     >
-      {photoUris.length > 0 && (
-        <ScrollView
-          horizontal
-          pagingEnabled
-          showsHorizontalScrollIndicator={false}
-          style={{ marginTop: 20 }}
-          contentContainerStyle={{ gap: 12, paddingHorizontal: 20 }}
-        >
-          {photoUris.map((uri, i) => (
-            <Image
-              key={i}
-              source={{ uri }}
-              style={{ width: photoW, height: photoH, borderRadius: 12 }}
-              contentFit="cover"
-            />
-          ))}
-        </ScrollView>
+      {notePhotoUris.length > 0 && (
+        <View style={{ marginTop: 20, gap: 8, alignItems: 'center' }}>
+          <Text style={{ fontSize: 13, fontWeight: '600', color: '#999', alignSelf: 'flex-start', paddingHorizontal: 20 }}>
+            노트 사진
+          </Text>
+          <FlipCard
+            frontUri={notePhotoUris[0]}
+            backUri={notePhotoUris[1] ?? null}
+            width={photoW * 0.72}
+          />
+        </View>
+      )}
+
+      {cafePhotoUris.length > 0 && (
+        <View style={{ marginTop: notePhotoUris.length > 0 ? 4 : 20, gap: 8 }}>
+          <Text style={{ fontSize: 13, fontWeight: '600', color: '#999', paddingHorizontal: 20 }}>
+            카페 · 메뉴 사진
+          </Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ gap: 12, paddingHorizontal: 20 }}
+          >
+            {cafePhotoUris.map((uri, i) => (
+              <Image
+                key={i}
+                source={{ uri }}
+                style={{ width: photoW, height: photoH, borderRadius: 12 }}
+                contentFit="cover"
+              />
+            ))}
+          </ScrollView>
+        </View>
       )}
 
       <View className="px-5 pt-5">
@@ -374,5 +389,70 @@ export default function CafeDetailScreen() {
       </View>
     </ScrollView>
     </>
+  );
+}
+
+function FlipCard({
+  frontUri,
+  backUri,
+  width,
+}: {
+  frontUri: string;
+  backUri: string | null;
+  width: number;
+}) {
+  const [flipped, setFlipped] = useState(false);
+  const [frontH, setFrontH] = useState(width * 1.4);
+  const anim = useRef(new Animated.Value(0)).current;
+
+  function flip() {
+    Animated.spring(anim, {
+      toValue: flipped ? 0 : 1,
+      friction: 8,
+      tension: 60,
+      useNativeDriver: true,
+    }).start();
+    setFlipped((f) => !f);
+  }
+
+  const frontRotate = anim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '180deg'] });
+  const backRotate = anim.interpolate({ inputRange: [0, 1], outputRange: ['180deg', '360deg'] });
+
+  return (
+    <TouchableOpacity onPress={flip} activeOpacity={0.95} style={{ width, height: frontH }}>
+      {/* 앞면 */}
+      <Animated.View
+        style={{
+          position: 'absolute', width, height: frontH,
+          backfaceVisibility: 'hidden',
+          transform: [{ perspective: 1200 }, { rotateY: frontRotate }],
+        }}
+      >
+        <Image
+          source={{ uri: frontUri }}
+          style={{ width, height: frontH, borderRadius: 14 }}
+          contentFit="cover"
+          onLoad={(e) => {
+            const { width: w, height: h } = e.source;
+            if (w && h) setFrontH(width * (h / w));
+          }}
+        />
+      </Animated.View>
+
+      {/* 뒷면 - 앞면과 동일한 사이즈 사용 */}
+      <Animated.View
+        style={{
+          position: 'absolute', width, height: frontH,
+          backfaceVisibility: 'hidden',
+          transform: [{ perspective: 1200 }, { rotateY: backRotate }],
+        }}
+      >
+        <Image
+          source={backUri ? { uri: backUri } : DEFAULT_CARD}
+          style={{ width, height: frontH, borderRadius: 14 }}
+          contentFit="cover"
+        />
+      </Animated.View>
+    </TouchableOpacity>
   );
 }

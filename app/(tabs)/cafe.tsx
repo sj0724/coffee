@@ -172,15 +172,11 @@ function CafeCard({
   const router = useRouter();
   const [imgRatio, setImgRatio] = useState<number | null>(null);
   const noteColors = parseNoteColors(item.first_my_notes);
-  const firstPhotoUri: string | undefined = item.photos
-    ? (() => {
-        try {
-          return (JSON.parse(item.photos) as string[])[0];
-        } catch {
-          return undefined;
-        }
-      })()
-    : undefined;
+  const firstPhotoUri: string | undefined = (() => {
+    const src = item.photos || item.note_photos;
+    if (!src) return undefined;
+    try { return (JSON.parse(src) as string[])[0]; } catch { return undefined; }
+  })();
   const hasPhoto = !!firstPhotoUri;
 
   let actualCardWidth = cardWidth;
@@ -343,9 +339,11 @@ function CafeGridCard({ item }: { item: CafeLog }) {
   const router = useRouter();
   const [imgRatio, setImgRatio] = useState<number | null>(null); // width / height
   const noteColors = parseNoteColors(item.first_my_notes);
-  const firstPhotoUri: string | undefined = item.photos
-    ? (() => { try { return (JSON.parse(item.photos) as string[])[0]; } catch { return undefined; } })()
-    : undefined;
+  const firstPhotoUri: string | undefined = (() => {
+    const src = item.photos || item.note_photos;
+    if (!src) return undefined;
+    try { return (JSON.parse(src) as string[])[0]; } catch { return undefined; }
+  })();
 
   const noteGradient =
     noteColors.length > 0
@@ -437,7 +435,7 @@ function splitIntoMasonryColumns(items: CafeLog[], cardWidth: number): [CafeLog[
   const right: CafeLog[] = [];
   let lh = 0, rh = 0;
   for (const item of items) {
-    const h = item.photos ? photoH : noPhotoH;
+    const h = (item.photos || item.note_photos) ? photoH : noPhotoH;
     if (lh <= rh) { left.push(item); lh += h + GRID_GAP; }
     else { right.push(item); rh += h + GRID_GAP; }
   }

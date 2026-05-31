@@ -1,4 +1,4 @@
-export const DB_VERSION = 10;
+export const DB_VERSION = 11;
 
 export const CREATE_TABLES_SQL = `
 CREATE TABLE IF NOT EXISTS cafe_logs (
@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS cafe_logs (
   cafe_name   TEXT NOT NULL,
   visited_at  TEXT NOT NULL,
   photos      TEXT,
+  note_photos TEXT,
   address     TEXT,
   memo        TEXT,
   is_favorite INTEGER DEFAULT 0,
@@ -24,6 +25,7 @@ CREATE TABLE IF NOT EXISTS cafe_tasting_notes (
   cafe_menu_item_id INTEGER NOT NULL REFERENCES cafe_menu_items(id) ON DELETE CASCADE,
   is_blend          INTEGER DEFAULT 0,
   origin            TEXT,
+  farm              TEXT,
   variety           TEXT,
   process           TEXT,
   roast_level       TEXT,
@@ -40,6 +42,7 @@ CREATE TABLE IF NOT EXISTS cafe_tasting_note_beans (
   id      INTEGER PRIMARY KEY AUTOINCREMENT,
   note_id INTEGER NOT NULL REFERENCES cafe_tasting_notes(id) ON DELETE CASCADE,
   origin  TEXT,
+  farm    TEXT,
   variety TEXT,
   process TEXT,
   ratio   INTEGER
