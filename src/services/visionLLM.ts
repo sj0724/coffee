@@ -77,6 +77,83 @@ async function imageToBase64(uri: string): Promise<{ data: string; mimeType: str
   return { data, mimeType: 'image/jpeg' };
 }
 
+const MENU_PROMPT = `
+이 이미지에 카페 음료가 포함되어 있는지 확인하세요.
+
+규칙:
+- JSON만 출력
+- 코드블록 금지
+- 설명 금지
+
+is_coffee 판단 기준:
+- true: 에스프레소, 아메리카노, 라떼, 카푸치노, 콜드브루, 드립커피 등 커피 베이스 음료
+- false: 차, 에이드, 스무디, 쉐이크, 주스, 코코아 등 커피가 아닌 음료
+
+음료가 보이면:
+{"is_drink": true, "is_coffee": true, "menu_name": "음료명(한국어, 예: 아메리카노, 카페라떼, 말차 라떼)"}
+
+음료가 없으면:
+{"is_drink": false, "is_coffee": false, "menu_name": null}
+`;
+
+export async function analyzeMenuPhoto(
+  uri: string,
+): Promise<{ is_drink: boolean; is_coffee: boolean; menu_name: string | null } | null> {
+  try {
+    if (!GEMINI_API_KEY || GEMINI_API_KEY === '여기에_키_입력') return null;
+
+    const img = await imageToBase64(uri);
+    const parts = [
+      { inlineData: { data: img.data, mimeType: img.mimeType } },
+      { text: MENU_PROMPT },
+    ];
+
+    const response = await fetch(GEMINI_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ role: 'user', parts }],
+        generationConfig: {
+          temperature: 0.1,
+          maxOutputTokens: 1024,
+          responseMimeType: 'application/json',
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error('[Gemini Menu] API 오류:', response.status, errText);
+      return null;
+    }
+
+    const json = await response.json();
+    const candidate = json.candidates?.[0];
+    console.log('[Gemini Menu] finishReason:', candidate?.finishReason);
+    const raw: string = candidate?.content?.parts?.[0]?.text ?? '';
+    console.log('[Gemini Menu] raw:', JSON.stringify(raw));
+
+    const p = extractLastJSON(
+      raw
+        .replace(/```(?:json)?\s*/g, '')
+        .replace(/```/g, '')
+        .trim(),
+    );
+    console.log('[Gemini Menu] parsed:', JSON.stringify(p));
+
+    if (!p) return null;
+
+    return {
+      is_drink: p.is_drink === true,
+      is_coffee: p.is_coffee === true,
+      menu_name: typeof p.menu_name === 'string' ? p.menu_name : null,
+    };
+  } catch (e) {
+    console.error('[Gemini Menu] analyzeMenuPhoto error:', e);
+    return null;
+  }
+}
+
 export async function analyzeCardImages(uris: string[]): Promise<Partial<HanddripNote> | null> {
   try {
     if (!GEMINI_API_KEY || GEMINI_API_KEY === '여기에_키_입력') {

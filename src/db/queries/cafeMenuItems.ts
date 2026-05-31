@@ -14,12 +14,14 @@ export async function getMenuItems(cafeLogId: number): Promise<CafeMenuItem[]> {
   }
 }
 
-export async function createMenuItem(item: Omit<CafeMenuItem, 'id' | 'created_at'>): Promise<number | null> {
+export async function createMenuItem(
+  item: Omit<CafeMenuItem, 'id' | 'created_at'>,
+): Promise<number | null> {
   try {
     const db = await getDB();
     const result = await db.runAsync(
-      'INSERT INTO cafe_menu_items (cafe_log_id, menu_name) VALUES (?, ?)',
-      [item.cafe_log_id, item.menu_name],
+      'INSERT INTO cafe_menu_items (cafe_log_id, menu_name, is_coffee) VALUES (?, ?, ?)',
+      [item.cafe_log_id, item.menu_name, item.is_coffee ?? null],
     );
     return result.lastInsertRowId;
   } catch (e) {

@@ -1,4 +1,4 @@
-export const DB_VERSION = 11;
+export const DB_VERSION = 13;
 
 export const CREATE_TABLES_SQL = `
 CREATE TABLE IF NOT EXISTS cafe_logs (
@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS cafe_menu_items (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,
   cafe_log_id INTEGER NOT NULL REFERENCES cafe_logs(id) ON DELETE CASCADE,
   menu_name   TEXT NOT NULL,
+  is_coffee   INTEGER,
   created_at  TEXT DEFAULT (datetime('now'))
 );
 

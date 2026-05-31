@@ -36,8 +36,11 @@ const COFFEE_OPTIONS = [
   '콜드브루',
 ];
 
-function getMenuCategory(menuName: string): MenuCategory {
+function getMenuCategory(menuName: string, isCoffee?: number | null): MenuCategory {
   if (menuName === '핸드드립') return 'handdip';
+  if (isCoffee === 1) return 'espresso';
+  if (isCoffee === 0) return 'simple';
+  // is_coffee 없는 구버전 데이터는 COFFEE_OPTIONS로 폴백
   if (COFFEE_OPTIONS.includes(menuName)) return 'espresso';
   return 'simple';
 }
@@ -71,7 +74,7 @@ export default function CafeDetailScreen() {
 
     await Promise.all(
       items.map(async (item) => {
-        const category = getMenuCategory(item.menu_name);
+        const category = getMenuCategory(item.menu_name, item.is_coffee);
         if (category === 'handdip') {
           const note = await getTastingNote(item.id!);
           if (note) handripMap[item.id!] = note;
@@ -111,7 +114,9 @@ export default function CafeDetailScreen() {
     if (Platform.OS === 'ios') {
       ActionSheetIOS.showActionSheetWithOptions(
         { options: ['취소', '삭제'], cancelButtonIndex: 0, destructiveButtonIndex: 1 },
-        (index) => { if (index === 1) handleDeleteLog(); },
+        (index) => {
+          if (index === 1) handleDeleteLog();
+        },
       );
     } else {
       handleDeleteLog();
@@ -154,7 +159,7 @@ export default function CafeDetailScreen() {
   }
 
   function startEditing(item: CafeMenuItem) {
-    const category = getMenuCategory(item.menu_name);
+    const category = getMenuCategory(item.menu_name, item.is_coffee);
     setEditingMenuId(item.id!);
     if (category === 'handdip') {
       const existing = handripNotesMap[item.id!];
@@ -170,224 +175,238 @@ export default function CafeDetailScreen() {
   const isFav = !!log.is_favorite;
 
   const cafePhotoUris: string[] = (() => {
-    try { return log.photos ? JSON.parse(log.photos) : []; } catch { return []; }
+    try {
+      return log.photos ? JSON.parse(log.photos) : [];
+    } catch {
+      return [];
+    }
   })();
   const notePhotoUris: string[] = (() => {
-    try { return log.note_photos ? JSON.parse(log.note_photos) : []; } catch { return []; }
+    try {
+      return log.note_photos ? JSON.parse(log.note_photos) : [];
+    } catch {
+      return [];
+    }
   })();
   const photoW = screenWidth - 40;
   const photoH = Math.round(photoW * 1.25);
 
   return (
     <>
-    <Stack.Screen
-      options={{
-        headerRight: () => (
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-            <TouchableOpacity onPress={handleToggleFavorite} style={{ padding: 6 }}>
-              <Ionicons
-                name={isFav ? 'star' : 'star-outline'}
-                size={22}
-                color={isFav ? '#F5A623' : '#888'}
-              />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={showMoreOptions} style={{ padding: 6 }}>
-              <Ionicons name="ellipsis-horizontal" size={22} color="#111" />
-            </TouchableOpacity>
-          </View>
-        ),
-      }}
-    />
-    <ScrollView
-      className="flex-1 bg-coffee-light"
-      contentContainerStyle={{ gap: 16, paddingBottom: 40 }}
-    >
-      {notePhotoUris.length > 0 && (
-        <View style={{ marginTop: 20, gap: 8, alignItems: 'center' }}>
-          <Text style={{ fontSize: 13, fontWeight: '600', color: '#999', alignSelf: 'flex-start', paddingHorizontal: 20 }}>
-            노트 사진
-          </Text>
-          <FlipCard
-            frontUri={notePhotoUris[0]}
-            backUri={notePhotoUris[1] ?? null}
-            width={photoW * 0.72}
-          />
-        </View>
-      )}
-
-      {cafePhotoUris.length > 0 && (
-        <View style={{ marginTop: notePhotoUris.length > 0 ? 4 : 20, gap: 8 }}>
-          <Text style={{ fontSize: 13, fontWeight: '600', color: '#999', paddingHorizontal: 20 }}>
-            카페 · 메뉴 사진
-          </Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ gap: 12, paddingHorizontal: 20 }}
-          >
-            {cafePhotoUris.map((uri, i) => (
-              <Image
-                key={i}
-                source={{ uri }}
-                style={{ width: photoW, height: photoH, borderRadius: 12 }}
-                contentFit="cover"
-              />
-            ))}
-          </ScrollView>
-        </View>
-      )}
-
-      <View className="px-5 pt-5">
-        <Text className="text-[22px] font-bold text-[#222]">{log.cafe_name}</Text>
-        <Text className="text-[13px] text-gray-400 mt-1">{log.visited_at}</Text>
-        {log.address ? (
-          <TouchableOpacity
-            className="flex-row items-center gap-1 mt-2"
-            onPress={() => {
-              const query = encodeURIComponent(`${log.cafe_name} ${log.address}`);
-              Linking.openURL(`https://map.naver.com/v5/search/${query}`);
-            }}
-          >
-            <Ionicons name="location-outline" size={14} color="#111111" />
-            <Text className="text-[13px] text-coffee underline" numberOfLines={1}>
-              {log.address}
-            </Text>
-          </TouchableOpacity>
-        ) : null}
-      </View>
-
-      {log.memo ? (
-        <View className="p-4 mx-5 bg-white shadow-sm rounded-xl">
-          <Text className="text-[13px] font-bold text-[#333] mb-1">메모</Text>
-          <Text className="text-sm text-[#555] leading-5">{log.memo}</Text>
-        </View>
-      ) : null}
-
-      <View className="mx-5">
-        <View className="flex-row items-center justify-between mb-3">
-          <Text className="text-[16px] font-bold text-[#222]">메뉴</Text>
-          <TouchableOpacity
-            className="flex-row items-center gap-1"
-            onPress={() => {
-              setAddingMenu(!addingMenu);
-              setEditingMenuId(null);
-            }}
-          >
-            <Ionicons
-              name={addingMenu ? 'close-outline' : 'add-circle-outline'}
-              size={22}
-              color="#111111"
-            />
-            {!addingMenu && <Text className="text-sm font-semibold text-coffee">추가</Text>}
-          </TouchableOpacity>
-        </View>
-
-        {addingMenu && (
-          <View className="gap-3 p-4 mb-3 bg-white shadow-sm rounded-xl">
-            <View>
-              <Text className="text-[13px] font-semibold text-[#444] mb-2">커피</Text>
-              <View className="flex-row flex-wrap gap-2">
-                {COFFEE_OPTIONS.map((option) => (
-                  <TouchableOpacity
-                    key={option}
-                    onPress={() => handleAddMenu(option)}
-                    className="px-3 py-1.5 rounded-full border border-coffee-border bg-white"
-                  >
-                    <Text className="text-sm text-[#555]">{option}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-            <View>
-              <Text className="text-[13px] font-semibold text-[#444] mb-2">논커피 / 기타</Text>
-              <View className="flex-row gap-2">
-                <TextInput
-                  className="flex-1 border border-coffee-border rounded-lg px-3 py-2 text-sm text-[#222] bg-white"
-                  value={customMenuInput}
-                  onChangeText={setCustomMenuInput}
-                  placeholder="말차 라떼, 자몽 에이드..."
-                  placeholderTextColor="#ccc"
+      <Stack.Screen
+        options={{
+          headerRight: () => (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <TouchableOpacity onPress={handleToggleFavorite} style={{ padding: 6 }}>
+                <Ionicons
+                  name={isFav ? 'star' : 'star-outline'}
+                  size={22}
+                  color={isFav ? '#F5A623' : '#888'}
                 />
-                <TouchableOpacity
-                  className="items-center justify-center px-4 rounded-lg bg-coffee"
-                  onPress={() => {
-                    if (customMenuInput.trim()) {
-                      handleAddMenu(customMenuInput.trim());
-                      setCustomMenuInput('');
-                    }
-                  }}
-                >
-                  <Text className="text-sm font-semibold text-white">추가</Text>
-                </TouchableOpacity>
-              </View>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={showMoreOptions} style={{ padding: 6 }}>
+                <Ionicons name="ellipsis-horizontal" size={22} color="#111" />
+              </TouchableOpacity>
             </View>
+          ),
+        }}
+      />
+      <ScrollView
+        className="flex-1 bg-coffee-light"
+        contentContainerStyle={{ gap: 16, paddingBottom: 40 }}
+      >
+        {notePhotoUris.length > 0 && (
+          <View style={{ marginTop: 20, gap: 8, alignItems: 'center' }}>
+            <Text
+              style={{
+                fontSize: 13,
+                fontWeight: '600',
+                color: '#999',
+                alignSelf: 'flex-start',
+                paddingHorizontal: 20,
+              }}
+            >
+              노트 사진
+            </Text>
+            <FlipCard
+              frontUri={notePhotoUris[0]}
+              backUri={notePhotoUris[1] ?? null}
+              width={photoW * 0.72}
+            />
           </View>
         )}
 
-        {menuItems.length === 0 && !addingMenu && (
-          <Text className="py-4 text-sm text-center text-gray-300">메뉴를 추가해보세요.</Text>
+        {cafePhotoUris.length > 0 && (
+          <View style={{ marginTop: notePhotoUris.length > 0 ? 4 : 20, gap: 8 }}>
+            <Text style={{ fontSize: 13, fontWeight: '600', color: '#999', paddingHorizontal: 20 }}>
+              카페 · 메뉴 사진
+            </Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ gap: 12, paddingHorizontal: 20 }}
+            >
+              {cafePhotoUris.map((uri, i) => (
+                <Image
+                  key={i}
+                  source={{ uri }}
+                  style={{ width: photoW, height: photoH, borderRadius: 12 }}
+                  contentFit="cover"
+                />
+              ))}
+            </ScrollView>
+          </View>
         )}
 
-        {menuItems.map((item) => {
-          const category = getMenuCategory(item.menu_name);
-          const isEditing = editingMenuId === item.id;
+        <View className="px-5 pt-5">
+          <Text className="text-[22px] font-bold text-[#222]">{log.cafe_name}</Text>
+          <Text className="text-[13px] text-gray-400 mt-1">{log.visited_at}</Text>
+          {log.address ? (
+            <TouchableOpacity
+              className="flex-row items-center gap-1 mt-2"
+              onPress={() => {
+                const query = encodeURIComponent(`${log.cafe_name} ${log.address}`);
+                Linking.openURL(`https://map.naver.com/v5/search/${query}`);
+              }}
+            >
+              <Ionicons name="location-outline" size={14} color="#111111" />
+              <Text className="text-[13px] text-coffee underline" numberOfLines={1}>
+                {log.address}
+              </Text>
+            </TouchableOpacity>
+          ) : null}
+        </View>
 
-          return (
-            <View key={item.id} className="p-4 mb-3 bg-white shadow-sm rounded-xl">
-              <View className="flex-row items-center justify-between mb-2">
-                <View className="px-3 py-1 rounded-full bg-coffee-cream">
-                  <Text className="text-[13px] font-bold text-coffee">{item.menu_name}</Text>
-                </View>
-                <View className="flex-row gap-3">
-                  {category !== 'simple' && (
+        {log.memo ? (
+          <View className="p-4 mx-5 bg-white shadow-sm rounded-xl">
+            <Text className="text-[13px] font-bold text-[#333] mb-1">메모</Text>
+            <Text className="text-sm text-[#555] leading-5">{log.memo}</Text>
+          </View>
+        ) : null}
+
+        <View className="mx-5">
+          <View className="flex-row items-center justify-between mb-3">
+            <Text className="text-[16px] font-bold text-[#222]">메뉴</Text>
+            <TouchableOpacity
+              className="flex-row items-center gap-1"
+              onPress={() => {
+                setAddingMenu(!addingMenu);
+                setEditingMenuId(null);
+              }}
+            >
+              <Ionicons
+                name={addingMenu ? 'close-outline' : 'add-circle-outline'}
+                size={22}
+                color="#111111"
+              />
+              {!addingMenu && <Text className="text-sm font-semibold text-coffee">추가</Text>}
+            </TouchableOpacity>
+          </View>
+
+          {addingMenu && (
+            <View className="gap-3 p-4 mb-3 bg-white shadow-sm rounded-xl">
+              <View>
+                <Text className="text-[13px] font-semibold text-[#444] mb-2">커피</Text>
+                <View className="flex-row flex-wrap gap-2">
+                  {COFFEE_OPTIONS.map((option) => (
                     <TouchableOpacity
-                      onPress={() => (isEditing ? setEditingMenuId(null) : startEditing(item))}
+                      key={option}
+                      onPress={() => handleAddMenu(option)}
+                      className="px-3 py-1.5 rounded-full border border-coffee-border bg-white"
                     >
-                      <Ionicons
-                        name={isEditing ? 'close-outline' : 'pencil-outline'}
-                        size={18}
-                        color="#111111"
-                      />
+                      <Text className="text-sm text-[#555]">{option}</Text>
                     </TouchableOpacity>
-                  )}
-                  <TouchableOpacity onPress={() => handleDeleteMenu(item.id!)}>
-                    <Ionicons name="trash-outline" size={18} color="#E76F51" />
+                  ))}
+                </View>
+              </View>
+              <View>
+                <Text className="text-[13px] font-semibold text-[#444] mb-2">논커피 / 기타</Text>
+                <View className="flex-row gap-2">
+                  <TextInput
+                    className="flex-1 border border-coffee-border rounded-lg px-3 py-2 text-sm text-[#222] bg-white"
+                    value={customMenuInput}
+                    onChangeText={setCustomMenuInput}
+                    placeholder="말차 라떼, 자몽 에이드..."
+                    placeholderTextColor="#ccc"
+                  />
+                  <TouchableOpacity
+                    className="items-center justify-center px-4 rounded-lg bg-coffee"
+                    onPress={() => {
+                      if (customMenuInput.trim()) {
+                        handleAddMenu(customMenuInput.trim());
+                        setCustomMenuInput('');
+                      }
+                    }}
+                  >
+                    <Text className="text-sm font-semibold text-white">추가</Text>
                   </TouchableOpacity>
                 </View>
               </View>
-
-              {category === 'handdip' && (
-                isEditing ? (
-                  <NoteForm
-                    form={handripForm}
-                    onChange={setHandripForm}
-                    onSave={() => handleSaveNote(item.id!, category)}
-                  />
-                ) : handripNotesMap[item.id!] ? (
-                  <NoteView note={handripNotesMap[item.id!]} />
-                ) : (
-                  <Text className="py-1 text-xs text-gray-300">노트를 추가해보세요.</Text>
-                )
-              )}
-
-              {category === 'espresso' && (
-                isEditing ? (
-                  <EspressoNoteForm
-                    tags={espressoTags}
-                    onChange={setEspressoTags}
-                    onSave={() => handleSaveNote(item.id!, category)}
-                  />
-                ) : espressoNotesMap[item.id!] ? (
-                  <EspressoNoteView note={espressoNotesMap[item.id!]} />
-                ) : (
-                  <Text className="py-1 text-xs text-gray-300">특징을 추가해보세요.</Text>
-                )
-              )}
             </View>
-          );
-        })}
-      </View>
-    </ScrollView>
+          )}
+
+          {menuItems.length === 0 && !addingMenu && (
+            <Text className="py-4 text-sm text-center text-gray-300">메뉴를 추가해보세요.</Text>
+          )}
+
+          {menuItems.map((item) => {
+            const category = getMenuCategory(item.menu_name, item.is_coffee);
+            const isEditing = editingMenuId === item.id;
+
+            return (
+              <View key={item.id} className="p-4 mb-3 bg-white shadow-sm rounded-xl">
+                <View className="flex-row items-center justify-between mb-2">
+                  <View className="px-3 py-1 rounded-full bg-coffee-cream">
+                    <Text className="text-[13px] font-bold text-coffee">{item.menu_name}</Text>
+                  </View>
+                  <View className="flex-row gap-3">
+                    {category !== 'simple' && (
+                      <TouchableOpacity
+                        onPress={() => (isEditing ? setEditingMenuId(null) : startEditing(item))}
+                      >
+                        <Ionicons
+                          name={isEditing ? 'close-outline' : 'pencil-outline'}
+                          size={18}
+                          color="#111111"
+                        />
+                      </TouchableOpacity>
+                    )}
+                    <TouchableOpacity onPress={() => handleDeleteMenu(item.id!)}>
+                      <Ionicons name="trash-outline" size={18} color="#E76F51" />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                {category === 'handdip' &&
+                  (isEditing ? (
+                    <NoteForm
+                      form={handripForm}
+                      onChange={setHandripForm}
+                      onSave={() => handleSaveNote(item.id!, category)}
+                    />
+                  ) : handripNotesMap[item.id!] ? (
+                    <NoteView note={handripNotesMap[item.id!]} />
+                  ) : (
+                    <Text className="py-1 text-xs text-gray-300">노트를 추가해보세요.</Text>
+                  ))}
+
+                {category === 'espresso' &&
+                  (isEditing ? (
+                    <EspressoNoteForm
+                      tags={espressoTags}
+                      onChange={setEspressoTags}
+                      onSave={() => handleSaveNote(item.id!, category)}
+                    />
+                  ) : espressoNotesMap[item.id!] ? (
+                    <EspressoNoteView note={espressoNotesMap[item.id!]} />
+                  ) : (
+                    <Text className="py-1 text-xs text-gray-300">특징을 추가해보세요.</Text>
+                  ))}
+              </View>
+            );
+          })}
+        </View>
+      </ScrollView>
     </>
   );
 }
@@ -423,7 +442,9 @@ function FlipCard({
       {/* 앞면 */}
       <Animated.View
         style={{
-          position: 'absolute', width, height: frontH,
+          position: 'absolute',
+          width,
+          height: frontH,
           backfaceVisibility: 'hidden',
           transform: [{ perspective: 1200 }, { rotateY: frontRotate }],
         }}
@@ -442,7 +463,9 @@ function FlipCard({
       {/* 뒷면 - 앞면과 동일한 사이즈 사용 */}
       <Animated.View
         style={{
-          position: 'absolute', width, height: frontH,
+          position: 'absolute',
+          width,
+          height: frontH,
           backfaceVisibility: 'hidden',
           transform: [{ perspective: 1200 }, { rotateY: backRotate }],
         }}

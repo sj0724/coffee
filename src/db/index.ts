@@ -20,7 +20,9 @@ export async function getDB(): Promise<SQLite.SQLiteDatabase> {
       version !== 7 &&
       version !== 8 &&
       version !== 9 &&
-      version !== 10
+      version !== 10 &&
+      version !== 11 &&
+      version !== 12
     ) {
       await db.execAsync(`
         DROP TABLE IF EXISTS cafe_tasting_note_beans;
@@ -99,9 +101,28 @@ export async function getDB(): Promise<SQLite.SQLiteDatabase> {
         version = 10;
       }
       if (version === 10) {
-        try { await db.execAsync(`ALTER TABLE cafe_tasting_notes ADD COLUMN farm TEXT;`); } catch {}
-        try { await db.execAsync(`ALTER TABLE cafe_tasting_note_beans ADD COLUMN farm TEXT;`); } catch {}
-        try { await db.execAsync(`ALTER TABLE cafe_logs ADD COLUMN note_photos TEXT;`); } catch {}
+        try {
+          await db.execAsync(`ALTER TABLE cafe_tasting_notes ADD COLUMN farm TEXT;`);
+        } catch {}
+        try {
+          await db.execAsync(`ALTER TABLE cafe_tasting_note_beans ADD COLUMN farm TEXT;`);
+        } catch {}
+        try {
+          await db.execAsync(`ALTER TABLE cafe_logs ADD COLUMN note_photos TEXT;`);
+        } catch {}
+        version = 11;
+      }
+      if (version === 11) {
+        try {
+          await db.execAsync(`ALTER TABLE cafe_menu_items ADD COLUMN is_coffee INTEGER;`);
+        } catch {}
+        version = 12;
+      }
+      if (version === 12) {
+        // v11 마이그레이션이 누락됐을 경우 재시도
+        try {
+          await db.execAsync(`ALTER TABLE cafe_menu_items ADD COLUMN is_coffee INTEGER;`);
+        } catch {}
       }
     }
 

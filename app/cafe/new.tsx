@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { Image } from 'expo-image';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { useRouter } from 'expo-router';
+import { useRouter, useNavigation } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -23,7 +23,7 @@ import { createMenuItem } from '@/src/db/queries/cafeMenuItems';
 import { upsertTastingNote } from '@/src/db/queries/tastingNotes';
 import { AddressSearchModal } from '@/src/components/AddressSearchModal';
 import { detectAndCrop } from '@/modules/document-scanner';
-import { analyzeCardImages } from '@/src/services/visionLLM';
+import { analyzeCardImages, analyzeMenuPhoto } from '@/src/services/visionLLM';
 import { NoteInput } from '@/src/components/cafe/NoteInput';
 import { TagsInput } from '@/src/components/cafe/TagsInput';
 import { MyNotesInput } from '@/src/components/cafe/MyNotesInput';
@@ -45,13 +45,18 @@ const STEP_LABELS = ['사진', '카페', '정보', '메모'];
 
 export default function NewCafeLogScreen() {
   const router = useRouter();
+  const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const progressAnim = useRef(new Animated.Value(1 / TOTAL_STEPS)).current;
 
   const [step, setStep] = useState(1);
 
   // Step 1 - 사진
+  const [photoMode, setPhotoMode] = useState<'handdip' | 'menu'>('handdip');
   const [notePhotos, setNotePhotos] = useState<string[]>([]);
+  const [menuPhoto, setMenuPhoto] = useState<string | null>(null);
+  const [menuNotDrink, setMenuNotDrink] = useState(false);
+  const [isCoffeeDrink, setIsCoffeeDrink] = useState(true);
   const [cafePhotos, setCafePhotos] = useState<string[]>([]);
   const [scanningNote, setScanningNote] = useState(false);
   const [scanningCafe, setScanningCafe] = useState(false);
@@ -91,6 +96,15 @@ export default function NewCafeLogScreen() {
 
   const visitedAt = date.toISOString().slice(0, 10);
 
+  // 분석 중 화면 이탈 차단 (iOS 스와이프, Android 뒤로가기)
+  useEffect(() => {
+    if (!analyzing) return;
+    const unsub = navigation.addListener('beforeRemove', (e: { preventDefault: () => void }) => {
+      e.preventDefault();
+    });
+    return unsub;
+  }, [analyzing, navigation]);
+
   useEffect(() => {
     Animated.timing(progressAnim, {
       toValue: step / TOTAL_STEPS,
@@ -125,10 +139,28 @@ export default function NewCafeLogScreen() {
 
   // Step 3 진입 시 Gemini 분석 자동 실행
   useEffect(() => {
-    if (step === 3 && !analyzed && notePhotos.length > 0) {
-      runAnalysis();
-    }
+    if (step !== 3 || analyzed) return;
+    if (photoMode === 'handdip' && notePhotos.length > 0) runAnalysis();
+    else if (photoMode === 'menu' && menuPhoto) runMenuAnalysis();
   }, [step]);
+
+  async function runMenuAnalysis() {
+    if (!menuPhoto) return;
+    setAnalyzing(true);
+    setMenuNotDrink(false);
+    try {
+      const result = await analyzeMenuPhoto(menuPhoto);
+      if (!result || !result.is_drink) {
+        setMenuNotDrink(true);
+      } else {
+        if (result.menu_name) setMenuName(result.menu_name);
+        setIsCoffeeDrink(result.is_coffee);
+      }
+    } finally {
+      setAnalyzing(false);
+      setAnalyzed(true);
+    }
+  }
 
   async function runAnalysis() {
     setAnalyzing(true);
@@ -155,6 +187,7 @@ export default function NewCafeLogScreen() {
   }
 
   function goBack() {
+    if (analyzing) return;
     if (step > 1) setStep((s) => s - 1);
     else router.back();
   }
@@ -203,6 +236,53 @@ export default function NewCafeLogScreen() {
     setNotePhotos((prev) => [...prev, uri]);
     setAnalyzed(false);
     setScanningNote(false);
+  }
+
+  function switchPhotoMode(mode: 'handdip' | 'menu') {
+    if (mode === 'handdip') {
+      setMenuPhoto(null);
+      setMenuName('');
+    } else {
+      setNotePhotos([]);
+      setAnalyzed(false);
+    }
+    setPhotoMode(mode);
+  }
+
+  async function pickMenuPhoto() {
+    Alert.alert('메뉴 사진', undefined, [
+      { text: '카메라', onPress: pickMenuFromCamera },
+      { text: '갤러리', onPress: pickMenuFromLibrary },
+      { text: '취소', style: 'cancel' },
+    ]);
+  }
+
+  async function pickMenuFromCamera() {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('권한 필요', '카메라 권한이 필요해요.');
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({ quality: 1 });
+    if (!result.canceled) addMenuPhoto(result.assets[0].uri);
+  }
+
+  async function pickMenuFromLibrary() {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('권한 필요', '사진 접근 권한이 필요해요.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 1,
+    });
+    if (!result.canceled) addMenuPhoto(result.assets[0].uri);
+  }
+
+  async function addMenuPhoto(uri: string) {
+    setMenuPhoto(uri);
+    setAnalyzed(false);
   }
 
   async function pickCafePhoto() {
@@ -288,7 +368,10 @@ export default function NewCafeLogScreen() {
       const logId = await createCafeLog({
         cafe_name: selectedPlace.name,
         visited_at: visitedAt,
-        photos: cafePhotos.length > 0 ? JSON.stringify(cafePhotos) : undefined,
+        photos: (() => {
+          const all = [menuPhoto, ...cafePhotos].filter(Boolean) as string[];
+          return all.length > 0 ? JSON.stringify(all) : undefined;
+        })(),
         note_photos: notePhotos.length > 0 ? JSON.stringify(notePhotos) : undefined,
         address: selectedPlace.address || undefined,
         memo: memo.trim() || undefined,
@@ -313,7 +396,8 @@ export default function NewCafeLogScreen() {
       if (menuName.trim() || hasInfo) {
         const menuId = await createMenuItem({
           cafe_log_id: logId,
-          menu_name: menuName.trim() || (notePhotos.length > 0 ? '핸드드립' : '커피'),
+          menu_name: menuName.trim() || (photoMode === 'handdip' ? '핸드드립' : '커피'),
+          is_coffee: photoMode === 'menu' ? (isCoffeeDrink ? 1 : 0) : null,
         });
         if (menuId != null && hasInfo) {
           await upsertTastingNote({
@@ -403,12 +487,20 @@ export default function NewCafeLogScreen() {
         >
           {step === 1 && (
             <Step1
+              photoMode={photoMode}
+              onSwitchMode={switchPhotoMode}
               notePhotos={notePhotos}
+              menuPhoto={menuPhoto}
               cafePhotos={cafePhotos}
               scanningNote={scanningNote}
               scanningCafe={scanningCafe}
               onAddNotePhoto={pickNotePhoto}
               onRemoveNotePhoto={(i) => setNotePhotos((p) => p.filter((_, idx) => idx !== i))}
+              onAddMenuPhoto={pickMenuPhoto}
+              onRemoveMenuPhoto={() => {
+                setMenuPhoto(null);
+                setMenuName('');
+              }}
               onAddCafePhoto={pickCafePhoto}
               onRemoveCafePhoto={(i) => setCafePhotos((p) => p.filter((_, idx) => idx !== i))}
             />
@@ -435,7 +527,15 @@ export default function NewCafeLogScreen() {
             <Step3
               analyzing={analyzing}
               analyzed={analyzed}
-              onReanalyze={notePhotos.length > 0 ? runAnalysis : undefined}
+              menuNotDrink={menuNotDrink}
+              photoMode={photoMode}
+              onReanalyze={
+                photoMode === 'handdip' && notePhotos.length > 0
+                  ? runAnalysis
+                  : photoMode === 'menu' && menuPhoto
+                    ? runMenuAnalysis
+                    : undefined
+              }
               menuName={menuName}
               onMenuName={setMenuName}
               isBlend={isBlend}
@@ -452,6 +552,16 @@ export default function NewCafeLogScreen() {
               onRoastLevel={setRoastLevel}
               officialNotes={officialNotes}
               onOfficialNotes={setOfficialNotes}
+              beans={beans}
+              onBeans={setBeans}
+            />
+          )}
+          {step === 4 && (
+            <Step4
+              photoMode={photoMode}
+              isCoffeeDrink={isCoffeeDrink}
+              memo={memo}
+              onMemo={setMemo}
               myNotes={myNotes}
               onMyNotes={setMyNotes}
               acidity={acidity}
@@ -462,11 +572,8 @@ export default function NewCafeLogScreen() {
               onRichness={setRichness}
               smoothness={smoothness}
               onSmoothness={setSmoothness}
-              beans={beans}
-              onBeans={setBeans}
             />
           )}
-          {step === 4 && <Step4 memo={memo} onMemo={setMemo} />}
         </ScrollView>
 
         {/* 하단 버튼 */}
@@ -578,27 +685,40 @@ export default function NewCafeLogScreen() {
           maximumDate={new Date()}
         />
       )}
+
+      {/* 분석 오버레이 */}
+      <AnalysisOverlay visible={analyzing} mode={photoMode} />
     </View>
   );
 }
 
 // ── Step 1: 사진 ──────────────────────────────────────
 function Step1({
+  photoMode,
+  onSwitchMode,
   notePhotos,
+  menuPhoto,
   cafePhotos,
   scanningNote,
   scanningCafe,
   onAddNotePhoto,
   onRemoveNotePhoto,
+  onAddMenuPhoto,
+  onRemoveMenuPhoto,
   onAddCafePhoto,
   onRemoveCafePhoto,
 }: {
+  photoMode: 'handdip' | 'menu';
+  onSwitchMode: (mode: 'handdip' | 'menu') => void;
   notePhotos: string[];
+  menuPhoto: string | null;
   cafePhotos: string[];
   scanningNote: boolean;
   scanningCafe: boolean;
   onAddNotePhoto: () => void;
   onRemoveNotePhoto: (i: number) => void;
+  onAddMenuPhoto: () => void;
+  onRemoveMenuPhoto: () => void;
   onAddCafePhoto: () => void;
   onRemoveCafePhoto: (i: number) => void;
 }) {
@@ -606,90 +726,188 @@ function Step1({
 
   return (
     <View style={{ gap: 24 }}>
-      {/* 노트 사진 */}
-      <Section label="노트 사진" hint="원두 카드 앞면/뒷면 · 최대 2장 · 선택">
-        <View style={{ flexDirection: 'row', gap: 12 }}>
-          {noteSlots.map((i) => {
-            const uri = notePhotos[i];
-            if (uri) {
-              return (
-                <View key={i} style={{ position: 'relative' }}>
-                  <Image
-                    source={{ uri }}
-                    style={{ width: 120, height: 160, borderRadius: 12 }}
-                    contentFit="cover"
-                  />
-                  <TouchableOpacity
-                    style={{
-                      position: 'absolute',
-                      top: 6,
-                      right: 6,
-                      backgroundColor: 'rgba(0,0,0,0.52)',
-                      borderRadius: 12,
-                      padding: 2,
-                    }}
-                    onPress={() => onRemoveNotePhoto(i)}
-                  >
-                    <Ionicons name="close" size={15} color="#fff" />
-                  </TouchableOpacity>
-                  <View
-                    style={{
-                      position: 'absolute',
-                      bottom: 6,
-                      left: 6,
-                      backgroundColor: 'rgba(0,0,0,0.45)',
-                      borderRadius: 6,
-                      paddingHorizontal: 6,
-                      paddingVertical: 2,
-                    }}
-                  >
-                    <Text style={{ color: '#fff', fontSize: 10, fontWeight: '600' }}>
-                      {i === 0 ? '앞면' : '뒷면'}
-                    </Text>
-                  </View>
-                </View>
-              );
-            }
-            if (i === 0 || notePhotos.length >= 1) {
-              return (
-                <TouchableOpacity
-                  key={i}
-                  onPress={onAddNotePhoto}
-                  disabled={scanningNote}
-                  style={{
-                    width: 120,
-                    height: 160,
-                    borderRadius: 12,
-                    backgroundColor: '#F0EBE5',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 6,
-                    borderWidth: 1.5,
-                    borderColor: '#D6C4B0',
-                    borderStyle: 'dashed',
-                    opacity: scanningNote ? 0.5 : 1,
-                  }}
-                >
-                  {scanningNote && i === notePhotos.length ? (
-                    <ActivityIndicator color="#8B5E3C" />
-                  ) : (
-                    <>
-                      <Ionicons name="add" size={26} color="#8B5E3C" />
-                      <Text style={{ fontSize: 12, color: '#8B5E3C', fontWeight: '600' }}>
+      {/* 모드 토글 */}
+      <View
+        style={{
+          flexDirection: 'row',
+          borderRadius: 10,
+          borderWidth: 1,
+          borderColor: '#E5DDD5',
+          overflow: 'hidden',
+        }}
+      >
+        {(['handdip', 'menu'] as const).map((mode) => (
+          <TouchableOpacity
+            key={mode}
+            style={{
+              flex: 1,
+              paddingVertical: 11,
+              alignItems: 'center',
+              backgroundColor: photoMode === mode ? '#5C3D2E' : '#fff',
+            }}
+            onPress={() => onSwitchMode(mode)}
+          >
+            <Text
+              style={{
+                fontSize: 13,
+                fontWeight: '600',
+                color: photoMode === mode ? '#fff' : '#999',
+              }}
+            >
+              {mode === 'handdip' ? '핸드드립 / 스페셜티' : '일반 메뉴'}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {/* 노트 사진 (핸드드립 모드) */}
+      {photoMode === 'handdip' && (
+        <Section label="노트 사진" hint="원두 카드 앞면/뒷면 · 최대 2장 · 선택">
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+            {noteSlots.map((i) => {
+              const uri = notePhotos[i];
+              if (uri) {
+                return (
+                  <View key={i} style={{ position: 'relative' }}>
+                    <Image
+                      source={{ uri }}
+                      style={{ width: 120, height: 160, borderRadius: 12 }}
+                      contentFit="cover"
+                    />
+                    <TouchableOpacity
+                      style={{
+                        position: 'absolute',
+                        top: 6,
+                        right: 6,
+                        backgroundColor: 'rgba(0,0,0,0.52)',
+                        borderRadius: 12,
+                        padding: 2,
+                      }}
+                      onPress={() => onRemoveNotePhoto(i)}
+                    >
+                      <Ionicons name="close" size={15} color="#fff" />
+                    </TouchableOpacity>
+                    <View
+                      style={{
+                        position: 'absolute',
+                        bottom: 6,
+                        left: 6,
+                        backgroundColor: 'rgba(0,0,0,0.45)',
+                        borderRadius: 6,
+                        paddingHorizontal: 6,
+                        paddingVertical: 2,
+                      }}
+                    >
+                      <Text style={{ color: '#fff', fontSize: 10, fontWeight: '600' }}>
                         {i === 0 ? '앞면' : '뒷면'}
                       </Text>
-                    </>
-                  )}
-                </TouchableOpacity>
-              );
-            }
-            return null;
-          })}
-        </View>
-      </Section>
+                    </View>
+                  </View>
+                );
+              }
+              if (i === 0 || notePhotos.length >= 1) {
+                return (
+                  <TouchableOpacity
+                    key={i}
+                    onPress={onAddNotePhoto}
+                    disabled={scanningNote}
+                    style={{
+                      width: 120,
+                      height: 160,
+                      borderRadius: 12,
+                      backgroundColor: '#F0EBE5',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 6,
+                      borderWidth: 1.5,
+                      borderColor: '#D6C4B0',
+                      borderStyle: 'dashed',
+                      opacity: scanningNote ? 0.5 : 1,
+                    }}
+                  >
+                    {scanningNote && i === notePhotos.length ? (
+                      <ActivityIndicator color="#8B5E3C" />
+                    ) : (
+                      <>
+                        <Ionicons name="add" size={26} color="#8B5E3C" />
+                        <Text style={{ fontSize: 12, color: '#8B5E3C', fontWeight: '600' }}>
+                          {i === 0 ? '앞면' : '뒷면'}
+                        </Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                );
+              }
+              return null;
+            })}
+          </View>
+        </Section>
+      )}
 
-      {/* 카페/메뉴 사진 */}
-      <Section label="카페 · 메뉴 사진" hint={`최대 10장 · 선택 (${cafePhotos.length}/10)`}>
+      {/* 메뉴 사진 (일반 메뉴 모드) */}
+      {photoMode === 'menu' && (
+        <Section label="메뉴 사진" hint="음료 사진 · 1장 · 선택 · 메뉴명 자동 인식">
+          {menuPhoto ? (
+            <View style={{ position: 'relative', alignSelf: 'flex-start' }}>
+              <Image
+                source={{ uri: menuPhoto }}
+                style={{ width: 120, height: 160, borderRadius: 12 }}
+                contentFit="cover"
+              />
+              <TouchableOpacity
+                style={{
+                  position: 'absolute',
+                  top: 6,
+                  right: 6,
+                  backgroundColor: 'rgba(0,0,0,0.52)',
+                  borderRadius: 12,
+                  padding: 2,
+                }}
+                onPress={onRemoveMenuPhoto}
+              >
+                <Ionicons name="close" size={15} color="#fff" />
+              </TouchableOpacity>
+              <View
+                style={{
+                  position: 'absolute',
+                  bottom: 6,
+                  left: 6,
+                  backgroundColor: 'rgba(92,61,46,0.85)',
+                  borderRadius: 6,
+                  paddingHorizontal: 6,
+                  paddingVertical: 2,
+                }}
+              >
+                <Text style={{ color: '#fff', fontSize: 10, fontWeight: '600' }}>메뉴</Text>
+              </View>
+            </View>
+          ) : (
+            <TouchableOpacity
+              onPress={onAddMenuPhoto}
+              style={{
+                width: 120,
+                height: 160,
+                borderRadius: 12,
+                backgroundColor: '#F0EBE5',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 6,
+                borderWidth: 1.5,
+                borderColor: '#D6C4B0',
+                borderStyle: 'dashed',
+              }}
+            >
+              <>
+                <Ionicons name="cafe-outline" size={26} color="#8B5E3C" />
+                <Text style={{ fontSize: 12, color: '#8B5E3C', fontWeight: '600' }}>메뉴 사진</Text>
+              </>
+            </TouchableOpacity>
+          )}
+        </Section>
+      )}
+
+      {/* 카페 사진 */}
+      <Section label="카페 사진" hint={`최대 10장 · 선택 (${cafePhotos.length}/10)`}>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -955,7 +1173,9 @@ function Step2({
 // ── Step 3: 커피 정보 ─────────────────────────────────
 function Step3({
   analyzing,
+  menuNotDrink,
   analyzed,
+  photoMode,
   onReanalyze,
   menuName,
   onMenuName,
@@ -973,21 +1193,13 @@ function Step3({
   onRoastLevel,
   officialNotes,
   onOfficialNotes,
-  myNotes,
-  onMyNotes,
-  acidity,
-  onAcidity,
-  nuttiness,
-  onNuttiness,
-  richness,
-  onRichness,
-  smoothness,
-  onSmoothness,
   beans,
   onBeans,
 }: {
   analyzing: boolean;
+  menuNotDrink: boolean;
   analyzed: boolean;
+  photoMode: 'handdip' | 'menu';
   onReanalyze?: () => void;
   menuName: string;
   onMenuName: (v: string) => void;
@@ -1005,40 +1217,37 @@ function Step3({
   onRoastLevel: (v: string) => void;
   officialNotes: string[];
   onOfficialNotes: (v: string[]) => void;
-  myNotes: string[];
-  onMyNotes: (v: string[]) => void;
-  acidity?: number;
-  onAcidity: (v?: number) => void;
-  nuttiness?: number;
-  onNuttiness: (v?: number) => void;
-  richness?: number;
-  onRichness: (v?: number) => void;
-  smoothness?: number;
-  onSmoothness: (v?: number) => void;
   beans: HanddripNoteBean[];
   onBeans: (v: HanddripNoteBean[]) => void;
 }) {
   return (
     <View style={{ gap: 20 }}>
       {/* 분석 상태 배너 */}
-      {analyzing && (
+      {analyzed && !analyzing && menuNotDrink && (
         <View
           style={{
             flexDirection: 'row',
             alignItems: 'center',
-            gap: 10,
-            padding: 14,
-            backgroundColor: '#F0EBE5',
+            justifyContent: 'space-between',
+            padding: 12,
+            backgroundColor: '#FFF0F0',
             borderRadius: 12,
           }}
         >
-          <ActivityIndicator size="small" color="#8B5E3C" />
-          <Text style={{ fontSize: 14, color: '#8B5E3C', fontWeight: '500' }}>
-            노트 사진 분석 중...
-          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
+            <Ionicons name="warning-outline" size={15} color="#c00" />
+            <Text style={{ fontSize: 13, color: '#c00', fontWeight: '500', flex: 1 }}>
+              카페 음료 사진이 아닌 것 같아요. 이전 단계에서 사진을 변경해주세요.
+            </Text>
+          </View>
+          {onReanalyze && (
+            <TouchableOpacity onPress={onReanalyze} style={{ marginLeft: 8 }}>
+              <Text style={{ fontSize: 12, color: '#c00', fontWeight: '600' }}>재분석</Text>
+            </TouchableOpacity>
+          )}
         </View>
       )}
-      {analyzed && !analyzing && onReanalyze && (
+      {analyzed && !analyzing && !menuNotDrink && onReanalyze && (
         <View
           style={{
             flexDirection: 'row',
@@ -1064,124 +1273,176 @@ function Step3({
       {/* 메뉴명 */}
       <NoteInput label="메뉴명" value={menuName} onChange={onMenuName} />
 
-      {/* 싱글/블랜드 토글 */}
-      <View>
-        <Text style={{ fontSize: 13, color: '#666', marginBottom: 8 }}>원두 종류</Text>
-        <View
-          style={{
-            flexDirection: 'row',
-            borderRadius: 10,
-            borderWidth: 1,
-            borderColor: '#E5DDD5',
-            overflow: 'hidden',
-          }}
-        >
-          <TouchableOpacity
-            style={{
-              flex: 1,
-              paddingVertical: 10,
-              alignItems: 'center',
-              backgroundColor: isBlend === 0 ? '#5C3D2E' : '#fff',
-            }}
-            onPress={() => onIsBlend(0)}
-          >
-            <Text
-              style={{ fontSize: 13, fontWeight: '600', color: isBlend === 0 ? '#fff' : '#999' }}
+      {/* 핸드드립 전용: 원두 정보 */}
+      {photoMode === 'handdip' && (
+        <>
+          <View>
+            <Text style={{ fontSize: 13, color: '#666', marginBottom: 8 }}>원두 종류</Text>
+            <View
+              style={{
+                flexDirection: 'row',
+                borderRadius: 10,
+                borderWidth: 1,
+                borderColor: '#E5DDD5',
+                overflow: 'hidden',
+              }}
             >
-              싱글 오리진
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={{
-              flex: 1,
-              paddingVertical: 10,
-              alignItems: 'center',
-              backgroundColor: isBlend === 1 ? '#5C3D2E' : '#fff',
-            }}
-            onPress={() => onIsBlend(1)}
-          >
-            <Text
-              style={{ fontSize: 13, fontWeight: '600', color: isBlend === 1 ? '#fff' : '#999' }}
-            >
-              블랜드
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+              <TouchableOpacity
+                style={{
+                  flex: 1,
+                  paddingVertical: 10,
+                  alignItems: 'center',
+                  backgroundColor: isBlend === 0 ? '#5C3D2E' : '#fff',
+                }}
+                onPress={() => onIsBlend(0)}
+              >
+                <Text
+                  style={{
+                    fontSize: 13,
+                    fontWeight: '600',
+                    color: isBlend === 0 ? '#fff' : '#999',
+                  }}
+                >
+                  싱글 오리진
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={{
+                  flex: 1,
+                  paddingVertical: 10,
+                  alignItems: 'center',
+                  backgroundColor: isBlend === 1 ? '#5C3D2E' : '#fff',
+                }}
+                onPress={() => onIsBlend(1)}
+              >
+                <Text
+                  style={{
+                    fontSize: 13,
+                    fontWeight: '600',
+                    color: isBlend === 1 ? '#fff' : '#999',
+                  }}
+                >
+                  블랜드
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
 
-      {/* 원두 정보 */}
-      {isBlend === 1 ? (
-        <View style={{ gap: 12 }}>
-          {beans.map((bean, idx) => (
-            <BeanEditor
-              key={idx}
-              bean={bean}
-              index={idx}
-              onChange={(b) => onBeans(beans.map((x, i) => (i === idx ? b : x)))}
-              onRemove={() => onBeans(beans.filter((_, i) => i !== idx))}
-            />
-          ))}
-          <TouchableOpacity
-            style={{
-              borderWidth: 1,
-              borderStyle: 'dashed',
-              borderColor: '#C5B8AE',
-              borderRadius: 10,
-              paddingVertical: 12,
-              alignItems: 'center',
-            }}
-            onPress={() => onBeans([...beans, {}])}
-          >
-            <Text style={{ fontSize: 13, color: '#999' }}>+ 원두 추가</Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <View style={{ gap: 14 }}>
-          <NoteInput label="원산지" value={origin} onChange={onOrigin} />
-          <NoteInput label="농장" value={farm} onChange={onFarm} />
-          <NoteInput label="품종" value={variety} onChange={onVariety} />
-          <NoteInput label="가공법" value={process} onChange={onProcess} />
-        </View>
+          {isBlend === 1 ? (
+            <View style={{ gap: 12 }}>
+              {beans.map((bean, idx) => (
+                <BeanEditor
+                  key={idx}
+                  bean={bean}
+                  index={idx}
+                  onChange={(b) => onBeans(beans.map((x, i) => (i === idx ? b : x)))}
+                  onRemove={() => onBeans(beans.filter((_, i) => i !== idx))}
+                />
+              ))}
+              <TouchableOpacity
+                style={{
+                  borderWidth: 1,
+                  borderStyle: 'dashed',
+                  borderColor: '#C5B8AE',
+                  borderRadius: 10,
+                  paddingVertical: 12,
+                  alignItems: 'center',
+                }}
+                onPress={() => onBeans([...beans, {}])}
+              >
+                <Text style={{ fontSize: 13, color: '#999' }}>+ 원두 추가</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={{ gap: 14 }}>
+              <NoteInput label="원산지" value={origin} onChange={onOrigin} />
+              <NoteInput label="농장" value={farm} onChange={onFarm} />
+              <NoteInput label="품종" value={variety} onChange={onVariety} />
+              <NoteInput label="가공법" value={process} onChange={onProcess} />
+            </View>
+          )}
+
+          <NoteInput label="로스팅" value={roastLevel} onChange={onRoastLevel} />
+          <TagsInput
+            label="공식 노트 (쉼표 구분)"
+            value={officialNotes}
+            onChange={onOfficialNotes}
+          />
+        </>
       )}
-
-      <NoteInput label="로스팅" value={roastLevel} onChange={onRoastLevel} />
-      <TagsInput label="공식 노트 (쉼표 구분)" value={officialNotes} onChange={onOfficialNotes} />
-      <MyNotesInput value={myNotes} onChange={onMyNotes} />
-
-      <View style={{ gap: 4 }}>
-        <SliderRow label="산미" value={acidity} onChange={onAcidity} />
-        <SliderRow label="고소함" value={nuttiness} onChange={onNuttiness} />
-        <SliderRow label="진함" value={richness} onChange={onRichness} />
-        <SliderRow label="부드러움" value={smoothness} onChange={onSmoothness} />
-      </View>
     </View>
   );
 }
 
-// ── Step 4: 메모 ──────────────────────────────────────
-function Step4({ memo, onMemo }: { memo: string; onMemo: (v: string) => void }) {
+// ── Step 4: 내 노트 + 메모 ────────────────────────────
+function Step4({
+  photoMode,
+  isCoffeeDrink,
+  memo,
+  onMemo,
+  myNotes,
+  onMyNotes,
+  acidity,
+  onAcidity,
+  nuttiness,
+  onNuttiness,
+  richness,
+  onRichness,
+  smoothness,
+  onSmoothness,
+}: {
+  photoMode: 'handdip' | 'menu';
+  isCoffeeDrink: boolean;
+  memo: string;
+  onMemo: (v: string) => void;
+  myNotes: string[];
+  onMyNotes: (v: string[]) => void;
+  acidity?: number;
+  onAcidity: (v?: number) => void;
+  nuttiness?: number;
+  onNuttiness: (v?: number) => void;
+  richness?: number;
+  onRichness: (v?: number) => void;
+  smoothness?: number;
+  onSmoothness: (v?: number) => void;
+}) {
+  const showSliders = photoMode === 'handdip' || isCoffeeDrink;
+
   return (
-    <View style={{ gap: 8 }}>
-      <Text style={{ fontSize: 13, color: '#666' }}>한 줄 감상</Text>
-      <TextInput
-        style={{
-          backgroundColor: '#fff',
-          borderRadius: 12,
-          borderWidth: 1,
-          borderColor: '#E5DDD5',
-          padding: 14,
-          fontSize: 15,
-          color: '#222',
-          minHeight: 120,
-          textAlignVertical: 'top',
-        }}
-        value={memo}
-        onChangeText={onMemo}
-        placeholder="오늘의 커피 한 줄 감상..."
-        placeholderTextColor="#C5B8AE"
-        multiline
-        numberOfLines={5}
-      />
+    <View style={{ gap: 20 }}>
+      {photoMode === 'handdip' && <MyNotesInput value={myNotes} onChange={onMyNotes} />}
+
+      {showSliders && (
+        <View style={{ gap: 4 }}>
+          <SliderRow label="산미" value={acidity} onChange={onAcidity} />
+          <SliderRow label="고소함" value={nuttiness} onChange={onNuttiness} />
+          <SliderRow label="진함" value={richness} onChange={onRichness} />
+          <SliderRow label="부드러움" value={smoothness} onChange={onSmoothness} />
+        </View>
+      )}
+
+      <View style={{ gap: 8 }}>
+        <Text style={{ fontSize: 13, color: '#666' }}>한 줄 감상</Text>
+        <TextInput
+          style={{
+            backgroundColor: '#fff',
+            borderRadius: 12,
+            borderWidth: 1,
+            borderColor: '#E5DDD5',
+            padding: 14,
+            fontSize: 15,
+            color: '#222',
+            minHeight: 120,
+            textAlignVertical: 'top',
+          }}
+          value={memo}
+          onChangeText={onMemo}
+          placeholder="오늘의 커피 한 줄 감상..."
+          placeholderTextColor="#C5B8AE"
+          multiline
+          numberOfLines={5}
+        />
+      </View>
     </View>
   );
 }
@@ -1243,6 +1504,73 @@ function BeanEditor({
           placeholderTextColor="#C5B8AE"
         />
       </View>
+    </View>
+  );
+}
+
+// ── 분석 오버레이 ─────────────────────────────────────
+const HANDDIP_MESSAGES = [
+  '원두 카드 스캔 중...',
+  '산지와 품종 파악 중...',
+  '가공법과 로스팅 확인 중...',
+  '공식 노트 정리 중...',
+  '거의 다 됐어요...',
+];
+const MENU_MESSAGES = [
+  '메뉴 사진 분석 중...',
+  '음료 종류 확인 중...',
+  '메뉴명 추출 중...',
+  '거의 다 됐어요...',
+];
+
+function AnalysisOverlay({ visible, mode }: { visible: boolean; mode: 'handdip' | 'menu' }) {
+  const messages = mode === 'handdip' ? HANDDIP_MESSAGES : MENU_MESSAGES;
+  const [msgIdx, setMsgIdx] = useState(0);
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    if (!visible) {
+      setMsgIdx(0);
+      fadeAnim.setValue(1);
+      return;
+    }
+    const interval = setInterval(() => {
+      Animated.timing(fadeAnim, { toValue: 0, duration: 300, useNativeDriver: true }).start(() => {
+        setMsgIdx((i) => (i + 1) % messages.length);
+        Animated.timing(fadeAnim, { toValue: 1, duration: 300, useNativeDriver: true }).start();
+      });
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [visible]);
+
+  if (!visible) return null;
+
+  return (
+    <View
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(247, 243, 239, 0.97)',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 28,
+      }}
+    >
+      <ActivityIndicator size="large" color="#5C3D2E" />
+      <Animated.Text
+        style={{
+          opacity: fadeAnim,
+          fontSize: 16,
+          color: '#5C3D2E',
+          fontWeight: '600',
+          textAlign: 'center',
+        }}
+      >
+        {messages[msgIdx]}
+      </Animated.Text>
     </View>
   );
 }

@@ -4,8 +4,8 @@ export interface CafeLog {
   id?: number;
   cafe_name: string;
   visited_at: string;
-  photos?: string;       // JSON array of cafe/menu photo URIs
-  note_photos?: string;  // JSON array of note card photo URIs
+  photos?: string; // JSON array of cafe/menu photo URIs
+  note_photos?: string; // JSON array of note card photo URIs
   address?: string;
   memo?: string;
   is_favorite?: number;
@@ -19,6 +19,7 @@ export interface CafeMenuItem {
   id?: number;
   cafe_log_id: number;
   menu_name: string;
+  is_coffee?: number | null;
   created_at?: string;
 }
 
@@ -36,10 +37,10 @@ export interface HanddripNote {
   id?: number;
   cafe_menu_item_id: number;
   is_blend?: number; // 0 = 싱글 오리진, 1 = 블랜드
-  origin?: string;   // 싱글 오리진 전용
-  farm?: string;     // 싱글 오리진 전용
-  variety?: string;  // 싱글 오리진 전용
-  process?: string;  // 싱글 오리진 전용
+  origin?: string; // 싱글 오리진 전용
+  farm?: string; // 싱글 오리진 전용
+  variety?: string; // 싱글 오리진 전용
+  process?: string; // 싱글 오리진 전용
   roast_level?: string;
   official_notes?: string[];
   my_notes?: string[];
