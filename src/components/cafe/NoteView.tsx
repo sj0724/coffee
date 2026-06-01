@@ -11,6 +11,32 @@ function InfoRow({ label, value }: { label: string; value: string }) {
   );
 }
 
+function NoteTagRow({
+  label,
+  tags,
+  color,
+}: {
+  label: string;
+  tags: string[];
+  color: 'blue' | 'coffee';
+}) {
+  const badgeStyle =
+    color === 'blue' ? 'bg-blue-50 border border-blue-200' : 'bg-amber-50 border border-amber-200';
+  const textStyle = color === 'blue' ? 'text-blue-700' : 'text-amber-800';
+  return (
+    <View className="flex-row gap-2">
+      <Text className="text-[13px] text-gray-400 w-[60px] mt-0.5">{label}</Text>
+      <View className="flex-row flex-wrap flex-1 gap-1">
+        {tags.map((tag, i) => (
+          <View key={i} className={`px-2 py-0.5 rounded-full ${badgeStyle}`}>
+            <Text className={`text-[12px] ${textStyle}`}>{tag}</Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
 function BeanRow({ bean, index }: { bean: HanddripNoteBean; index: number }) {
   const parts = [bean.origin, bean.variety, bean.process].filter(Boolean);
   if (!parts.length) return null;
@@ -23,7 +49,7 @@ export function NoteView({ note }: { note: HanddripNote }) {
 
   return (
     <View className="gap-1.5">
-      <View className="mt-2 gap-1.5">
+      <View className="gap-3 mt-2">
         {isBlend ? (
           <>
             <View className="flex-row gap-2 mb-0.5">
@@ -43,10 +69,10 @@ export function NoteView({ note }: { note: HanddripNote }) {
         )}
         {note.roast_level && <InfoRow label="로스팅" value={note.roast_level} />}
         {(note.official_notes?.length ?? 0) > 0 && (
-          <InfoRow label="공식 노트" value={note.official_notes!.join(', ')} />
+          <NoteTagRow label="공식 노트" tags={note.official_notes!} color="blue" />
         )}
         {(note.my_notes?.length ?? 0) > 0 && (
-          <InfoRow label="내 노트" value={note.my_notes!.join(', ')} />
+          <NoteTagRow label="내 노트" tags={note.my_notes!} color="coffee" />
         )}
       </View>
       <View className="gap-2 mt-2">

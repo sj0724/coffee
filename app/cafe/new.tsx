@@ -432,14 +432,14 @@ export default function NewCafeLogScreen() {
 
   // ── 렌더 ──────────────────────────────────────────────
   return (
-    <View style={{ flex: 1, backgroundColor: '#F7F3EF', paddingTop: insets.top }}>
+    <View style={{ flex: 1, backgroundColor: '#fff', paddingTop: insets.top }}>
       {/* 헤더 */}
       <View
         style={{
           flexDirection: 'row',
           alignItems: 'center',
           paddingHorizontal: 16,
-          paddingVertical: 12,
+          paddingBottom: 12,
         }}
       >
         <TouchableOpacity onPress={goBack} style={{ padding: 4, marginRight: 8 }}>
@@ -457,7 +457,7 @@ export default function NewCafeLogScreen() {
       <View
         style={{
           height: 3,
-          backgroundColor: '#E5DDD5',
+          backgroundColor: '#E5E5E5',
           marginHorizontal: 16,
           borderRadius: 2,
           marginVertical: 16,
@@ -466,7 +466,7 @@ export default function NewCafeLogScreen() {
         <Animated.View
           style={{
             height: 3,
-            backgroundColor: '#5C3D2E',
+            backgroundColor: '#000',
             borderRadius: 2,
             width: progressAnim.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }),
           }}
@@ -582,9 +582,7 @@ export default function NewCafeLogScreen() {
             paddingHorizontal: 20,
             paddingBottom: insets.bottom + 16,
             paddingTop: 12,
-            borderTopWidth: 1,
-            borderTopColor: '#EDE8E3',
-            backgroundColor: '#F7F3EF',
+            backgroundColor: '#fff',
           }}
         >
           {step < TOTAL_STEPS ? (
@@ -592,7 +590,7 @@ export default function NewCafeLogScreen() {
               onPress={goNext}
               disabled={step === 2 && !selectedPlace}
               style={{
-                backgroundColor: step === 2 && !selectedPlace ? '#C5B8AE' : '#5C3D2E',
+                backgroundColor: step === 2 && !selectedPlace ? '#C0C0C0' : '#111',
                 borderRadius: 14,
                 paddingVertical: 15,
                 alignItems: 'center',
@@ -605,7 +603,7 @@ export default function NewCafeLogScreen() {
               onPress={handleSave}
               disabled={saving || !selectedPlace}
               style={{
-                backgroundColor: saving || !selectedPlace ? '#C5B8AE' : '#5C3D2E',
+                backgroundColor: saving || !selectedPlace ? '#C0C0C0' : '#111',
                 borderRadius: 14,
                 paddingVertical: 15,
                 alignItems: 'center',
@@ -657,13 +655,13 @@ export default function NewCafeLogScreen() {
                 onChange={onDateChange}
                 maximumDate={new Date()}
                 locale="ko-KR"
-                accentColor="#5C3D2E"
+                accentColor="#000"
                 style={{ width: '100%' }}
               />
               <TouchableOpacity
                 style={{
                   marginTop: 8,
-                  backgroundColor: '#5C3D2E',
+                  backgroundColor: '#111',
                   borderRadius: 10,
                   paddingVertical: 10,
                   paddingHorizontal: 32,
@@ -732,7 +730,7 @@ function Step1({
           flexDirection: 'row',
           borderRadius: 10,
           borderWidth: 1,
-          borderColor: '#E5DDD5',
+          borderColor: '#E0E0E0',
           overflow: 'hidden',
         }}
       >
@@ -743,7 +741,7 @@ function Step1({
               flex: 1,
               paddingVertical: 11,
               alignItems: 'center',
-              backgroundColor: photoMode === mode ? '#5C3D2E' : '#fff',
+              backgroundColor: photoMode === mode ? '#111' : '#fff',
             }}
             onPress={() => onSwitchMode(mode)}
           >
@@ -815,22 +813,22 @@ function Step1({
                       width: 120,
                       height: 160,
                       borderRadius: 12,
-                      backgroundColor: '#F0EBE5',
+                      backgroundColor: '#F5F5F5',
                       alignItems: 'center',
                       justifyContent: 'center',
                       gap: 6,
                       borderWidth: 1.5,
-                      borderColor: '#D6C4B0',
+                      borderColor: '#D0D0D0',
                       borderStyle: 'dashed',
                       opacity: scanningNote ? 0.5 : 1,
                     }}
                   >
                     {scanningNote && i === notePhotos.length ? (
-                      <ActivityIndicator color="#8B5E3C" />
+                      <ActivityIndicator color="#555" />
                     ) : (
                       <>
-                        <Ionicons name="add" size={26} color="#8B5E3C" />
-                        <Text style={{ fontSize: 12, color: '#8B5E3C', fontWeight: '600' }}>
+                        <Ionicons name="add" size={26} color="#555" />
+                        <Text style={{ fontSize: 12, color: '#555', fontWeight: '600' }}>
                           {i === 0 ? '앞면' : '뒷면'}
                         </Text>
                       </>
@@ -888,18 +886,18 @@ function Step1({
                 width: 120,
                 height: 160,
                 borderRadius: 12,
-                backgroundColor: '#F0EBE5',
+                backgroundColor: '#F5F5F5',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: 6,
                 borderWidth: 1.5,
-                borderColor: '#D6C4B0',
+                borderColor: '#D0D0D0',
                 borderStyle: 'dashed',
               }}
             >
               <>
-                <Ionicons name="cafe-outline" size={26} color="#8B5E3C" />
-                <Text style={{ fontSize: 12, color: '#8B5E3C', fontWeight: '600' }}>메뉴 사진</Text>
+                <Ionicons name="cafe-outline" size={26} color="#555" />
+                <Text style={{ fontSize: 12, color: '#555', fontWeight: '600' }}>메뉴 사진</Text>
               </>
             </TouchableOpacity>
           )}
@@ -947,7 +945,7 @@ function Step1({
                 gap: 4,
               }}
             >
-              <ActivityIndicator color="#5C3D2E" />
+              <ActivityIndicator color="#111" />
               <Text style={{ fontSize: 10, color: '#888' }}>스캔 중</Text>
             </View>
           )}
@@ -958,17 +956,17 @@ function Step1({
                 width: 100,
                 height: 133,
                 borderRadius: 10,
-                backgroundColor: '#F0EBE5',
+                backgroundColor: '#F5F5F5',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: 6,
                 borderWidth: 1.5,
-                borderColor: '#D6C4B0',
+                borderColor: '#D0D0D0',
                 borderStyle: 'dashed',
               }}
             >
-              <Ionicons name="add" size={24} color="#5C3D2E" />
-              <Text style={{ fontSize: 11, color: '#5C3D2E', fontWeight: '600' }}>사진 추가</Text>
+              <Ionicons name="add" size={24} color="#111" />
+              <Text style={{ fontSize: 11, color: '#111', fontWeight: '600' }}>사진 추가</Text>
             </TouchableOpacity>
           )}
         </ScrollView>
@@ -1015,7 +1013,7 @@ function Step2({
               backgroundColor: '#fff',
               borderRadius: 12,
               borderWidth: 1.5,
-              borderColor: '#5C3D2E',
+              borderColor: '#111',
               padding: 14,
               gap: 4,
             }}
@@ -1044,7 +1042,7 @@ function Step2({
               onPress={onOpenSearch}
               style={{ marginTop: 6, alignSelf: 'flex-start' }}
             >
-              <Text style={{ fontSize: 12, color: '#5C3D2E', fontWeight: '600' }}>직접 검색</Text>
+              <Text style={{ fontSize: 12, color: '#111', fontWeight: '600' }}>직접 검색</Text>
             </TouchableOpacity>
           </View>
         ) : hasCoords ? (
@@ -1054,7 +1052,7 @@ function Step2({
               <View
                 style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 16 }}
               >
-                <ActivityIndicator size="small" color="#5C3D2E" />
+                <ActivityIndicator size="small" color="#111" />
                 <Text style={{ fontSize: 13, color: '#999' }}>
                   사진 위치로 근처 카페 검색 중...
                 </Text>
@@ -1064,8 +1062,8 @@ function Step2({
                 <View
                   style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 2 }}
                 >
-                  <Ionicons name="location" size={13} color="#5C3D2E" />
-                  <Text style={{ fontSize: 12, color: '#5C3D2E', fontWeight: '600' }}>
+                  <Ionicons name="location" size={13} color="#111" />
+                  <Text style={{ fontSize: 12, color: '#111', fontWeight: '600' }}>
                     반경 500m 근처 카페
                   </Text>
                 </View>
@@ -1077,7 +1075,7 @@ function Step2({
                       backgroundColor: '#fff',
                       borderRadius: 12,
                       borderWidth: 1,
-                      borderColor: '#E5DDD5',
+                      borderColor: '#E0E0E0',
                       padding: 14,
                     }}
                   >
@@ -1086,7 +1084,7 @@ function Step2({
                         {p.place_name}
                       </Text>
                       {p.distance ? (
-                        <Text style={{ fontSize: 12, color: '#5C3D2E', fontWeight: '500' }}>
+                        <Text style={{ fontSize: 12, color: '#111', fontWeight: '500' }}>
                           {formatDistance(p.distance)}
                         </Text>
                       ) : null}
@@ -1116,13 +1114,13 @@ function Step2({
                 paddingVertical: 12,
                 borderRadius: 10,
                 borderWidth: 1,
-                borderColor: '#D6C4B0',
+                borderColor: '#D0D0D0',
                 borderStyle: 'dashed',
                 marginTop: 4,
               }}
             >
-              <Ionicons name="search" size={15} color="#8B5E3C" />
-              <Text style={{ fontSize: 13, color: '#8B5E3C', fontWeight: '600' }}>직접 검색</Text>
+              <Ionicons name="search" size={15} color="#555" />
+              <Text style={{ fontSize: 13, color: '#555', fontWeight: '600' }}>직접 검색</Text>
             </TouchableOpacity>
           </View>
         ) : (
@@ -1138,12 +1136,12 @@ function Step2({
               backgroundColor: '#fff',
               borderRadius: 12,
               borderWidth: 1.5,
-              borderColor: '#D6C4B0',
+              borderColor: '#D0D0D0',
               borderStyle: 'dashed',
             }}
           >
-            <Ionicons name="search" size={18} color="#5C3D2E" />
-            <Text style={{ fontSize: 15, color: '#5C3D2E', fontWeight: '600' }}>카페 검색</Text>
+            <Ionicons name="search" size={18} color="#111" />
+            <Text style={{ fontSize: 15, color: '#111', fontWeight: '600' }}>카페 검색</Text>
           </TouchableOpacity>
         )}
       </Section>
@@ -1159,7 +1157,7 @@ function Step2({
             backgroundColor: '#fff',
             borderRadius: 12,
             borderWidth: 1,
-            borderColor: '#E5DDD5',
+            borderColor: '#E0E0E0',
           }}
         >
           <Text style={{ fontSize: 15, color: '#222' }}>{visitedAt}</Text>
@@ -1254,18 +1252,16 @@ function Step3({
             alignItems: 'center',
             justifyContent: 'space-between',
             padding: 12,
-            backgroundColor: '#F0EBE5',
+            backgroundColor: '#F5F5F5',
             borderRadius: 12,
           }}
         >
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <Ionicons name="sparkles-outline" size={15} color="#8B5E3C" />
-            <Text style={{ fontSize: 13, color: '#8B5E3C', fontWeight: '500' }}>
-              자동 분석 완료
-            </Text>
+            <Ionicons name="sparkles-outline" size={15} color="#555" />
+            <Text style={{ fontSize: 13, color: '#555', fontWeight: '500' }}>자동 분석 완료</Text>
           </View>
           <TouchableOpacity onPress={onReanalyze}>
-            <Text style={{ fontSize: 12, color: '#8B5E3C', fontWeight: '600' }}>재분석</Text>
+            <Text style={{ fontSize: 12, color: '#555', fontWeight: '600' }}>재분석</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -1283,7 +1279,7 @@ function Step3({
                 flexDirection: 'row',
                 borderRadius: 10,
                 borderWidth: 1,
-                borderColor: '#E5DDD5',
+                borderColor: '#E0E0E0',
                 overflow: 'hidden',
               }}
             >
@@ -1292,7 +1288,7 @@ function Step3({
                   flex: 1,
                   paddingVertical: 10,
                   alignItems: 'center',
-                  backgroundColor: isBlend === 0 ? '#5C3D2E' : '#fff',
+                  backgroundColor: isBlend === 0 ? '#111' : '#fff',
                 }}
                 onPress={() => onIsBlend(0)}
               >
@@ -1311,7 +1307,7 @@ function Step3({
                   flex: 1,
                   paddingVertical: 10,
                   alignItems: 'center',
-                  backgroundColor: isBlend === 1 ? '#5C3D2E' : '#fff',
+                  backgroundColor: isBlend === 1 ? '#111' : '#fff',
                 }}
                 onPress={() => onIsBlend(1)}
               >
@@ -1343,7 +1339,7 @@ function Step3({
                 style={{
                   borderWidth: 1,
                   borderStyle: 'dashed',
-                  borderColor: '#C5B8AE',
+                  borderColor: '#C0C0C0',
                   borderRadius: 10,
                   paddingVertical: 12,
                   alignItems: 'center',
@@ -1428,7 +1424,7 @@ function Step4({
             backgroundColor: '#fff',
             borderRadius: 12,
             borderWidth: 1,
-            borderColor: '#E5DDD5',
+            borderColor: '#E0E0E0',
             padding: 14,
             fontSize: 15,
             color: '#222',
@@ -1438,7 +1434,7 @@ function Step4({
           value={memo}
           onChangeText={onMemo}
           placeholder="오늘의 커피 한 줄 감상..."
-          placeholderTextColor="#C5B8AE"
+          placeholderTextColor="#C0C0C0"
           multiline
           numberOfLines={5}
         />
@@ -1461,7 +1457,7 @@ function BeanEditor({
 }) {
   return (
     <View
-      style={{ borderWidth: 1, borderColor: '#E5DDD5', borderRadius: 12, padding: 14, gap: 12 }}
+      style={{ borderWidth: 1, borderColor: '#E0E0E0', borderRadius: 12, padding: 14, gap: 12 }}
     >
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
         <Text style={{ fontSize: 13, fontWeight: '600', color: '#666' }}>원두 {index + 1}</Text>
@@ -1490,7 +1486,7 @@ function BeanEditor({
         <TextInput
           style={{
             borderWidth: 1,
-            borderColor: '#E5DDD5',
+            borderColor: '#E0E0E0',
             borderRadius: 10,
             padding: 10,
             fontSize: 14,
@@ -1501,7 +1497,7 @@ function BeanEditor({
           value={bean.ratio != null ? String(bean.ratio) : ''}
           onChangeText={(v) => onChange({ ...bean, ratio: v ? Number(v) : undefined })}
           placeholder="선택"
-          placeholderTextColor="#C5B8AE"
+          placeholderTextColor="#C0C0C0"
         />
       </View>
     </View>
@@ -1553,18 +1549,18 @@ function AnalysisOverlay({ visible, mode }: { visible: boolean; mode: 'handdip' 
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: 'rgba(247, 243, 239, 0.97)',
+        backgroundColor: 'rgba(255, 255, 255, 0.97)',
         alignItems: 'center',
         justifyContent: 'center',
         gap: 28,
       }}
     >
-      <ActivityIndicator size="large" color="#5C3D2E" />
+      <ActivityIndicator size="large" color="#111" />
       <Animated.Text
         style={{
           opacity: fadeAnim,
           fontSize: 16,
-          color: '#5C3D2E',
+          color: '#111',
           fontWeight: '600',
           textAlign: 'center',
         }}

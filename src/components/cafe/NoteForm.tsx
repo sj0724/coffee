@@ -18,8 +18,8 @@ function BeanEditor({
   onRemove: () => void;
 }) {
   return (
-    <View className="border border-gray-200 rounded-lg p-3 gap-2">
-      <View className="flex-row justify-between items-center">
+    <View className="gap-2 p-3 border border-gray-200 rounded-lg">
+      <View className="flex-row items-center justify-between">
         <Text className="text-[13px] font-semibold text-gray-500">원두 {index + 1}</Text>
         <TouchableOpacity onPress={onRemove}>
           <Text className="text-[13px] text-red-400">삭제</Text>
@@ -68,7 +68,11 @@ export function NoteForm({
   const beans = form.beans ?? [];
 
   function toggleBlend(blend: boolean) {
-    onChange({ ...form, is_blend: blend ? 1 : 0, beans: blend ? (beans.length ? beans : [{}]) : [] });
+    onChange({
+      ...form,
+      is_blend: blend ? 1 : 0,
+      beans: blend ? (beans.length ? beans : [{}]) : [],
+    });
   }
 
   function addBean() {
@@ -90,8 +94,8 @@ export function NoteForm({
     onChange({
       ...data,
       ...Object.fromEntries(
-        Object.entries(form).filter(([, v]) =>
-          v !== undefined && v !== null && !(Array.isArray(v) && v.length === 0),
+        Object.entries(form).filter(
+          ([, v]) => v !== undefined && v !== null && !(Array.isArray(v) && v.length === 0),
         ),
       ),
     } as Partial<HanddripNote>);
@@ -99,16 +103,15 @@ export function NoteForm({
 
   return (
     <View className="gap-3 mt-1">
-      {/* 원두 카드 스캔 */}
-      <CardScanSection onAnalyzed={handleAnalyzed} />
-
       {/* 싱글 오리진 / 블랜드 토글 */}
-      <View className="flex-row rounded-lg border border-gray-200 overflow-hidden">
+      <View className="flex-row overflow-hidden border border-gray-200 rounded-lg">
         <TouchableOpacity
           className={`flex-1 py-2 items-center ${!isBlend ? 'bg-coffee' : 'bg-white'}`}
           onPress={() => toggleBlend(false)}
         >
-          <Text className={`text-[13px] font-semibold ${!isBlend ? 'text-white' : 'text-gray-400'}`}>
+          <Text
+            className={`text-[13px] font-semibold ${!isBlend ? 'text-white' : 'text-gray-400'}`}
+          >
             싱글 오리진
           </Text>
         </TouchableOpacity>
