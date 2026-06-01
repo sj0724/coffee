@@ -175,7 +175,11 @@ function CafeCard({
   const firstPhotoUri: string | undefined = (() => {
     const src = item.photos || item.note_photos;
     if (!src) return undefined;
-    try { return (JSON.parse(src) as string[])[0]; } catch { return undefined; }
+    try {
+      return (JSON.parse(src) as string[])[0];
+    } catch {
+      return undefined;
+    }
   })();
   const hasPhoto = !!firstPhotoUri;
 
@@ -342,25 +346,35 @@ function CafeGridCard({ item }: { item: CafeLog }) {
   const firstPhotoUri: string | undefined = (() => {
     const src = item.photos || item.note_photos;
     if (!src) return undefined;
-    try { return (JSON.parse(src) as string[])[0]; } catch { return undefined; }
+    try {
+      return (JSON.parse(src) as string[])[0];
+    } catch {
+      return undefined;
+    }
   })();
 
   const noteGradient =
     noteColors.length > 0
-      ? ((noteColors.length === 1 ? [noteColors[0], noteColors[0]] : noteColors) as [string, string, ...string[]])
+      ? ((noteColors.length === 1 ? [noteColors[0], noteColors[0]] : noteColors) as [
+          string,
+          string,
+          ...string[],
+        ])
       : null;
 
   return (
-    <View style={{
-      width: '100%',
-      borderRadius: 16,
-      backgroundColor: '#fff',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 3 },
-      shadowOpacity: 0.12,
-      shadowRadius: 8,
-      elevation: 4,
-    }}>
+    <View
+      style={{
+        width: '100%',
+        borderRadius: 16,
+        backgroundColor: '#fff',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.12,
+        shadowRadius: 8,
+        elevation: 4,
+      }}
+    >
       <TouchableOpacity
         onPress={() => router.push(`/cafe/${item.id}`)}
         activeOpacity={0.9}
@@ -368,7 +382,7 @@ function CafeGridCard({ item }: { item: CafeLog }) {
       >
         {firstPhotoUri ? (
           // 실제 이미지 비율 반영 — onLoad 전에는 3:4 portrait 기본값
-          <View style={{ aspectRatio: imgRatio ?? (3 / 4) }}>
+          <View style={{ aspectRatio: imgRatio ?? 3 / 4 }}>
             <Image
               source={{ uri: firstPhotoUri }}
               style={{ width: '100%', height: '100%' }}
@@ -377,7 +391,14 @@ function CafeGridCard({ item }: { item: CafeLog }) {
             />
             <LinearGradient
               colors={['transparent', 'rgba(0,0,0,0.75)']}
-              style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: 12, paddingTop: 50 }}
+              style={{
+                position: 'absolute',
+                bottom: 0,
+                left: 0,
+                right: 0,
+                padding: 12,
+                paddingTop: 50,
+              }}
             >
               <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 10, marginBottom: 2 }}>
                 {item.visited_at.replace(/-/g, '.')}
@@ -386,15 +407,23 @@ function CafeGridCard({ item }: { item: CafeLog }) {
                 {item.cafe_name}
               </Text>
               {noteGradient && (
-                <LinearGradient colors={noteGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                  style={{ height: 3, borderRadius: 2, marginTop: 6 }} />
+                <LinearGradient
+                  colors={noteGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={{ height: 3, borderRadius: 2, marginTop: 6 }}
+                />
               )}
             </LinearGradient>
           </View>
         ) : (
           <>
             <View style={{ aspectRatio: 4 / 3 }}>
-              <Image source={DEFAULT_CARD} style={{ width: '100%', height: '100%' }} contentFit="cover" />
+              <Image
+                source={DEFAULT_CARD}
+                style={{ width: '100%', height: '100%' }}
+                contentFit="cover"
+              />
               <LinearGradient
                 colors={['rgba(255,255,255,0)', '#fff']}
                 style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 32 }}
@@ -404,7 +433,10 @@ function CafeGridCard({ item }: { item: CafeLog }) {
               <Text style={{ color: '#bbb', fontSize: 11, marginBottom: 3 }}>
                 {item.visited_at.replace(/-/g, '.')}
               </Text>
-              <Text style={{ color: '#222', fontSize: 13, fontWeight: '700', lineHeight: 19 }} numberOfLines={2}>
+              <Text
+                style={{ color: '#222', fontSize: 13, fontWeight: '700', lineHeight: 19 }}
+                numberOfLines={2}
+              >
                 {item.cafe_name}
               </Text>
               {(item.menu_count ?? 0) > 0 && (
@@ -415,8 +447,12 @@ function CafeGridCard({ item }: { item: CafeLog }) {
                 </View>
               )}
               {noteGradient && (
-                <LinearGradient colors={noteGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                  style={{ height: 3, borderRadius: 2, marginTop: 7 }} />
+                <LinearGradient
+                  colors={noteGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={{ height: 3, borderRadius: 2, marginTop: 7 }}
+                />
               )}
             </View>
           </>
@@ -429,15 +465,21 @@ function CafeGridCard({ item }: { item: CafeLog }) {
 // Greedy masonry: assign each item to the shorter column.
 // Photo cards default to 3:4 portrait for estimation; no-photo cards = image(4:3) + text area.
 function splitIntoMasonryColumns(items: CafeLog[], cardWidth: number): [CafeLog[], CafeLog[]] {
-  const photoH = cardWidth * (4 / 3);   // 3:4 portrait default
+  const photoH = cardWidth * (4 / 3); // 3:4 portrait default
   const noPhotoH = cardWidth * (3 / 4) + 72; // 4:3 thumbnail + text
   const left: CafeLog[] = [];
   const right: CafeLog[] = [];
-  let lh = 0, rh = 0;
+  let lh = 0,
+    rh = 0;
   for (const item of items) {
-    const h = (item.photos || item.note_photos) ? photoH : noPhotoH;
-    if (lh <= rh) { left.push(item); lh += h + GRID_GAP; }
-    else { right.push(item); rh += h + GRID_GAP; }
+    const h = item.photos || item.note_photos ? photoH : noPhotoH;
+    if (lh <= rh) {
+      left.push(item);
+      lh += h + GRID_GAP;
+    } else {
+      right.push(item);
+      rh += h + GRID_GAP;
+    }
   }
   return [left, right];
 }
@@ -523,24 +565,26 @@ export default function CafeScreen() {
   return (
     <SafeAreaView className="flex-1 bg-white" edges={['top']}>
       {/* 헤더 */}
-      <View style={{
-        flexDirection: 'row', alignItems: 'center',
-        paddingHorizontal: 20, paddingVertical: 12,
-      }}>
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          paddingHorizontal: 20,
+          paddingVertical: 12,
+        }}
+      >
         <Text style={{ flex: 1, fontSize: 24, fontWeight: '800', color: '#111' }}>카페</Text>
         <TouchableOpacity
-          onPress={() => setViewMode(v => v === 'coverflow' ? 'grid' : 'coverflow')}
+          onPress={() => setViewMode((v) => (v === 'coverflow' ? 'grid' : 'coverflow'))}
           style={{ padding: 6, marginRight: 4 }}
         >
           <Ionicons
             name={viewMode === 'coverflow' ? 'grid-outline' : 'albums-outline'}
-            size={22} color="#111"
+            size={22}
+            color="#111"
           />
         </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => router.push('/cafe/new')}
-          style={{ padding: 6 }}
-        >
+        <TouchableOpacity onPress={() => router.push('/cafe/new')} style={{ padding: 6 }}>
           <Ionicons name="add" size={26} color="#111" />
         </TouchableOpacity>
       </View>
@@ -556,14 +600,25 @@ export default function CafeScreen() {
           <TouchableOpacity
             onPress={() => setFavOnly((v) => !v)}
             style={{
-              flexDirection: 'row', alignItems: 'center', gap: 5,
-              paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20,
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 5,
+              paddingHorizontal: 14,
+              paddingVertical: 7,
+              borderRadius: 20,
               backgroundColor: favOnly ? '#111111' : '#fff',
-              borderWidth: 1, borderColor: '#ccc',
+              borderWidth: 1,
+              borderColor: '#ccc',
             }}
           >
-            <Ionicons name={favOnly ? 'star' : 'star-outline'} size={14} color={favOnly ? '#FFD166' : '#999'} />
-            <Text style={{ fontSize: 13, fontWeight: '600', color: favOnly ? '#fff' : '#666' }}>즐겨찾기</Text>
+            <Ionicons
+              name={favOnly ? 'star' : 'star-outline'}
+              size={14}
+              color={favOnly ? '#FFD166' : '#999'}
+            />
+            <Text style={{ fontSize: 13, fontWeight: '600', color: favOnly ? '#fff' : '#666' }}>
+              즐겨찾기
+            </Text>
           </TouchableOpacity>
 
           {uniqueTags.map((tag) => {
@@ -574,12 +629,19 @@ export default function CafeScreen() {
                 key={tag}
                 onPress={() => toggleTag(tag)}
                 style={{
-                  paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20,
+                  paddingHorizontal: 14,
+                  paddingVertical: 7,
+                  borderRadius: 20,
                   backgroundColor: isActive ? color : '#fff',
-                  borderWidth: 1, borderColor: isActive ? color : '#ccc',
+                  borderWidth: 1,
+                  borderColor: isActive ? color : '#ccc',
                 }}
               >
-                <Text style={{ fontSize: 13, fontWeight: '600', color: isActive ? '#fff' : '#666' }}>{tag}</Text>
+                <Text
+                  style={{ fontSize: 13, fontWeight: '600', color: isActive ? '#fff' : '#666' }}
+                >
+                  {tag}
+                </Text>
               </TouchableOpacity>
             );
           })}
@@ -595,7 +657,7 @@ export default function CafeScreen() {
         ) : (
           <ScrollView
             style={{ flex: 1 }}
-            contentContainerStyle={{ padding: GRID_PADDING, paddingBottom: 40 }}
+            contentContainerStyle={{ padding: GRID_PADDING, paddingBottom: 100 }}
           >
             <View style={{ flexDirection: 'row', gap: GRID_GAP }}>
               <View style={{ flex: 1, gap: GRID_GAP }}>
@@ -620,7 +682,7 @@ export default function CafeScreen() {
           pagingEnabled
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{ alignItems: 'center' }}
-          style={{ flex: 1 }}
+          style={{ flex: 1, marginBottom: 90 }}
           snapToInterval={screenWidth}
           decelerationRate="fast"
           scrollEventThrottle={16}
@@ -632,8 +694,17 @@ export default function CafeScreen() {
             index,
           })}
           ListEmptyComponent={
-            <View style={{ width: screenWidth, justifyContent: 'center', alignItems: 'center', flex: 1 }}>
-              <Text style={{ color: '#bbb', fontSize: 15 }}>+ 버튼으로 첫 카페를 기록해보세요.</Text>
+            <View
+              style={{
+                width: screenWidth,
+                justifyContent: 'center',
+                alignItems: 'center',
+                flex: 1,
+              }}
+            >
+              <Text style={{ color: '#bbb', fontSize: 15 }}>
+                + 버튼으로 첫 카페를 기록해보세요.
+              </Text>
             </View>
           }
           renderItem={({ item, index }) => (
