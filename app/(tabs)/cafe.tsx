@@ -81,7 +81,8 @@ function parseAllNotes(concat: string | null | undefined): string[] {
   });
 }
 
-const SIDE_PADDING = 28;
+const CAROUSEL_GAP = 16;
+const CAROUSEL_INSET = 56;
 const AnimatedFlatList = Animated.createAnimatedComponent(FlatList) as typeof FlatList;
 
 // ─── Coverflow animated wrapper ──────────────────────────────────────────────
@@ -89,41 +90,35 @@ const AnimatedFlatList = Animated.createAnimatedComponent(FlatList) as typeof Fl
 function CoverflowWrapper({
   index,
   scrollX,
-  screenWidth,
+  itemStep,
   cardWidth,
   cardHeight,
   children,
 }: {
   index: number;
   scrollX: SharedValue<number>;
-  screenWidth: number;
+  itemStep: number;
   cardWidth: number;
   cardHeight: number;
   children: React.ReactNode;
 }) {
   const animStyle = useAnimatedStyle(() => {
-    const center = index * screenWidth;
-    const rotateY = interpolate(
-      scrollX.value,
-      [center - screenWidth, center, center + screenWidth],
-      [38, 0, -38],
-      Extrapolation.CLAMP,
-    );
+    const center = index * itemStep;
     const scale = interpolate(
       scrollX.value,
-      [center - screenWidth, center, center + screenWidth],
-      [0.82, 1, 0.82],
+      [center - itemStep, center, center + itemStep],
+      [0.92, 1, 0.92],
       Extrapolation.CLAMP,
     );
     const opacity = interpolate(
       scrollX.value,
-      [center - screenWidth, center, center + screenWidth],
-      [0.6, 1, 0.6],
+      [center - itemStep, center, center + itemStep],
+      [0.5, 1, 0.5],
       Extrapolation.CLAMP,
     );
     return {
       opacity,
-      transform: [{ perspective: 900 }, { rotateY: `${rotateY}deg` }, { scale }],
+      transform: [{ scale }],
     };
   });
 
@@ -155,7 +150,7 @@ function CafeCard({
   index,
   scrollX,
   cardWidth,
-  screenWidth,
+  itemStep,
   screenHeight,
   defaultCardHeight,
   defaultImageHeight,
@@ -164,7 +159,7 @@ function CafeCard({
   index: number;
   scrollX: SharedValue<number>;
   cardWidth: number;
-  screenWidth: number;
+  itemStep: number;
   screenHeight: number;
   defaultCardHeight: number;
   defaultImageHeight: number;
@@ -208,9 +203,8 @@ function CafeCard({
   return (
     <View
       style={{
-        width: screenWidth,
+        width: cardWidth,
         height: screenHeight,
-        paddingHorizontal: hasPhoto ? 0 : SIDE_PADDING,
         justifyContent: 'center',
         alignItems: 'center',
       }}
@@ -218,7 +212,7 @@ function CafeCard({
       <CoverflowWrapper
         index={index}
         scrollX={scrollX}
-        screenWidth={screenWidth}
+        itemStep={itemStep}
         cardWidth={actualCardWidth}
         cardHeight={actualCardHeight}
       >
@@ -495,7 +489,8 @@ export default function CafeScreen() {
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const router = useRouter();
 
-  const cardWidth = screenWidth - SIDE_PADDING * 2;
+  const cardWidth = screenWidth - CAROUSEL_INSET * 2;
+  const itemStep = cardWidth + CAROUSEL_GAP;
   const gridCardWidth = (screenWidth - GRID_PADDING * 2 - GRID_GAP) / 2;
 
   const scrollX = useSharedValue(0);
@@ -679,24 +674,23 @@ export default function CafeScreen() {
           data={filteredLogs}
           keyExtractor={(item) => String((item as CafeLog).id)}
           horizontal
-          pagingEnabled
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ alignItems: 'center' }}
+          contentContainerStyle={{ alignItems: 'center', paddingHorizontal: CAROUSEL_INSET, gap: CAROUSEL_GAP }}
           style={{ flex: 1, marginBottom: 90 }}
-          snapToInterval={screenWidth}
+          snapToInterval={itemStep}
           decelerationRate="fast"
           scrollEventThrottle={16}
           onScroll={scrollHandler as any}
           onLayout={(e) => setListHeight(e.nativeEvent.layout.height)}
           getItemLayout={(_data, index) => ({
-            length: screenWidth,
-            offset: screenWidth * index,
+            length: cardWidth,
+            offset: CAROUSEL_INSET + index * itemStep,
             index,
           })}
           ListEmptyComponent={
             <View
               style={{
-                width: screenWidth,
+                width: screenWidth - CAROUSEL_INSET * 2,
                 justifyContent: 'center',
                 alignItems: 'center',
                 flex: 1,
@@ -713,7 +707,7 @@ export default function CafeScreen() {
               index={index}
               scrollX={scrollX}
               cardWidth={cardWidth}
-              screenWidth={screenWidth}
+              itemStep={itemStep}
               screenHeight={cardAreaHeight}
               defaultCardHeight={defaultCardHeight}
               defaultImageHeight={defaultImageHeight}

@@ -210,7 +210,15 @@ export async function analyzeCardImages(uris: string[]): Promise<Partial<Handdri
       process: typeof p.process_raw === 'string' ? p.process_raw : undefined,
       roast_level: typeof p.roast_level_raw === 'string' ? p.roast_level_raw : undefined,
       official_notes: Array.isArray(p.official_notes) ? (p.official_notes as string[]) : [],
-      beans: Array.isArray(p.beans) ? (p.beans as HanddripNote['beans']) : [],
+      beans: Array.isArray(p.beans)
+        ? (p.beans as Record<string, unknown>[]).map((b) => ({
+            origin: typeof b.origin === 'string' ? b.origin : undefined,
+            farm: typeof b.farm === 'string' ? b.farm : undefined,
+            variety: typeof b.variety === 'string' ? b.variety : undefined,
+            process: typeof b.process_raw === 'string' ? b.process_raw : undefined,
+            ratio: typeof b.ratio === 'number' ? b.ratio : undefined,
+          }))
+        : [],
     };
   } catch (e) {
     console.error('analyzeCardImages error:', e);
