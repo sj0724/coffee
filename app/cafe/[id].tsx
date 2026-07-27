@@ -122,6 +122,10 @@ export default function CafeDetailScreen() {
         } else if (category === 'espresso') {
           const note = await getEspressoNote(item.id!);
           if (note) espressoMap[item.id!] = note;
+        } else if (item.is_coffee == null) {
+          // 사용자 지정 메뉴명의 기존 핸드드립 기록도 저장된 노트로 판별한다.
+          const note = await getTastingNote(item.id!);
+          if (note) handripMap[item.id!] = note;
         }
       }),
     );
@@ -235,7 +239,9 @@ export default function CafeDetailScreen() {
 
         {cafePhotoUris.length > 0 && (
           <View style={{ marginTop: notePhotoUris.length > 0 ? 4 : 20, gap: 8 }}>
-            <Text style={{ fontSize: 13, fontWeight: '600', color: '#999', paddingHorizontal: 20 }}>
+            <Text
+              style={{ fontSize: 14, fontWeight: '600', color: '#5F5A54', paddingHorizontal: 20 }}
+            >
               카페 · 메뉴 사진
             </Text>
             <ScrollView
@@ -255,54 +261,116 @@ export default function CafeDetailScreen() {
           </View>
         )}
 
-        <View className="px-5 pt-5">
-          <Text className="text-[22px] font-bold text-[#222]">{log.cafe_name}</Text>
-          <Text className="text-[13px] text-gray-400 mt-1">{log.visited_at}</Text>
-          {log.address ? (
-            <TouchableOpacity
-              className="flex-row items-center gap-1 mt-2"
-              onPress={() => {
-                const query = encodeURIComponent(`${log.cafe_name} ${log.address}`);
-                Linking.openURL(`https://map.naver.com/v5/search/${query}`);
+        <View
+          style={{
+            marginHorizontal: 20,
+            marginTop: 4,
+            padding: 20,
+            borderRadius: 20,
+            backgroundColor: '#fff',
+            borderWidth: 1,
+            borderColor: '#ECEAE6',
+          }}
+        >
+          <Text style={{ fontSize: 24, fontWeight: '800', color: '#1D1D1B', letterSpacing: -0.5 }}>
+            {log.cafe_name}
+          </Text>
+          <View style={{ gap: 10, marginTop: 16 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <View
+                style={{
+                  width: 30,
+                  height: 30,
+                  borderRadius: 15,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: '#F4F2EE',
+                }}
+              >
+                <Ionicons name="calendar-outline" size={15} color="#69645D" />
+              </View>
+              <Text style={{ fontSize: 14, color: '#68645E' }}>{log.visited_at}</Text>
+            </View>
+            {log.address ? (
+              <TouchableOpacity
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}
+                onPress={() => {
+                  const query = encodeURIComponent(`${log.cafe_name} ${log.address}`);
+                  Linking.openURL(`https://map.naver.com/v5/search/${query}`);
+                }}
+              >
+                <View
+                  style={{
+                    width: 30,
+                    height: 30,
+                    borderRadius: 15,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: '#F4F2EE',
+                  }}
+                >
+                  <Ionicons name="location-outline" size={16} color="#69645D" />
+                </View>
+                <Text style={{ flex: 1, fontSize: 14, color: '#3F3C38' }} numberOfLines={2}>
+                  {log.address}
+                </Text>
+                <Ionicons name="chevron-forward" size={16} color="#B5B0A8" />
+              </TouchableOpacity>
+            ) : null}
+          </View>
+
+          {log.memo ? (
+            <View
+              style={{
+                marginTop: 18,
+                paddingTop: 16,
+                borderTopWidth: 1,
+                borderTopColor: '#EFEDE9',
+                flexDirection: 'row',
+                gap: 10,
               }}
             >
-              <Ionicons name="location-outline" size={14} color="#111111" />
-              <Text className="text-[13px] text-coffee underline" numberOfLines={1}>
-                {log.address}
+              <Ionicons name="chatbubble-ellipses-outline" size={17} color="#918A80" />
+              <Text style={{ flex: 1, fontSize: 14, lineHeight: 21, color: '#55514C' }}>
+                {log.memo}
               </Text>
-            </TouchableOpacity>
+            </View>
           ) : null}
         </View>
 
-        {log.memo ? (
-          <View className="p-4 mx-5 bg-white shadow-sm rounded-xl">
-            <Text className="text-[13px] font-bold text-[#333] mb-1">메모</Text>
-            <Text className="text-sm text-[#555] leading-5">{log.memo}</Text>
-          </View>
-        ) : null}
-
-        <View>
-          <View className="px-5 mb-3">
-            <Text className="text-[16px] font-bold text-[#222]">메뉴</Text>
+        <View style={{ marginTop: 8 }}>
+          <View className="flex-row items-center px-5 mb-3">
+            <Text className="text-[18px] font-bold text-[#222]">메뉴</Text>
           </View>
 
           {menuItems.length === 0 && (
-            <Text className="py-4 text-sm text-center text-gray-300">등록된 메뉴가 없어요.</Text>
+            <View className="px-5 py-8 mx-5 bg-white border border-coffee-border rounded-2xl">
+              <Text className="text-sm text-center text-gray-300">등록된 메뉴가 없어요.</Text>
+            </View>
           )}
 
           {menuItems.length > 0 && (
-            <View className="bg-white border-y border-coffee-border">
-              {menuItems.map((item, index) => {
-                const category = getMenuCategory(item.menu_name, item.is_coffee);
-                const isLast = index === menuItems.length - 1;
+            <View style={{ gap: 12, paddingHorizontal: 20 }}>
+              {menuItems.map((item) => {
+                const category = handripNotesMap[item.id!]
+                  ? 'handdip'
+                  : getMenuCategory(item.menu_name, item.is_coffee);
 
                 return (
                   <View
                     key={item.id}
-                    className={`px-5 py-4 bg-white ${isLast ? '' : 'border-b border-coffee-border'}`}
+                    style={{
+                      padding: 18,
+                      borderRadius: 18,
+                      backgroundColor: '#fff',
+                      borderWidth: 1,
+                      borderColor: '#ECEAE6',
+                    }}
                   >
-                    <View className="flex-row items-center justify-between mb-2">
-                      <Text className="text-[15px] font-bold text-[#222]">{item.menu_name}</Text>
+                    <View className="flex-row items-center justify-between mb-3">
+                      <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        <Text className="text-[17px] font-bold text-[#222]">{item.menu_name}</Text>
+                      </View>
                       <MenuActionDropdown
                         onEdit={
                           category !== 'simple'

@@ -28,9 +28,8 @@ export default function EditCafeMenuScreen() {
         return;
       }
 
-      const menuCategory = getMenuCategory(menuItem.menu_name, menuItem.is_coffee);
+      let menuCategory = getMenuCategory(menuItem.menu_name, menuItem.is_coffee);
       setItem(menuItem);
-      setCategory(menuCategory);
 
       if (menuCategory === 'handdip') {
         const note = await getTastingNote(id);
@@ -38,7 +37,14 @@ export default function EditCafeMenuScreen() {
       } else if (menuCategory === 'espresso') {
         const note = await getEspressoNote(id);
         setEspressoTags(note?.tags ?? []);
+      } else if (menuItem.is_coffee == null) {
+        const note = await getTastingNote(id);
+        if (note) {
+          menuCategory = 'handdip';
+          setHanddripForm({ ...note });
+        }
       }
+      setCategory(menuCategory);
       setLoading(false);
     }
 

@@ -5,9 +5,16 @@ const EMPTY = '#E5E7EB';
 
 export function ScoreBar({ label, value }: { label: string; value: number }) {
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-      <Text style={{ fontSize: 12, color: '#9CA3AF', width: 52 }}>{label}</Text>
-      <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
+    <View
+      style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}
+      accessible
+      accessibilityLabel={`${label} ${value}점`}
+    >
+      <Text style={{ fontSize: 13, color: '#5F5A54', fontWeight: '600', width: 52 }}>{label}</Text>
+      <View
+        style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}
+        importantForAccessibility="no-hide-descendants"
+      >
         {[1, 2, 3, 4, 5].flatMap((n) => {
           const items = [];
           if (n > 1) {
@@ -32,11 +39,6 @@ export function ScoreBar({ label, value }: { label: string; value: number }) {
           return items;
         })}
       </View>
-      <Text
-        style={{ fontSize: 12, color: COFFEE, fontWeight: '600', width: 20, textAlign: 'right' }}
-      >
-        {value}
-      </Text>
     </View>
   );
 }
