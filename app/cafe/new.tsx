@@ -85,6 +85,8 @@ export default function NewCafeLogScreen() {
   const [saving, setSaving] = useState(false);
 
   const visitedAt = date.toISOString().slice(0, 10);
+  const nextDisabled =
+    (step === 2 && !selectedPlace) || (step === 3 && photoMode === 'menu' && !menuName.trim());
 
   // 분석 중 화면 이탈 차단 (iOS 스와이프, Android 뒤로가기)
   useEffect(() => {
@@ -498,6 +500,8 @@ export default function NewCafeLogScreen() {
               }
               menuName={menuName}
               onMenuName={setMenuName}
+              isCoffeeDrink={isCoffeeDrink}
+              onIsCoffeeDrink={setIsCoffeeDrink}
               isBlend={isBlend}
               onIsBlend={setIsBlend}
               origin={origin}
@@ -548,9 +552,9 @@ export default function NewCafeLogScreen() {
           {step < TOTAL_STEPS ? (
             <TouchableOpacity
               onPress={goNext}
-              disabled={step === 2 && !selectedPlace}
+              disabled={nextDisabled}
               style={{
-                backgroundColor: step === 2 && !selectedPlace ? '#C0C0C0' : '#111',
+                backgroundColor: nextDisabled ? '#C0C0C0' : '#111',
                 borderRadius: 14,
                 paddingVertical: 15,
                 alignItems: 'center',
