@@ -438,24 +438,22 @@ export default function CafeDetailScreen() {
             >
               {log.cafe_name}
             </Text>
-            <View style={{ flexDirection: 'row', gap: 4 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <TouchableOpacity
                 onPress={handleToggleFavorite}
                 accessibilityRole="button"
                 accessibilityLabel={isFav ? '즐겨찾기 해제' : '즐겨찾기'}
                 style={{
-                  width: 36,
+                  width: 32,
                   height: 36,
-                  borderRadius: 18,
                   alignItems: 'center',
                   justifyContent: 'center',
-                  backgroundColor: '#F4F2EE',
                 }}
               >
                 <Ionicons
-                  name={isFav ? 'star' : 'star-outline'}
-                  size={19}
-                  color={isFav ? '#E9A923' : '#706A62'}
+                  name={isFav ? 'heart' : 'heart-outline'}
+                  size={20}
+                  color={isFav ? '#D96C67' : '#B7B1A9'}
                 />
               </TouchableOpacity>
               <TouchableOpacity

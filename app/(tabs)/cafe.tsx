@@ -3,7 +3,14 @@ import { View, Text, TouchableOpacity, ScrollView, useWindowDimensions } from 'r
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useSharedValue, useAnimatedScrollHandler } from 'react-native-reanimated';
+import Animated, {
+  Easing,
+  runOnJS,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 import { getCafeLogs } from '@/src/db/queries/cafeLogs';
 import { CafeLog } from '@/src/types';
 import {
@@ -24,6 +31,7 @@ export default function CafeScreen() {
   const [activeTags, setActiveTags] = useState<string[]>([]);
   const [favOnly, setFavOnly] = useState(false);
   const [viewMode, setViewMode] = useState<'coverflow' | 'grid'>('coverflow');
+  const [viewTransitioning, setViewTransitioning] = useState(false);
   const [listHeight, setListHeight] = useState(0);
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const router = useRouter();
@@ -36,9 +44,15 @@ export default function CafeScreen() {
   const scrollHandler = useAnimatedScrollHandler((event) => {
     scrollX.value = event.contentOffset.x;
   });
+  const viewProgress = useSharedValue(1);
+  const viewTransitionStyle = useAnimatedStyle(() => ({
+    opacity: viewProgress.value,
+    transform: [{ scale: 0.985 + viewProgress.value * 0.015 }],
+  }));
 
   const listRef = useRef<any>(null);
   const initialScrollDone = useRef(false);
+  const resetCoverflowOnLayout = useRef(true);
 
   const uniqueTags = useMemo(() => {
     const seen = new Set<string>();
@@ -68,6 +82,37 @@ export default function CafeScreen() {
     setActiveTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]));
   }
 
+  function showNextView(nextMode: 'coverflow' | 'grid') {
+    if (nextMode === 'coverflow') {
+      scrollX.value = 0;
+      resetCoverflowOnLayout.current = true;
+    }
+    setViewMode(nextMode);
+    requestAnimationFrame(() => {
+      viewProgress.value = withTiming(
+        1,
+        { duration: 220, easing: Easing.out(Easing.cubic) },
+        (finished) => {
+          if (finished) runOnJS(setViewTransitioning)(false);
+        },
+      );
+    });
+  }
+
+  function toggleViewMode() {
+    if (viewTransitioning) return;
+    const nextMode = viewMode === 'coverflow' ? 'grid' : 'coverflow';
+    setViewTransitioning(true);
+    viewProgress.value = withTiming(
+      0,
+      { duration: 120, easing: Easing.in(Easing.quad) },
+      (finished) => {
+        if (finished) runOnJS(showNextView)(nextMode);
+        else runOnJS(setViewTransitioning)(false);
+      },
+    );
+  }
+
   useFocusEffect(
     useCallback(() => {
       getCafeLogs().then((data) => {
@@ -84,12 +129,12 @@ export default function CafeScreen() {
   );
 
   useEffect(() => {
-    if (!initialScrollDone.current) return;
+    if (!initialScrollDone.current || viewMode !== 'coverflow') return;
     scrollX.value = 0;
     requestAnimationFrame(() => {
       listRef.current?.scrollToIndex({ index: 0, animated: false });
     });
-  }, [activeTags, favOnly]);
+  }, [activeTags, favOnly, viewMode]);
 
   const showFilterBar = logs.length > 0;
   const cardAreaHeight = listHeight || screenHeight;
@@ -109,8 +154,10 @@ export default function CafeScreen() {
       >
         <Text style={{ flex: 1, fontSize: 24, fontWeight: '800', color: '#111' }}>카페</Text>
         <TouchableOpacity
-          onPress={() => setViewMode((v) => (v === 'coverflow' ? 'grid' : 'coverflow'))}
-          style={{ padding: 6, marginRight: 4 }}
+          onPress={toggleViewMode}
+          disabled={viewTransitioning}
+          activeOpacity={0.6}
+          style={{ padding: 6, marginRight: 4, opacity: viewTransitioning ? 0.55 : 1 }}
         >
           <Ionicons
             name={viewMode === 'coverflow' ? 'grid-outline' : 'albums-outline'}
@@ -183,81 +230,93 @@ export default function CafeScreen() {
       )}
 
       {/* 콘텐츠 */}
-      {viewMode === 'grid' ? (
-        filteredLogs.length === 0 ? (
-          <View style={{ alignItems: 'center', paddingTop: 80 }}>
-            <Text style={{ color: '#bbb', fontSize: 15 }}>기록이 없어요.</Text>
-          </View>
-        ) : (
-          <ScrollView
-            style={{ flex: 1 }}
-            contentContainerStyle={{ padding: GRID_PADDING, paddingBottom: 100 }}
-          >
-            <View style={{ flexDirection: 'row', gap: GRID_GAP }}>
-              <View style={{ flex: 1, gap: GRID_GAP }}>
-                {masonryLeft.map((item) => (
-                  <CafeGridCard key={item.id} item={item} />
-                ))}
-              </View>
-              <View style={{ flex: 1, gap: GRID_GAP }}>
-                {masonryRight.map((item) => (
-                  <CafeGridCard key={item.id} item={item} />
-                ))}
-              </View>
+      <Animated.View style={[{ flex: 1 }, viewTransitionStyle]}>
+        {viewMode === 'grid' ? (
+          filteredLogs.length === 0 ? (
+            <View style={{ alignItems: 'center', paddingTop: 80 }}>
+              <Text style={{ color: '#bbb', fontSize: 15 }}>기록이 없어요.</Text>
             </View>
-          </ScrollView>
-        )
-      ) : (
-        <AnimatedFlatList
-          ref={listRef}
-          data={filteredLogs}
-          keyExtractor={(item) => String((item as CafeLog).id)}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{
-            alignItems: 'center',
-            paddingHorizontal: CAROUSEL_INSET,
-            gap: CAROUSEL_GAP,
-          }}
-          style={{ flex: 1, marginBottom: 90 }}
-          snapToInterval={itemStep}
-          decelerationRate="fast"
-          scrollEventThrottle={16}
-          onScroll={scrollHandler as any}
-          onLayout={(e) => setListHeight(e.nativeEvent.layout.height)}
-          getItemLayout={(_data, index) => ({
-            length: cardWidth,
-            offset: CAROUSEL_INSET + index * itemStep,
-            index,
-          })}
-          ListEmptyComponent={
-            <View
-              style={{
-                width: screenWidth - CAROUSEL_INSET * 2,
-                justifyContent: 'center',
-                alignItems: 'center',
-                flex: 1,
-              }}
+          ) : (
+            <ScrollView
+              style={{ flex: 1 }}
+              contentContainerStyle={{ padding: GRID_PADDING, paddingBottom: 100 }}
             >
-              <Text style={{ color: '#bbb', fontSize: 15 }}>
-                + 버튼으로 첫 카페를 기록해보세요.
-              </Text>
-            </View>
-          }
-          renderItem={({ item, index }) => (
-            <CafeCard
-              item={item as CafeLog}
-              index={index}
-              scrollX={scrollX}
-              cardWidth={cardWidth}
-              itemStep={itemStep}
-              screenHeight={cardAreaHeight}
-              defaultCardHeight={defaultCardHeight}
-              defaultImageHeight={defaultImageHeight}
-            />
-          )}
-        />
-      )}
+              <View style={{ flexDirection: 'row', gap: GRID_GAP }}>
+                <View style={{ flex: 1, gap: GRID_GAP }}>
+                  {masonryLeft.map((item) => (
+                    <CafeGridCard key={item.id} item={item} />
+                  ))}
+                </View>
+                <View style={{ flex: 1, gap: GRID_GAP }}>
+                  {masonryRight.map((item) => (
+                    <CafeGridCard key={item.id} item={item} />
+                  ))}
+                </View>
+              </View>
+            </ScrollView>
+          )
+        ) : (
+          <AnimatedFlatList
+            ref={listRef}
+            data={filteredLogs}
+            keyExtractor={(item) => String((item as CafeLog).id)}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{
+              alignItems: 'center',
+              paddingHorizontal: CAROUSEL_INSET,
+              gap: CAROUSEL_GAP,
+            }}
+            style={{ flex: 1, marginBottom: 90 }}
+            snapToInterval={itemStep}
+            decelerationRate="fast"
+            scrollEventThrottle={16}
+            onScroll={scrollHandler as any}
+            onLayout={(e) => {
+              setListHeight(e.nativeEvent.layout.height);
+              if (resetCoverflowOnLayout.current) {
+                resetCoverflowOnLayout.current = false;
+                scrollX.value = 0;
+                requestAnimationFrame(() => {
+                  listRef.current?.scrollToOffset({ offset: 0, animated: false });
+                  scrollX.value = 0;
+                });
+              }
+            }}
+            getItemLayout={(_data, index) => ({
+              length: itemStep,
+              offset: index * itemStep,
+              index,
+            })}
+            ListEmptyComponent={
+              <View
+                style={{
+                  width: screenWidth - CAROUSEL_INSET * 2,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  flex: 1,
+                }}
+              >
+                <Text style={{ color: '#bbb', fontSize: 15 }}>
+                  + 버튼으로 첫 카페를 기록해보세요.
+                </Text>
+              </View>
+            }
+            renderItem={({ item, index }) => (
+              <CafeCard
+                item={item as CafeLog}
+                index={index}
+                scrollX={scrollX}
+                cardWidth={cardWidth}
+                itemStep={itemStep}
+                screenHeight={cardAreaHeight}
+                defaultCardHeight={defaultCardHeight}
+                defaultImageHeight={defaultImageHeight}
+              />
+            )}
+          />
+        )}
+      </Animated.View>
     </SafeAreaView>
   );
 }

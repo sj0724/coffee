@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
@@ -156,7 +155,6 @@ export function CafeCard({
   defaultImageHeight: number;
 }) {
   const router = useRouter();
-  const [imgRatio, setImgRatio] = useState<number | null>(null);
   const noteColors = parseNoteColors(item.first_my_notes);
   const firstPhotoUri: string | undefined = (() => {
     const src = item.photos || item.note_photos;
@@ -168,19 +166,6 @@ export function CafeCard({
     }
   })();
   const hasPhoto = !!firstPhotoUri;
-
-  let actualCardWidth = cardWidth;
-  let actualCardHeight = defaultCardHeight;
-  if (hasPhoto && imgRatio != null) {
-    const naturalHeight = cardWidth / imgRatio;
-    if (naturalHeight > defaultCardHeight) {
-      actualCardHeight = defaultCardHeight;
-      actualCardWidth = defaultCardHeight * imgRatio;
-    } else {
-      actualCardHeight = naturalHeight;
-      actualCardWidth = cardWidth;
-    }
-  }
 
   const noteGradient =
     noteColors.length > 0
@@ -204,8 +189,8 @@ export function CafeCard({
         index={index}
         scrollX={scrollX}
         itemStep={itemStep}
-        cardWidth={actualCardWidth}
-        cardHeight={actualCardHeight}
+        cardWidth={cardWidth}
+        cardHeight={defaultCardHeight}
       >
         <TouchableOpacity
           className="flex-1 overflow-hidden rounded-[24px]"
@@ -218,7 +203,7 @@ export function CafeCard({
                 source={{ uri: firstPhotoUri! }}
                 style={{ width: '100%', flex: 1 }}
                 contentFit="cover"
-                onLoad={(e) => setImgRatio(e.source.width / e.source.height)}
+                transition={150}
               />
               <LinearGradient
                 colors={['transparent', 'rgba(0,0,0,0.72)']}
@@ -326,7 +311,6 @@ export const GRID_PADDING = 16;
 
 export function CafeGridCard({ item }: { item: CafeLog }) {
   const router = useRouter();
-  const [imgRatio, setImgRatio] = useState<number | null>(null); // width / height
   const noteColors = parseNoteColors(item.first_my_notes);
   const firstPhotoUri: string | undefined = (() => {
     const src = item.photos || item.note_photos;
@@ -366,13 +350,13 @@ export function CafeGridCard({ item }: { item: CafeLog }) {
         style={{ borderRadius: 16, overflow: 'hidden' }}
       >
         {firstPhotoUri ? (
-          // 실제 이미지 비율 반영 — onLoad 전에는 3:4 portrait 기본값
-          <View style={{ aspectRatio: imgRatio ?? 3 / 4 }}>
+          // 그리드 높이를 고정해 이미지 로딩 후에도 카드가 움직이지 않게 한다.
+          <View style={{ aspectRatio: 3 / 4 }}>
             <Image
               source={{ uri: firstPhotoUri }}
               style={{ width: '100%', height: '100%' }}
               contentFit="cover"
-              onLoad={(e) => setImgRatio(e.source.width / e.source.height)}
+              transition={150}
             />
             <LinearGradient
               colors={['transparent', 'rgba(0,0,0,0.75)']}
