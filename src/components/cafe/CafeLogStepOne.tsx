@@ -5,7 +5,6 @@ import { Section } from './CafeLogFormSection';
 
 export function Step1({
   photoMode,
-  onSwitchMode,
   notePhotos,
   menuPhoto,
   cafePhotos,
@@ -18,7 +17,6 @@ export function Step1({
   onRemoveCafePhoto,
 }: {
   photoMode: 'handdip' | 'menu';
-  onSwitchMode: (mode: 'handdip' | 'menu') => void;
   notePhotos: string[];
   menuPhoto: string | null;
   cafePhotos: string[];
@@ -34,40 +32,6 @@ export function Step1({
 
   return (
     <View style={{ gap: 24 }}>
-      {/* 모드 토글 */}
-      <View
-        style={{
-          flexDirection: 'row',
-          borderRadius: 10,
-          borderWidth: 1,
-          borderColor: '#E0E0E0',
-          overflow: 'hidden',
-        }}
-      >
-        {(['handdip', 'menu'] as const).map((mode) => (
-          <TouchableOpacity
-            key={mode}
-            style={{
-              flex: 1,
-              paddingVertical: 11,
-              alignItems: 'center',
-              backgroundColor: photoMode === mode ? '#111' : '#fff',
-            }}
-            onPress={() => onSwitchMode(mode)}
-          >
-            <Text
-              style={{
-                fontSize: 13,
-                fontWeight: '600',
-                color: photoMode === mode ? '#fff' : '#999',
-              }}
-            >
-              {mode === 'handdip' ? '핸드드립 / 스페셜티' : '일반 메뉴'}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
       {/* 노트 사진 (핸드드립 모드) */}
       {photoMode === 'handdip' && (
         <Section label="노트 사진" hint="원두 카드 앞면/뒷면 · 최대 2장 · 선택">

@@ -26,6 +26,7 @@ import { Step1 } from '@/src/components/cafe/CafeLogStepOne';
 import { Step2 } from '@/src/components/cafe/CafeLogStepTwo';
 import { Step3 } from '@/src/components/cafe/CafeLogStepThree';
 import { Step4 } from '@/src/components/cafe/CafeLogStepFour';
+import { CafeLogTypePicker } from '@/src/components/cafe/CafeLogTypePicker';
 import type { NearbyPlace } from '@/src/components/cafe/cafeLogFormTypes';
 import { AnalysisOverlay } from '@/src/components/cafe/AnalysisOverlay';
 import type { HanddripNoteBean } from '@/src/types';
@@ -41,6 +42,7 @@ export default function NewCafeLogScreen() {
   const progressAnim = useRef(new Animated.Value(1 / TOTAL_STEPS)).current;
 
   const [step, setStep] = useState(1);
+  const [recordTypeSelected, setRecordTypeSelected] = useState(false);
 
   // Step 1 - 사진
   const [photoMode, setPhotoMode] = useState<'handdip' | 'menu'>('handdip');
@@ -181,6 +183,7 @@ export default function NewCafeLogScreen() {
   function goBack() {
     if (analyzing) return;
     if (step > 1) setStep((s) => s - 1);
+    else if (recordTypeSelected) setRecordTypeSelected(false);
     else router.back();
   }
 
@@ -229,15 +232,30 @@ export default function NewCafeLogScreen() {
     setScanningNote(false);
   }
 
-  function switchPhotoMode(mode: 'handdip' | 'menu') {
-    if (mode === 'handdip') {
+  function selectRecordType(mode: 'handdip' | 'menu') {
+    if (mode !== photoMode) {
+      setNotePhotos([]);
       setMenuPhoto(null);
       setMenuName('');
-    } else {
-      setNotePhotos([]);
       setAnalyzed(false);
+      setMenuNotDrink(false);
+      setIsCoffeeDrink(true);
+      setIsBlend(0);
+      setOrigin('');
+      setFarm('');
+      setVariety('');
+      setProcess('');
+      setRoastLevel('');
+      setOfficialNotes([]);
+      setMyNotes([]);
+      setAcidity(undefined);
+      setNuttiness(undefined);
+      setRichness(undefined);
+      setSmoothness(undefined);
+      setBeans([]);
     }
     setPhotoMode(mode);
+    setRecordTypeSelected(true);
   }
 
   async function pickMenuPhoto() {
@@ -416,172 +434,182 @@ export default function NewCafeLogScreen() {
         </Text>
       </View>
 
-      {/* 진행률 바 */}
-      <View
-        style={{
-          height: 3,
-          backgroundColor: '#E5E5E5',
-          marginHorizontal: 16,
-          borderRadius: 2,
-          marginVertical: 16,
-        }}
-      >
-        <Animated.View
-          style={{
-            height: 3,
-            backgroundColor: '#000',
-            borderRadius: 2,
-            width: progressAnim.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }),
-          }}
-        />
-      </View>
-
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={0}
-      >
-        {/* 스텝 컨텐츠 */}
-        <ScrollView
-          key={step}
-          style={{ flex: 1 }}
-          contentContainerStyle={{ padding: 20, paddingBottom: 24, gap: 24 }}
-          keyboardShouldPersistTaps="handled"
-        >
-          {step === 1 && (
-            <Step1
-              photoMode={photoMode}
-              onSwitchMode={switchPhotoMode}
-              notePhotos={notePhotos}
-              menuPhoto={menuPhoto}
-              cafePhotos={cafePhotos}
-              scanningNote={scanningNote}
-              onAddNotePhoto={pickNotePhoto}
-              onRemoveNotePhoto={(i) => setNotePhotos((p) => p.filter((_, idx) => idx !== i))}
-              onAddMenuPhoto={pickMenuPhoto}
-              onRemoveMenuPhoto={() => {
-                setMenuPhoto(null);
-                setMenuName('');
-              }}
-              onAddCafePhoto={pickCafePhoto}
-              onRemoveCafePhoto={(i) => setCafePhotos((p) => p.filter((_, idx) => idx !== i))}
-            />
-          )}
-          {step === 2 && (
-            <Step2
-              selectedPlace={selectedPlace}
-              visitedAt={visitedAt}
-              nearbyPlaces={nearbyPlaces}
-              nearbyLoading={nearbyLoading}
-              hasCoords={photoCoords !== null}
-              onSelectNearby={(p) =>
-                setSelectedPlace({
-                  name: p.place_name,
-                  address: p.road_address_name || p.address_name,
-                })
-              }
-              onOpenSearch={() => setShowAddressSearch(true)}
-              onClearPlace={() => setSelectedPlace(null)}
-              onOpenDatePicker={() => setShowDatePicker(true)}
-            />
-          )}
-          {step === 3 && (
-            <Step3
-              analyzing={analyzing}
-              analyzed={analyzed}
-              menuNotDrink={menuNotDrink}
-              photoMode={photoMode}
-              onReanalyze={
-                photoMode === 'handdip' && notePhotos.length > 0
-                  ? runAnalysis
-                  : photoMode === 'menu' && menuPhoto
-                    ? runMenuAnalysis
-                    : undefined
-              }
-              menuName={menuName}
-              onMenuName={setMenuName}
-              isCoffeeDrink={isCoffeeDrink}
-              onIsCoffeeDrink={setIsCoffeeDrink}
-              isBlend={isBlend}
-              onIsBlend={setIsBlend}
-              origin={origin}
-              onOrigin={setOrigin}
-              farm={farm}
-              onFarm={setFarm}
-              variety={variety}
-              onVariety={setVariety}
-              process={process}
-              onProcess={setProcess}
-              roastLevel={roastLevel}
-              onRoastLevel={setRoastLevel}
-              officialNotes={officialNotes}
-              onOfficialNotes={setOfficialNotes}
-              beans={beans}
-              onBeans={setBeans}
-            />
-          )}
-          {step === 4 && (
-            <Step4
-              photoMode={photoMode}
-              isCoffeeDrink={isCoffeeDrink}
-              memo={memo}
-              onMemo={setMemo}
-              myNotes={myNotes}
-              onMyNotes={setMyNotes}
-              acidity={acidity}
-              onAcidity={setAcidity}
-              nuttiness={nuttiness}
-              onNuttiness={setNuttiness}
-              richness={richness}
-              onRichness={setRichness}
-              smoothness={smoothness}
-              onSmoothness={setSmoothness}
-            />
-          )}
-        </ScrollView>
-
-        {/* 하단 버튼 */}
-        <View
-          style={{
-            paddingHorizontal: 20,
-            paddingBottom: insets.bottom + 16,
-            paddingTop: 12,
-            backgroundColor: '#fff',
-          }}
-        >
-          {step < TOTAL_STEPS ? (
-            <TouchableOpacity
-              onPress={goNext}
-              disabled={nextDisabled}
+      {!recordTypeSelected ? (
+        <CafeLogTypePicker onSelect={selectRecordType} />
+      ) : (
+        <>
+          {/* 진행률 바 */}
+          <View
+            style={{
+              height: 3,
+              backgroundColor: '#E5E5E5',
+              marginHorizontal: 16,
+              borderRadius: 2,
+              marginVertical: 16,
+            }}
+          >
+            <Animated.View
               style={{
-                backgroundColor: nextDisabled ? '#C0C0C0' : '#111',
-                borderRadius: 14,
-                paddingVertical: 15,
-                alignItems: 'center',
+                height: 3,
+                backgroundColor: '#000',
+                borderRadius: 2,
+                width: progressAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: ['0%', '100%'],
+                }),
               }}
+            />
+          </View>
+
+          <KeyboardAvoidingView
+            style={{ flex: 1 }}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            keyboardVerticalOffset={0}
+          >
+            {/* 스텝 컨텐츠 */}
+            <ScrollView
+              key={step}
+              style={{ flex: 1 }}
+              contentContainerStyle={{ padding: 20, paddingBottom: 24, gap: 24 }}
+              keyboardShouldPersistTaps="handled"
             >
-              <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>다음</Text>
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity
-              onPress={handleSave}
-              disabled={saving || !selectedPlace}
-              style={{
-                backgroundColor: saving || !selectedPlace ? '#C0C0C0' : '#111',
-                borderRadius: 14,
-                paddingVertical: 15,
-                alignItems: 'center',
-              }}
-            >
-              {saving ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>등록 완료</Text>
+              {step === 1 && (
+                <Step1
+                  photoMode={photoMode}
+                  notePhotos={notePhotos}
+                  menuPhoto={menuPhoto}
+                  cafePhotos={cafePhotos}
+                  scanningNote={scanningNote}
+                  onAddNotePhoto={pickNotePhoto}
+                  onRemoveNotePhoto={(i) => setNotePhotos((p) => p.filter((_, idx) => idx !== i))}
+                  onAddMenuPhoto={pickMenuPhoto}
+                  onRemoveMenuPhoto={() => {
+                    setMenuPhoto(null);
+                    setMenuName('');
+                  }}
+                  onAddCafePhoto={pickCafePhoto}
+                  onRemoveCafePhoto={(i) => setCafePhotos((p) => p.filter((_, idx) => idx !== i))}
+                />
               )}
-            </TouchableOpacity>
-          )}
-        </View>
-      </KeyboardAvoidingView>
+              {step === 2 && (
+                <Step2
+                  selectedPlace={selectedPlace}
+                  visitedAt={visitedAt}
+                  nearbyPlaces={nearbyPlaces}
+                  nearbyLoading={nearbyLoading}
+                  hasCoords={photoCoords !== null}
+                  onSelectNearby={(p) =>
+                    setSelectedPlace({
+                      name: p.place_name,
+                      address: p.road_address_name || p.address_name,
+                    })
+                  }
+                  onOpenSearch={() => setShowAddressSearch(true)}
+                  onClearPlace={() => setSelectedPlace(null)}
+                  onOpenDatePicker={() => setShowDatePicker(true)}
+                />
+              )}
+              {step === 3 && (
+                <Step3
+                  analyzing={analyzing}
+                  analyzed={analyzed}
+                  menuNotDrink={menuNotDrink}
+                  photoMode={photoMode}
+                  onReanalyze={
+                    photoMode === 'handdip' && notePhotos.length > 0
+                      ? runAnalysis
+                      : photoMode === 'menu' && menuPhoto
+                        ? runMenuAnalysis
+                        : undefined
+                  }
+                  menuName={menuName}
+                  onMenuName={setMenuName}
+                  isCoffeeDrink={isCoffeeDrink}
+                  onIsCoffeeDrink={setIsCoffeeDrink}
+                  isBlend={isBlend}
+                  onIsBlend={setIsBlend}
+                  origin={origin}
+                  onOrigin={setOrigin}
+                  farm={farm}
+                  onFarm={setFarm}
+                  variety={variety}
+                  onVariety={setVariety}
+                  process={process}
+                  onProcess={setProcess}
+                  roastLevel={roastLevel}
+                  onRoastLevel={setRoastLevel}
+                  officialNotes={officialNotes}
+                  onOfficialNotes={setOfficialNotes}
+                  beans={beans}
+                  onBeans={setBeans}
+                />
+              )}
+              {step === 4 && (
+                <Step4
+                  photoMode={photoMode}
+                  isCoffeeDrink={isCoffeeDrink}
+                  memo={memo}
+                  onMemo={setMemo}
+                  myNotes={myNotes}
+                  onMyNotes={setMyNotes}
+                  acidity={acidity}
+                  onAcidity={setAcidity}
+                  nuttiness={nuttiness}
+                  onNuttiness={setNuttiness}
+                  richness={richness}
+                  onRichness={setRichness}
+                  smoothness={smoothness}
+                  onSmoothness={setSmoothness}
+                />
+              )}
+            </ScrollView>
+
+            {/* 하단 버튼 */}
+            <View
+              style={{
+                paddingHorizontal: 20,
+                paddingBottom: insets.bottom + 16,
+                paddingTop: 12,
+                backgroundColor: '#fff',
+              }}
+            >
+              {step < TOTAL_STEPS ? (
+                <TouchableOpacity
+                  onPress={goNext}
+                  disabled={nextDisabled}
+                  style={{
+                    backgroundColor: nextDisabled ? '#C0C0C0' : '#111',
+                    borderRadius: 14,
+                    paddingVertical: 15,
+                    alignItems: 'center',
+                  }}
+                >
+                  <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>다음</Text>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  onPress={handleSave}
+                  disabled={saving || !selectedPlace}
+                  style={{
+                    backgroundColor: saving || !selectedPlace ? '#C0C0C0' : '#111',
+                    borderRadius: 14,
+                    paddingVertical: 15,
+                    alignItems: 'center',
+                  }}
+                >
+                  {saving ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>
+                      등록 완료
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              )}
+            </View>
+          </KeyboardAvoidingView>
+        </>
+      )}
 
       {/* 카페 검색 모달 */}
       <AddressSearchModal
