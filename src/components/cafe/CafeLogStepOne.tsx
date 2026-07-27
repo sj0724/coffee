@@ -10,7 +10,6 @@ export function Step1({
   menuPhoto,
   cafePhotos,
   scanningNote,
-  scanningCafe,
   onAddNotePhoto,
   onRemoveNotePhoto,
   onAddMenuPhoto,
@@ -24,7 +23,6 @@ export function Step1({
   menuPhoto: string | null;
   cafePhotos: string[];
   scanningNote: boolean;
-  scanningCafe: boolean;
   onAddNotePhoto: () => void;
   onRemoveNotePhoto: (i: number) => void;
   onAddMenuPhoto: () => void;
@@ -227,8 +225,8 @@ export function Step1({
             <View key={i} style={{ position: 'relative' }}>
               <Image
                 source={{ uri }}
-                style={{ width: 100, height: 133, borderRadius: 10 }}
-                contentFit="cover"
+                style={{ width: 100, height: 133, borderRadius: 10, backgroundColor: '#F1F1F1' }}
+                contentFit="contain"
               />
               <TouchableOpacity
                 style={{
@@ -245,23 +243,7 @@ export function Step1({
               </TouchableOpacity>
             </View>
           ))}
-          {scanningCafe && (
-            <View
-              style={{
-                width: 100,
-                height: 133,
-                borderRadius: 10,
-                backgroundColor: '#EFEFEF',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 4,
-              }}
-            >
-              <ActivityIndicator color="#111" />
-              <Text style={{ fontSize: 10, color: '#888' }}>스캔 중</Text>
-            </View>
-          )}
-          {!scanningCafe && cafePhotos.length < 10 && (
+          {cafePhotos.length < 10 && (
             <TouchableOpacity
               onPress={onAddCafePhoto}
               style={{

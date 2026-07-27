@@ -13,8 +13,11 @@ import {
   Linking,
 } from 'react-native';
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
+import { StatusBar } from 'expo-status-bar';
 import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getCafeLog, deleteCafeLog, setFavorite } from '@/src/db/queries/cafeLogs';
 import { getMenuItems, deleteMenuItem } from '@/src/db/queries/cafeMenuItems';
 import { getTastingNote } from '@/src/db/queries/tastingNotes';
@@ -92,11 +95,15 @@ function MenuActionDropdown({ onEdit, onDelete }: { onEdit?: () => void; onDelet
 export default function CafeDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { width: screenWidth } = useWindowDimensions();
   const [log, setLog] = useState<CafeLog | null>(null);
   const [menuItems, setMenuItems] = useState<CafeMenuItem[]>([]);
   const [handripNotesMap, setHandripNotesMap] = useState<Record<number, HanddripNote>>({});
   const [espressoNotesMap, setEspressoNotesMap] = useState<Record<number, EspressoNote>>({});
+  const [activeCafePhoto, setActiveCafePhoto] = useState(0);
+  const [noteCardOpen, setNoteCardOpen] = useState(false);
+  const [cafePhotoAspectRatio, setCafePhotoAspectRatio] = useState(1);
 
   useFocusEffect(
     useCallback(() => {
@@ -107,6 +114,23 @@ export default function CafeDetailScreen() {
   async function loadAll() {
     const logId = Number(id);
     const [l, items] = await Promise.all([getCafeLog(logId), getMenuItems(logId)]);
+
+    if (l?.photos) {
+      try {
+        const photos = JSON.parse(l.photos) as string[];
+        if (photos[0]) {
+          const image = await Image.loadAsync(photos[0]);
+          if (image.width > 0 && image.height > 0) {
+            setCafePhotoAspectRatio(image.width / image.height);
+          }
+        }
+      } catch {
+        setCafePhotoAspectRatio(1);
+      }
+    } else {
+      setCafePhotoAspectRatio(1);
+    }
+
     setLog(l);
     setMenuItems(items);
 
@@ -182,7 +206,14 @@ export default function CafeDetailScreen() {
     ]);
   }
 
-  if (!log) return <View className="flex-1 bg-coffee-light" />;
+  if (!log) {
+    return (
+      <View className="flex-1 bg-coffee-light">
+        <Stack.Screen options={{ headerShown: false }} />
+        <StatusBar style="dark" />
+      </View>
+    );
+  }
 
   const isFav = !!log.is_favorite;
 
@@ -201,33 +232,72 @@ export default function CafeDetailScreen() {
     }
   })();
   const photoW = screenWidth - 40;
-  const photoH = Math.round(photoW * 1.25);
+  const headerOnPhoto = cafePhotoUris.length > 0;
+  const headerColor = '#1D1D1B';
+  const headerButtonBackground = headerOnPhoto ? 'rgba(255,255,255,0.58)' : '#F4F3F1';
+  const headerBorderColor = headerOnPhoto ? 'rgba(255,255,255,0.48)' : '#ECEAE6';
+  const headerGradientColors = headerOnPhoto
+    ? (['rgba(255,255,255,0.78)', 'rgba(255,255,255,0.38)', 'rgba(255,255,255,0)'] as const)
+    : (['#fff', '#fff', '#fff'] as const);
 
   return (
-    <>
-      <Stack.Screen
-        options={{
-          headerRight: () => (
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-              <TouchableOpacity onPress={handleToggleFavorite} style={{ padding: 6 }}>
-                <Ionicons
-                  name={isFav ? 'star' : 'star-outline'}
-                  size={22}
-                  color={isFav ? '#F5A623' : '#888'}
-                />
-              </TouchableOpacity>
-              <TouchableOpacity onPress={showMoreOptions} style={{ padding: 6 }}>
-                <Ionicons name="ellipsis-horizontal" size={22} color="#111" />
-              </TouchableOpacity>
-            </View>
-          ),
+    <View style={{ flex: 1, backgroundColor: '#F8F8F8' }}>
+      <Stack.Screen options={{ headerShown: false }} />
+      <StatusBar style={noteCardOpen ? 'light' : 'dark'} />
+      <LinearGradient
+        colors={headerGradientColors}
+        locations={[0, 0.58, 1]}
+        style={{
+          position: headerOnPhoto ? 'absolute' : 'relative',
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 10,
+          height: insets.top + (headerOnPhoto ? 124 : 56),
+          paddingTop: insets.top,
+          paddingHorizontal: 16,
         }}
-      />
+      >
+        <View style={{ height: 48, flexDirection: 'row', alignItems: 'center' }}>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            accessibilityRole="button"
+            accessibilityLabel="뒤로 가기"
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 20,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: headerButtonBackground,
+              borderWidth: 1,
+              borderColor: headerBorderColor,
+            }}
+          >
+            <Ionicons name="chevron-back" size={24} color={headerColor} />
+          </TouchableOpacity>
+
+          <Text
+            numberOfLines={1}
+            style={{
+              position: 'absolute',
+              left: 72,
+              right: 72,
+              textAlign: 'center',
+              fontSize: 16,
+              fontWeight: '700',
+              color: headerColor,
+            }}
+          >
+            {log.cafe_name}
+          </Text>
+        </View>
+      </LinearGradient>
       <ScrollView
         className="flex-1 bg-coffee-light"
         contentContainerStyle={{ gap: 16, paddingBottom: 40 }}
       >
-        {notePhotoUris.length > 0 && (
+        {notePhotoUris.length > 0 && cafePhotoUris.length === 0 && (
           <View style={{ marginTop: 20, gap: 8, alignItems: 'center' }}>
             <FlipCard
               frontUri={notePhotoUris[0]}
@@ -238,26 +308,110 @@ export default function CafeDetailScreen() {
         )}
 
         {cafePhotoUris.length > 0 && (
-          <View style={{ marginTop: notePhotoUris.length > 0 ? 4 : 20, gap: 8 }}>
-            <Text
-              style={{ fontSize: 14, fontWeight: '600', color: '#5F5A54', paddingHorizontal: 20 }}
-            >
-              카페 · 메뉴 사진
-            </Text>
+          <View
+            style={{
+              width: screenWidth,
+              height: screenWidth / cafePhotoAspectRatio,
+              backgroundColor: '#EEECE8',
+            }}
+          >
             <ScrollView
               horizontal
+              pagingEnabled
+              bounces={false}
               showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ gap: 12, paddingHorizontal: 20 }}
+              onMomentumScrollEnd={(event) =>
+                setActiveCafePhoto(Math.round(event.nativeEvent.contentOffset.x / screenWidth))
+              }
             >
               {cafePhotoUris.map((uri, i) => (
                 <Image
                   key={i}
                   source={{ uri }}
-                  style={{ width: photoW, height: photoH, borderRadius: 12 }}
+                  style={{ width: screenWidth, height: screenWidth / cafePhotoAspectRatio }}
                   contentFit="cover"
                 />
               ))}
             </ScrollView>
+
+            {cafePhotoUris.length > 1 && (
+              <View
+                style={{
+                  position: 'absolute',
+                  bottom: 18,
+                  alignSelf: 'center',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 5,
+                  paddingHorizontal: 8,
+                  paddingVertical: 7,
+                  borderRadius: 999,
+                  backgroundColor: 'rgba(0,0,0,0.2)',
+                }}
+              >
+                {cafePhotoUris.map((_, index) => {
+                  const active = index === activeCafePhoto;
+                  return (
+                    <View
+                      key={index}
+                      style={{
+                        width: active ? 7 : 5,
+                        height: active ? 7 : 5,
+                        borderRadius: 999,
+                        backgroundColor: active ? '#fff' : 'rgba(255,255,255,0.52)',
+                      }}
+                    />
+                  );
+                })}
+              </View>
+            )}
+
+            {notePhotoUris.length > 0 && (
+              <TouchableOpacity
+                onPress={() => setNoteCardOpen(true)}
+                activeOpacity={0.9}
+                accessibilityRole="button"
+                accessibilityLabel="노트 카드 크게 보기"
+                style={{
+                  position: 'absolute',
+                  right: 16,
+                  bottom: 16,
+                  width: 78,
+                  height: 92,
+                  padding: 3,
+                  borderRadius: 12,
+                  backgroundColor: '#fff',
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.25,
+                  shadowRadius: 8,
+                  elevation: 8,
+                }}
+              >
+                <Image
+                  source={{ uri: notePhotoUris[0] }}
+                  style={{ width: '100%', height: '100%', borderRadius: 9 }}
+                  contentFit="cover"
+                />
+                {notePhotoUris.length > 1 && (
+                  <View
+                    style={{
+                      position: 'absolute',
+                      right: 7,
+                      bottom: 7,
+                      width: 22,
+                      height: 22,
+                      borderRadius: 11,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      backgroundColor: 'rgba(0,0,0,0.62)',
+                    }}
+                  >
+                    <Ionicons name="copy-outline" size={12} color="#fff" />
+                  </View>
+                )}
+              </TouchableOpacity>
+            )}
           </View>
         )}
 
@@ -272,9 +426,55 @@ export default function CafeDetailScreen() {
             borderColor: '#ECEAE6',
           }}
         >
-          <Text style={{ fontSize: 24, fontWeight: '800', color: '#1D1D1B', letterSpacing: -0.5 }}>
-            {log.cafe_name}
-          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
+            <Text
+              style={{
+                flex: 1,
+                fontSize: 24,
+                fontWeight: '800',
+                color: '#1D1D1B',
+                letterSpacing: -0.5,
+              }}
+            >
+              {log.cafe_name}
+            </Text>
+            <View style={{ flexDirection: 'row', gap: 4 }}>
+              <TouchableOpacity
+                onPress={handleToggleFavorite}
+                accessibilityRole="button"
+                accessibilityLabel={isFav ? '즐겨찾기 해제' : '즐겨찾기'}
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 18,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: '#F4F2EE',
+                }}
+              >
+                <Ionicons
+                  name={isFav ? 'star' : 'star-outline'}
+                  size={19}
+                  color={isFav ? '#E9A923' : '#706A62'}
+                />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={showMoreOptions}
+                accessibilityRole="button"
+                accessibilityLabel="더보기"
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 18,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: '#F4F2EE',
+                }}
+              >
+                <Ionicons name="ellipsis-horizontal" size={19} color="#706A62" />
+              </TouchableOpacity>
+            </View>
+          </View>
           <View style={{ gap: 10, marginTop: 16 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <View
@@ -339,10 +539,6 @@ export default function CafeDetailScreen() {
         </View>
 
         <View style={{ marginTop: 8 }}>
-          <View className="flex-row items-center px-5 mb-3">
-            <Text className="text-[18px] font-bold text-[#222]">메뉴</Text>
-          </View>
-
           {menuItems.length === 0 && (
             <View className="px-5 py-8 mx-5 bg-white border border-coffee-border rounded-2xl">
               <Text className="text-sm text-center text-gray-300">등록된 메뉴가 없어요.</Text>
@@ -401,6 +597,58 @@ export default function CafeDetailScreen() {
           )}
         </View>
       </ScrollView>
-    </>
+
+      <Modal
+        transparent
+        visible={noteCardOpen}
+        animationType="fade"
+        presentationStyle="overFullScreen"
+        statusBarTranslucent
+        onRequestClose={() => setNoteCardOpen(false)}
+      >
+        <View
+          style={{
+            flex: 1,
+            alignItems: 'center',
+            justifyContent: 'center',
+            paddingHorizontal: 20,
+            backgroundColor: 'rgba(0,0,0,0.72)',
+          }}
+        >
+          <TouchableOpacity
+            onPress={() => setNoteCardOpen(false)}
+            accessibilityRole="button"
+            accessibilityLabel="닫기"
+            style={{
+              position: 'absolute',
+              top: insets.top + 12,
+              right: 16,
+              width: 40,
+              height: 40,
+              borderRadius: 20,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: 'rgba(255,255,255,0.14)',
+              zIndex: 1,
+            }}
+          >
+            <Ionicons name="close" size={24} color="#fff" />
+          </TouchableOpacity>
+
+          {notePhotoUris.length > 0 && (
+            <FlipCard
+              frontUri={notePhotoUris[0]}
+              backUri={notePhotoUris[1] ?? null}
+              width={screenWidth - 40}
+            />
+          )}
+          {notePhotoUris.length > 1 && (
+            <Text style={{ marginTop: 20, fontSize: 13, color: 'rgba(255,255,255,0.72)' }}>
+              카드를 눌러 뒷면 보기
+            </Text>
+          )}
+        </View>
+      </Modal>
+    </View>
   );
 }

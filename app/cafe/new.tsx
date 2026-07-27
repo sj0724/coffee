@@ -50,7 +50,6 @@ export default function NewCafeLogScreen() {
   const [isCoffeeDrink, setIsCoffeeDrink] = useState(true);
   const [cafePhotos, setCafePhotos] = useState<string[]>([]);
   const [scanningNote, setScanningNote] = useState(false);
-  const [scanningCafe, setScanningCafe] = useState(false);
 
   // Step 2 - 카페
   const [photoCoords, setPhotoCoords] = useState<{ lat: number; lng: number } | null>(null);
@@ -303,7 +302,7 @@ export default function NewCafeLogScreen() {
     const result = await ImagePicker.launchCameraAsync({ quality: 1, exif: true });
     if (!result.canceled) {
       extractCoordsFromExif(result.assets[0].exif as Record<string, unknown>);
-      addCafePhoto(result.assets[0].uri);
+      setCafePhotos((prev) => [...prev, result.assets[0].uri]);
     }
   }
 
@@ -323,31 +322,8 @@ export default function NewCafeLogScreen() {
     });
     if (!result.canceled) {
       extractCoordsFromExif(result.assets[0].exif as Record<string, unknown>);
-      setScanningCafe(true);
-      const uris = await Promise.all(
-        result.assets.map(async (a) => {
-          try {
-            return await detectAndCrop(a.uri);
-          } catch {
-            return a.uri;
-          }
-        }),
-      );
-      setCafePhotos((prev) => [...prev, ...uris]);
-      setScanningCafe(false);
+      setCafePhotos((prev) => [...prev, ...result.assets.map((asset) => asset.uri)]);
     }
-  }
-
-  async function addCafePhoto(rawUri: string) {
-    setScanningCafe(true);
-    let uri = rawUri;
-    try {
-      uri = await detectAndCrop(rawUri);
-    } catch {
-      // detectAndCrop 실패 시 원본 사용
-    }
-    setCafePhotos((prev) => [...prev, uri]);
-    setScanningCafe(false);
   }
 
   async function handleSave() {
@@ -478,7 +454,6 @@ export default function NewCafeLogScreen() {
               menuPhoto={menuPhoto}
               cafePhotos={cafePhotos}
               scanningNote={scanningNote}
-              scanningCafe={scanningCafe}
               onAddNotePhoto={pickNotePhoto}
               onRemoveNotePhoto={(i) => setNotePhotos((p) => p.filter((_, idx) => idx !== i))}
               onAddMenuPhoto={pickMenuPhoto}
