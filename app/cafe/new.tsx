@@ -33,7 +33,6 @@ import type { HanddripNoteBean } from '@/src/types';
 const KAKAO_API_KEY = process.env.EXPO_PUBLIC_KAKAO_REST_API_KEY ?? '';
 
 const TOTAL_STEPS = 4;
-const STEP_LABELS = ['사진', '카페', '정보', '메모'];
 
 export default function NewCafeLogScreen() {
   const router = useRouter();
@@ -436,9 +435,6 @@ export default function NewCafeLogScreen() {
         </TouchableOpacity>
         <Text style={{ flex: 1, fontSize: 17, fontWeight: '700', color: '#222' }}>
           새 카페 기록
-        </Text>
-        <Text style={{ fontSize: 13, color: '#999', fontWeight: '500' }}>
-          {step}/{TOTAL_STEPS} {STEP_LABELS[step - 1]}
         </Text>
       </View>
 

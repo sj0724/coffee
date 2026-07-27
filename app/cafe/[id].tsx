@@ -1,9 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
+  Pressable,
+  Modal,
   Alert,
   ActionSheetIOS,
   Platform,
@@ -11,36 +13,80 @@ import {
   Linking,
 } from 'react-native';
 import { Image } from 'expo-image';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { getCafeLog, deleteCafeLog, setFavorite } from '@/src/db/queries/cafeLogs';
 import { getMenuItems, deleteMenuItem } from '@/src/db/queries/cafeMenuItems';
-import { getTastingNote, upsertTastingNote } from '@/src/db/queries/tastingNotes';
-import { getEspressoNote, upsertEspressoNote } from '@/src/db/queries/espressoNotes';
-import { CafeLog, CafeMenuItem, HanddripNote, EspressoNote, MenuCategory } from '@/src/types';
-import { NoteForm } from '@/src/components/cafe/NoteForm';
+import { getTastingNote } from '@/src/db/queries/tastingNotes';
+import { getEspressoNote } from '@/src/db/queries/espressoNotes';
+import { CafeLog, CafeMenuItem, HanddripNote, EspressoNote } from '@/src/types';
 import { NoteView } from '@/src/components/cafe/NoteView';
-import { EspressoNoteForm } from '@/src/components/cafe/EspressoNoteForm';
 import { EspressoNoteView } from '@/src/components/cafe/EspressoNoteView';
 import { FlipCard } from '@/src/components/cafe/FlipCard';
+import { getMenuCategory } from '@/src/components/cafe/menuCategory';
 
-const COFFEE_OPTIONS = [
-  '에스프레소',
-  '아메리카노',
-  '라떼',
-  '카푸치노',
-  '플랫화이트',
-  '핸드드립',
-  '콜드브루',
-];
+function MenuActionDropdown({ onEdit, onDelete }: { onEdit?: () => void; onDelete: () => void }) {
+  const anchorRef = useRef<View>(null);
+  const { height: screenHeight } = useWindowDimensions();
+  const [open, setOpen] = useState(false);
+  const [anchorBottom, setAnchorBottom] = useState(0);
 
-function getMenuCategory(menuName: string, isCoffee?: number | null): MenuCategory {
-  if (menuName === '핸드드립') return 'handdip';
-  if (isCoffee === 1) return 'espresso';
-  if (isCoffee === 0) return 'simple';
-  // is_coffee 없는 구버전 데이터는 COFFEE_OPTIONS로 폴백
-  if (COFFEE_OPTIONS.includes(menuName)) return 'espresso';
-  return 'simple';
+  function show() {
+    anchorRef.current?.measureInWindow((_x, y, _width, height) => {
+      setAnchorBottom(y + height);
+      setOpen(true);
+    });
+  }
+
+  function run(action: () => void) {
+    setOpen(false);
+    action();
+  }
+
+  return (
+    <View ref={anchorRef} collapsable={false}>
+      <TouchableOpacity onPress={show} style={{ padding: 6, margin: -6 }}>
+        <Ionicons name="ellipsis-horizontal" size={20} color="#666" />
+      </TouchableOpacity>
+      <Modal transparent visible={open} animationType="fade" onRequestClose={() => setOpen(false)}>
+        <Pressable style={{ flex: 1 }} onPress={() => setOpen(false)}>
+          <View
+            style={{
+              position: 'absolute',
+              top: Math.max(12, Math.min(anchorBottom + 4, screenHeight - (onEdit ? 126 : 78))),
+              right: 20,
+              minWidth: 132,
+              paddingVertical: 6,
+              borderRadius: 12,
+              backgroundColor: '#fff',
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.14,
+              shadowRadius: 12,
+              elevation: 8,
+            }}
+          >
+            {onEdit && (
+              <TouchableOpacity
+                onPress={() => run(onEdit)}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12 }}
+              >
+                <Ionicons name="pencil-outline" size={18} color="#333" />
+                <Text style={{ fontSize: 14, color: '#333', fontWeight: '600' }}>수정</Text>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity
+              onPress={() => run(onDelete)}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12 }}
+            >
+              <Ionicons name="trash-outline" size={18} color="#D9534F" />
+              <Text style={{ fontSize: 14, color: '#D9534F', fontWeight: '600' }}>삭제</Text>
+            </TouchableOpacity>
+          </View>
+        </Pressable>
+      </Modal>
+    </View>
+  );
 }
 
 export default function CafeDetailScreen() {
@@ -51,13 +97,12 @@ export default function CafeDetailScreen() {
   const [menuItems, setMenuItems] = useState<CafeMenuItem[]>([]);
   const [handripNotesMap, setHandripNotesMap] = useState<Record<number, HanddripNote>>({});
   const [espressoNotesMap, setEspressoNotesMap] = useState<Record<number, EspressoNote>>({});
-  const [editingMenuId, setEditingMenuId] = useState<number | null>(null);
-  const [handripForm, setHandripForm] = useState<Partial<HanddripNote>>({});
-  const [espressoTags, setEspressoTags] = useState<string[]>([]);
 
-  useEffect(() => {
-    loadAll();
-  }, [id]);
+  useFocusEffect(
+    useCallback(() => {
+      loadAll();
+    }, [id]),
+  );
 
   async function loadAll() {
     const logId = Number(id);
@@ -133,28 +178,6 @@ export default function CafeDetailScreen() {
     ]);
   }
 
-  async function handleSaveNote(menuId: number, category: MenuCategory) {
-    if (category === 'handdip') {
-      await upsertTastingNote({ ...handripForm, cafe_menu_item_id: menuId } as HanddripNote);
-    } else if (category === 'espresso') {
-      await upsertEspressoNote({ cafe_menu_item_id: menuId, tags: espressoTags });
-    }
-    setEditingMenuId(null);
-    loadAll();
-  }
-
-  function startEditing(item: CafeMenuItem) {
-    const category = getMenuCategory(item.menu_name, item.is_coffee);
-    setEditingMenuId(item.id!);
-    if (category === 'handdip') {
-      const existing = handripNotesMap[item.id!];
-      setHandripForm(existing ? { ...existing } : {});
-    } else if (category === 'espresso') {
-      const existing = espressoNotesMap[item.id!];
-      setEspressoTags(existing ? [...existing.tags] : []);
-    }
-  }
-
   if (!log) return <View className="flex-1 bg-coffee-light" />;
 
   const isFav = !!log.is_favorite;
@@ -202,17 +225,6 @@ export default function CafeDetailScreen() {
       >
         {notePhotoUris.length > 0 && (
           <View style={{ marginTop: 20, gap: 8, alignItems: 'center' }}>
-            <Text
-              style={{
-                fontSize: 13,
-                fontWeight: '600',
-                color: '#999',
-                alignSelf: 'flex-start',
-                paddingHorizontal: 20,
-              }}
-            >
-              노트 사진
-            </Text>
             <FlipCard
               frontUri={notePhotoUris[0]}
               backUri={notePhotoUris[1] ?? null}
@@ -282,7 +294,6 @@ export default function CafeDetailScreen() {
             <View className="bg-white border-y border-coffee-border">
               {menuItems.map((item, index) => {
                 const category = getMenuCategory(item.menu_name, item.is_coffee);
-                const isEditing = editingMenuId === item.id;
                 const isLast = index === menuItems.length - 1;
 
                 return (
@@ -292,47 +303,25 @@ export default function CafeDetailScreen() {
                   >
                     <View className="flex-row items-center justify-between mb-2">
                       <Text className="text-[15px] font-bold text-[#222]">{item.menu_name}</Text>
-                      <View className="flex-row gap-3">
-                        {category !== 'simple' && (
-                          <TouchableOpacity
-                            onPress={() =>
-                              isEditing ? setEditingMenuId(null) : startEditing(item)
-                            }
-                          >
-                            <Ionicons
-                              name={isEditing ? 'close-outline' : 'pencil-outline'}
-                              size={18}
-                              color="#111111"
-                            />
-                          </TouchableOpacity>
-                        )}
-                        <TouchableOpacity onPress={() => handleDeleteMenu(item.id!)}>
-                          <Ionicons name="trash-outline" size={18} color="#E76F51" />
-                        </TouchableOpacity>
-                      </View>
+                      <MenuActionDropdown
+                        onEdit={
+                          category !== 'simple'
+                            ? () => router.push(`/cafe/menu/${item.id}/edit`)
+                            : undefined
+                        }
+                        onDelete={() => handleDeleteMenu(item.id!)}
+                      />
                     </View>
 
                     {category === 'handdip' &&
-                      (isEditing ? (
-                        <NoteForm
-                          form={handripForm}
-                          onChange={setHandripForm}
-                          onSave={() => handleSaveNote(item.id!, category)}
-                        />
-                      ) : handripNotesMap[item.id!] ? (
+                      (handripNotesMap[item.id!] ? (
                         <NoteView note={handripNotesMap[item.id!]} />
                       ) : (
                         <Text className="py-1 text-xs text-gray-300">노트를 추가해보세요.</Text>
                       ))}
 
                     {category === 'espresso' &&
-                      (isEditing ? (
-                        <EspressoNoteForm
-                          tags={espressoTags}
-                          onChange={setEspressoTags}
-                          onSave={() => handleSaveNote(item.id!, category)}
-                        />
-                      ) : espressoNotesMap[item.id!] ? (
+                      (espressoNotesMap[item.id!] ? (
                         <EspressoNoteView note={espressoNotesMap[item.id!]} />
                       ) : (
                         <Text className="py-1 text-xs text-gray-300">특징을 추가해보세요.</Text>

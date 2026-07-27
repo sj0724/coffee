@@ -14,6 +14,16 @@ export async function getMenuItems(cafeLogId: number): Promise<CafeMenuItem[]> {
   }
 }
 
+export async function getMenuItem(id: number): Promise<CafeMenuItem | null> {
+  try {
+    const db = await getDB();
+    return await db.getFirstAsync<CafeMenuItem>('SELECT * FROM cafe_menu_items WHERE id = ?', [id]);
+  } catch (e) {
+    console.error('getMenuItem error:', e);
+    return null;
+  }
+}
+
 export async function createMenuItem(
   item: Omit<CafeMenuItem, 'id' | 'created_at'>,
 ): Promise<number | null> {
