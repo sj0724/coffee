@@ -444,7 +444,7 @@ export default function CafeDetailScreen() {
                 accessibilityRole="button"
                 accessibilityLabel={isFav ? '즐겨찾기 해제' : '즐겨찾기'}
                 style={{
-                  width: 32,
+                  width: 36,
                   height: 36,
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -453,7 +453,7 @@ export default function CafeDetailScreen() {
                 <Ionicons
                   name={isFav ? 'heart' : 'heart-outline'}
                   size={20}
-                  color={isFav ? '#D96C67' : '#B7B1A9'}
+                  color={isFav ? '#D96C67' : '#817B73'}
                 />
               </TouchableOpacity>
               <TouchableOpacity
@@ -463,13 +463,11 @@ export default function CafeDetailScreen() {
                 style={{
                   width: 36,
                   height: 36,
-                  borderRadius: 18,
                   alignItems: 'center',
                   justifyContent: 'center',
-                  backgroundColor: '#F4F2EE',
                 }}
               >
-                <Ionicons name="ellipsis-horizontal" size={19} color="#706A62" />
+                <Ionicons name="ellipsis-horizontal" size={20} color="#817B73" />
               </TouchableOpacity>
             </View>
           </View>
@@ -537,6 +535,20 @@ export default function CafeDetailScreen() {
         </View>
 
         <View style={{ marginTop: 8 }}>
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              paddingHorizontal: 20,
+              marginBottom: 12,
+            }}
+          >
+            <Text style={{ fontSize: 20, fontWeight: '800', color: '#222' }}>메뉴</Text>
+            <Text style={{ marginLeft: 7, fontSize: 14, fontWeight: '700', color: '#8A847C' }}>
+              {menuItems.length}
+            </Text>
+          </View>
+
           {menuItems.length === 0 && (
             <View className="px-5 py-8 mx-5 bg-white border border-coffee-border rounded-2xl">
               <Text className="text-sm text-center text-gray-300">등록된 메뉴가 없어요.</Text>
@@ -558,12 +570,41 @@ export default function CafeDetailScreen() {
                       borderRadius: 18,
                       backgroundColor: '#fff',
                       borderWidth: 1,
-                      borderColor: '#ECEAE6',
+                      borderColor: '#E3DFD9',
                     }}
                   >
-                    <View className="flex-row items-center justify-between mb-3">
-                      <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                        <Text className="text-[17px] font-bold text-[#222]">{item.menu_name}</Text>
+                    <View className="flex-row items-center justify-between">
+                      <View
+                        style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 11 }}
+                      >
+                        <View
+                          style={{
+                            width: 36,
+                            height: 36,
+                            borderRadius: 11,
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            backgroundColor: '#F2EFEA',
+                          }}
+                        >
+                          <Ionicons
+                            name={category === 'handdip' ? 'water-outline' : 'cafe-outline'}
+                            size={18}
+                            color="#59534C"
+                          />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text className="text-[17px] font-bold text-[#222]">
+                            {item.menu_name}
+                          </Text>
+                          <Text style={{ marginTop: 2, fontSize: 12, color: '#777169' }}>
+                            {category === 'handdip'
+                              ? '핸드드립 노트'
+                              : category === 'espresso'
+                                ? '커피 노트'
+                                : '일반 메뉴'}
+                          </Text>
+                        </View>
                       </View>
                       <MenuActionDropdown
                         onEdit={
@@ -574,6 +615,17 @@ export default function CafeDetailScreen() {
                         onDelete={() => handleDeleteMenu(item.id!)}
                       />
                     </View>
+
+                    {category !== 'simple' && (
+                      <View
+                        style={{
+                          height: 1,
+                          marginTop: 14,
+                          marginBottom: 16,
+                          backgroundColor: '#ECE8E2',
+                        }}
+                      />
+                    )}
 
                     {category === 'handdip' &&
                       (handripNotesMap[item.id!] ? (

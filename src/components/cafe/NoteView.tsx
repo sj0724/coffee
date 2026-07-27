@@ -5,8 +5,8 @@ import { ScoreBar } from './ScoreBar';
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
     <View className="flex-row gap-2">
-      <Text className="text-[13px] font-semibold text-[#625D57] w-[60px]">{label}</Text>
-      <Text className="text-[14px] text-[#333] flex-1">{value}</Text>
+      <Text className="text-[13px] font-semibold text-[#514D47] w-[60px]">{label}</Text>
+      <Text className="text-[14px] leading-5 text-[#2F2D2A] flex-1">{value}</Text>
     </View>
   );
 }
@@ -28,7 +28,7 @@ function NoteTagRow({
       <Text className="text-[13px] font-semibold text-[#625D57]">{label}</Text>
       <View className="flex-row flex-wrap gap-1.5">
         {tags.map((tag, i) => (
-          <View key={i} className={`px-2 py-0.5 rounded-full ${badgeStyle}`}>
+          <View key={i} className={`px-2.5 py-1 rounded-full ${badgeStyle}`}>
             <Text className={`text-[13px] ${textStyle}`}>{tag}</Text>
           </View>
         ))}
@@ -59,7 +59,7 @@ export function NoteView({ note }: { note: HanddripNote }) {
   return (
     <View style={{ gap: 14 }}>
       {hasBeanInfo && (
-        <View className="gap-3 p-4 bg-[#FAF9F7] rounded-xl">
+        <View className="gap-3 p-4 bg-[#F5F3EF] rounded-xl">
           {isBlend ? (
             <>
               <View className="flex-row gap-2 mb-0.5">
@@ -92,7 +92,7 @@ export function NoteView({ note }: { note: HanddripNote }) {
         </View>
       )}
       {hasScores && (
-        <View className="gap-2.5 p-4 bg-[#FAF9F7] rounded-xl">
+        <View className="gap-3 p-4 bg-[#F5F3EF] rounded-xl">
           {note.acidity != null && <ScoreBar label="산미" value={note.acidity} />}
           {note.nuttiness != null && <ScoreBar label="고소함" value={note.nuttiness} />}
           {note.richness != null && <ScoreBar label="진함" value={note.richness} />}

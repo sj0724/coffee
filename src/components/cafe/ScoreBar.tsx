@@ -1,7 +1,7 @@
 import { View, Text } from 'react-native';
 
 const COFFEE = '#111111';
-const EMPTY = '#E5E7EB';
+const EMPTY = '#D9D5CE';
 
 export function ScoreBar({ label, value }: { label: string; value: number }) {
   return (
@@ -10,7 +10,7 @@ export function ScoreBar({ label, value }: { label: string; value: number }) {
       accessible
       accessibilityLabel={`${label} ${value}점`}
     >
-      <Text style={{ fontSize: 13, color: '#5F5A54', fontWeight: '600', width: 52 }}>{label}</Text>
+      <Text style={{ fontSize: 13, color: '#514D47', fontWeight: '600', width: 52 }}>{label}</Text>
       <View
         style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}
         importantForAccessibility="no-hide-descendants"

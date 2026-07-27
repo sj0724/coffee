@@ -12,10 +12,12 @@ export function EspressoNoteView({ note }: { note: EspressoNote }) {
             paddingHorizontal: 14,
             paddingVertical: 6,
             borderRadius: 999,
-            backgroundColor: '#111',
+            backgroundColor: '#F2EFEA',
+            borderWidth: 1,
+            borderColor: '#DED9D1',
           }}
         >
-          <Text style={{ fontSize: 13, fontWeight: '600', color: '#fff' }}>{tag}</Text>
+          <Text style={{ fontSize: 13, fontWeight: '600', color: '#403C37' }}>{tag}</Text>
         </View>
       ))}
     </View>
