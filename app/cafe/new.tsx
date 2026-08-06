@@ -10,18 +10,13 @@ import {
   Platform,
   Modal,
   Animated,
+  Easing,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useRouter, useNavigation } from 'expo-router';
-import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { createCafeLog } from '@/src/db/queries/cafeLogs';
-import { createMenuItem } from '@/src/db/queries/cafeMenuItems';
-import { upsertTastingNote } from '@/src/db/queries/tastingNotes';
 import { AddressSearchModal } from '@/src/components/AddressSearchModal';
-import { detectAndCrop } from '@/modules/document-scanner';
-import { analyzeCardImages, analyzeMenuPhoto } from '@/src/services/visionLLM';
 import { Step1 } from '@/src/components/cafe/CafeLogStepOne';
 import { Step2 } from '@/src/components/cafe/CafeLogStepTwo';
 import { Step3 } from '@/src/components/cafe/CafeLogStepThree';
@@ -29,66 +24,69 @@ import { Step4 } from '@/src/components/cafe/CafeLogStepFour';
 import { CafeLogTypePicker } from '@/src/components/cafe/CafeLogTypePicker';
 import type { NearbyPlace } from '@/src/components/cafe/cafeLogFormTypes';
 import { AnalysisOverlay } from '@/src/components/cafe/AnalysisOverlay';
-import type { HanddripNoteBean } from '@/src/types';
+import { useCafeLogDraftStore } from '@/src/store/cafeLogDraftStore';
+import { useCafeLogPhotos } from '@/src/hooks/useCafeLogPhotos';
+import { useCafeLogAnalysis } from '@/src/hooks/useCafeLogAnalysis';
+import { saveCafeLogDraft } from '@/src/services/saveCafeLogDraft';
 
 const KAKAO_API_KEY = process.env.EXPO_PUBLIC_KAKAO_REST_API_KEY ?? '';
 
 const TOTAL_STEPS = 4;
 
-export default function NewCafeLogScreen() {
+const NewCafeLogScreen = () => {
   const router = useRouter();
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const progressAnim = useRef(new Animated.Value(1 / TOTAL_STEPS)).current;
+  const stageOpacity = useRef(new Animated.Value(1)).current;
+  const stageTranslateX = useRef(new Animated.Value(0)).current;
+  const stageTransitioning = useRef(false);
 
-  const [step, setStep] = useState(1);
-  const [recordTypeSelected, setRecordTypeSelected] = useState(false);
+  const draft = useCafeLogDraftStore();
+  const { setField, updateDraft, selectRecordType: updateRecordType, resetDraft } = draft;
+  const {
+    step,
+    recordTypeSelected,
+    photoMode,
+    notePhotos,
+    menuPhoto,
+    menuNotDrink,
+    isCoffeeDrink,
+    cafePhotos,
+    photoCoords,
+    selectedPlace,
+    visitedAt,
+    analyzed,
+    menuName,
+    isBlend,
+    origin,
+    farm,
+    variety,
+    process,
+    roastLevel,
+    officialNotes,
+    myNotes,
+    acidity,
+    nuttiness,
+    richness,
+    smoothness,
+    beans,
+    memo,
+  } = draft;
 
-  // Step 1 - 사진
-  const [photoMode, setPhotoMode] = useState<'handdip' | 'menu'>('handdip');
-  const [notePhotos, setNotePhotos] = useState<string[]>([]);
-  const [menuPhoto, setMenuPhoto] = useState<string | null>(null);
-  const [menuNotDrink, setMenuNotDrink] = useState(false);
-  const [isCoffeeDrink, setIsCoffeeDrink] = useState(true);
-  const [cafePhotos, setCafePhotos] = useState<string[]>([]);
-  const [scanningNote, setScanningNote] = useState(false);
-
-  // Step 2 - 카페
-  const [photoCoords, setPhotoCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const { scanningNote, pickNotePhoto, pickMenuPhoto, pickCafePhoto } = useCafeLogPhotos();
+  const { analyzing, runCardAnalysis, runMenuAnalysis } = useCafeLogAnalysis();
   const [nearbyPlaces, setNearbyPlaces] = useState<NearbyPlace[]>([]);
   const [nearbyLoading, setNearbyLoading] = useState(false);
-  const [selectedPlace, setSelectedPlace] = useState<{ name: string; address: string } | null>(
-    null,
-  );
-  const [date, setDate] = useState(new Date());
   const [showAddressSearch, setShowAddressSearch] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
-
-  // Step 3 - 정보
-  const [analyzing, setAnalyzing] = useState(false);
-  const [analyzed, setAnalyzed] = useState(false);
-  const [menuName, setMenuName] = useState('');
-  const [isBlend, setIsBlend] = useState(0);
-  const [origin, setOrigin] = useState('');
-  const [farm, setFarm] = useState('');
-  const [variety, setVariety] = useState('');
-  const [process, setProcess] = useState('');
-  const [roastLevel, setRoastLevel] = useState('');
-  const [officialNotes, setOfficialNotes] = useState<string[]>([]);
-  const [myNotes, setMyNotes] = useState<string[]>([]);
-  const [acidity, setAcidity] = useState<number | undefined>();
-  const [nuttiness, setNuttiness] = useState<number | undefined>();
-  const [richness, setRichness] = useState<number | undefined>();
-  const [smoothness, setSmoothness] = useState<number | undefined>();
-  const [beans, setBeans] = useState<HanddripNoteBean[]>([]);
-
-  // Step 4 - 메모
-  const [memo, setMemo] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const visitedAt = date.toISOString().slice(0, 10);
+  const date = new Date(`${visitedAt}T00:00:00`);
   const nextDisabled =
     (step === 2 && !selectedPlace) || (step === 3 && photoMode === 'menu' && !menuName.trim());
+
+  useEffect(() => resetDraft, [resetDraft]);
 
   // 분석 중 화면 이탈 차단 (iOS 스와이프, Android 뒤로가기)
   useEffect(() => {
@@ -114,7 +112,7 @@ export default function NewCafeLogScreen() {
     }
   }, [step]);
 
-  async function fetchNearby() {
+  const fetchNearby = async () => {
     if (!photoCoords) return;
     setNearbyLoading(true);
     try {
@@ -129,291 +127,88 @@ export default function NewCafeLogScreen() {
     } finally {
       setNearbyLoading(false);
     }
-  }
+  };
 
-  // Step 3 진입 시 Gemini 분석 자동 실행
-  useEffect(() => {
-    if (step !== 3 || analyzed) return;
-    if (photoMode === 'handdip' && notePhotos.length > 0) runAnalysis();
-    else if (photoMode === 'menu' && menuPhoto) runMenuAnalysis();
-  }, [step]);
+  const transitionStage = (update: () => void, direction: 'forward' | 'back') => {
+    if (stageTransitioning.current) return;
+    stageTransitioning.current = true;
 
-  async function runMenuAnalysis() {
-    if (!menuPhoto) return;
-    setAnalyzing(true);
-    setMenuNotDrink(false);
-    try {
-      const result = await analyzeMenuPhoto(menuPhoto);
-      if (!result || !result.is_drink) {
-        setMenuNotDrink(true);
-      } else {
-        if (result.menu_name) setMenuName(result.menu_name);
-        setIsCoffeeDrink(result.is_coffee);
-      }
-    } finally {
-      setAnalyzing(false);
-      setAnalyzed(true);
-    }
-  }
-
-  async function runAnalysis() {
-    setAnalyzing(true);
-    try {
-      const result = await analyzeCardImages(notePhotos);
-      if (result) {
-        if (result.is_blend !== undefined) setIsBlend(result.is_blend);
-        if (result.origin) setOrigin(result.origin);
-        if (result.farm) setFarm(result.farm);
-        if (result.variety) setVariety(result.variety);
-        if (result.process) setProcess(result.process);
-        if (result.roast_level) setRoastLevel(result.roast_level);
-        if (result.official_notes?.length) setOfficialNotes(result.official_notes);
-        if (result.beans?.length) setBeans(result.beans);
-      }
-    } finally {
-      setAnalyzing(false);
-      setAnalyzed(true);
-    }
-  }
-
-  function goNext() {
-    if (step < TOTAL_STEPS) setStep((s) => s + 1);
-  }
-
-  function goBack() {
-    if (analyzing) return;
-    if (step > 1) setStep((s) => s - 1);
-    else if (recordTypeSelected) setRecordTypeSelected(false);
-    else router.back();
-  }
-
-  async function pickNotePhoto() {
-    if (notePhotos.length >= 2) return;
-    Alert.alert('노트 사진', undefined, [
-      { text: '카메라', onPress: () => pickNoteFromCamera() },
-      { text: '갤러리', onPress: () => pickNoteFromLibrary() },
-      { text: '취소', style: 'cancel' },
-    ]);
-  }
-
-  async function pickNoteFromCamera() {
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('권한 필요', '카메라 권한이 필요해요.');
-      return;
-    }
-    const result = await ImagePicker.launchCameraAsync({ quality: 1 });
-    if (!result.canceled) addNotePhoto(result.assets[0].uri);
-  }
-
-  async function pickNoteFromLibrary() {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('권한 필요', '사진 접근 권한이 필요해요.');
-      return;
-    }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      quality: 1,
+    Animated.parallel([
+      Animated.timing(stageOpacity, {
+        toValue: 0,
+        duration: 100,
+        easing: Easing.in(Easing.quad),
+        useNativeDriver: true,
+      }),
+      Animated.timing(stageTranslateX, {
+        toValue: direction === 'forward' ? -14 : 14,
+        duration: 100,
+        easing: Easing.in(Easing.quad),
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      update();
+      stageTranslateX.setValue(direction === 'forward' ? 18 : -18);
+      requestAnimationFrame(() => {
+        Animated.parallel([
+          Animated.timing(stageOpacity, {
+            toValue: 1,
+            duration: 200,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: true,
+          }),
+          Animated.timing(stageTranslateX, {
+            toValue: 0,
+            duration: 200,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: true,
+          }),
+        ]).start(() => {
+          stageTransitioning.current = false;
+        });
+      });
     });
-    if (!result.canceled) addNotePhoto(result.assets[0].uri);
-  }
+  };
 
-  async function addNotePhoto(rawUri: string) {
-    setScanningNote(true);
-    let uri = rawUri;
-    try {
-      uri = await detectAndCrop(rawUri);
-    } catch {
-      // detectAndCrop 실패 시 원본 사용
+  const goNext = () => {
+    if (step < TOTAL_STEPS) transitionStage(() => setField('step', step + 1), 'forward');
+  };
+
+  const goBack = () => {
+    if (analyzing || stageTransitioning.current) return;
+    if (step > 1) transitionStage(() => setField('step', step - 1), 'back');
+    else if (recordTypeSelected)
+      transitionStage(() => setField('recordTypeSelected', false), 'back');
+    else {
+      resetDraft();
+      router.back();
     }
-    setNotePhotos((prev) => [...prev, uri]);
-    setAnalyzed(false);
-    setScanningNote(false);
-  }
+  };
 
-  function selectRecordType(mode: 'handdip' | 'menu') {
-    if (mode !== photoMode) {
-      setNotePhotos([]);
-      setMenuPhoto(null);
-      setMenuName('');
-      setAnalyzed(false);
-      setMenuNotDrink(false);
-      setIsCoffeeDrink(true);
-      setIsBlend(0);
-      setOrigin('');
-      setFarm('');
-      setVariety('');
-      setProcess('');
-      setRoastLevel('');
-      setOfficialNotes([]);
-      setMyNotes([]);
-      setAcidity(undefined);
-      setNuttiness(undefined);
-      setRichness(undefined);
-      setSmoothness(undefined);
-      setBeans([]);
-    }
-    setPhotoMode(mode);
-    setRecordTypeSelected(true);
-  }
+  const selectRecordType = (mode: 'handdip' | 'menu') => {
+    transitionStage(() => updateRecordType(mode), 'forward');
+  };
 
-  async function pickMenuPhoto() {
-    Alert.alert('메뉴 사진', undefined, [
-      { text: '카메라', onPress: pickMenuFromCamera },
-      { text: '갤러리', onPress: pickMenuFromLibrary },
-      { text: '취소', style: 'cancel' },
-    ]);
-  }
-
-  async function pickMenuFromCamera() {
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('권한 필요', '카메라 권한이 필요해요.');
-      return;
-    }
-    const result = await ImagePicker.launchCameraAsync({ quality: 1 });
-    if (!result.canceled) addMenuPhoto(result.assets[0].uri);
-  }
-
-  async function pickMenuFromLibrary() {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('권한 필요', '사진 접근 권한이 필요해요.');
-      return;
-    }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      quality: 1,
-    });
-    if (!result.canceled) addMenuPhoto(result.assets[0].uri);
-  }
-
-  async function addMenuPhoto(uri: string) {
-    setMenuPhoto(uri);
-    setAnalyzed(false);
-  }
-
-  async function pickCafePhoto() {
-    if (cafePhotos.length >= 10) return;
-    Alert.alert('사진 추가', undefined, [
-      { text: '카메라', onPress: () => pickCafeFromCamera() },
-      { text: '갤러리', onPress: () => pickCafeFromLibrary() },
-      { text: '취소', style: 'cancel' },
-    ]);
-  }
-
-  function extractCoordsFromExif(exif: Record<string, unknown> | null | undefined) {
-    if (!exif) return;
-    const lat = exif.GPSLatitude;
-    const lng = exif.GPSLongitude;
-    if (typeof lat !== 'number' || typeof lng !== 'number') return;
-    const latSigned = exif.GPSLatitudeRef === 'S' ? -Math.abs(lat) : Math.abs(lat);
-    const lngSigned = exif.GPSLongitudeRef === 'W' ? -Math.abs(lng) : Math.abs(lng);
-    setPhotoCoords((prev) => prev ?? { lat: latSigned, lng: lngSigned });
-  }
-
-  async function pickCafeFromCamera() {
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('권한 필요', '카메라 권한이 필요해요.');
-      return;
-    }
-    const result = await ImagePicker.launchCameraAsync({ quality: 1, exif: true });
-    if (!result.canceled) {
-      extractCoordsFromExif(result.assets[0].exif as Record<string, unknown>);
-      setCafePhotos((prev) => [...prev, result.assets[0].uri]);
-    }
-  }
-
-  async function pickCafeFromLibrary() {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('권한 필요', '사진 접근 권한이 필요해요.');
-      return;
-    }
-    const remaining = 10 - cafePhotos.length;
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsMultipleSelection: true,
-      selectionLimit: remaining,
-      quality: 1,
-      exif: true,
-    });
-    if (!result.canceled) {
-      extractCoordsFromExif(result.assets[0].exif as Record<string, unknown>);
-      setCafePhotos((prev) => [...prev, ...result.assets.map((asset) => asset.uri)]);
-    }
-  }
-
-  async function handleSave() {
+  const handleSave = async () => {
     if (!selectedPlace) return;
     setSaving(true);
     try {
-      const logId = await createCafeLog({
-        cafe_name: selectedPlace.name,
-        visited_at: visitedAt,
-        photos: (() => {
-          const all = [menuPhoto, ...cafePhotos].filter(Boolean) as string[];
-          return all.length > 0 ? JSON.stringify(all) : undefined;
-        })(),
-        note_photos: notePhotos.length > 0 ? JSON.stringify(notePhotos) : undefined,
-        address: selectedPlace.address || undefined,
-        memo: memo.trim() || undefined,
-      });
-
+      const logId = await saveCafeLogDraft(draft);
       if (logId == null) {
         Alert.alert('오류', '저장에 실패했어요.');
         return;
       }
-
-      const hasInfo =
-        origin ||
-        farm ||
-        variety ||
-        process ||
-        roastLevel ||
-        officialNotes.length > 0 ||
-        myNotes.length > 0 ||
-        acidity != null ||
-        (isBlend && beans.length > 0);
-
-      if (menuName.trim() || hasInfo) {
-        const menuId = await createMenuItem({
-          cafe_log_id: logId,
-          menu_name: menuName.trim() || (photoMode === 'handdip' ? '핸드드립' : '커피'),
-          is_coffee: photoMode === 'menu' ? (isCoffeeDrink ? 1 : 0) : null,
-        });
-        if (menuId != null && hasInfo) {
-          await upsertTastingNote({
-            cafe_menu_item_id: menuId,
-            is_blend: isBlend,
-            origin: isBlend ? undefined : origin || undefined,
-            farm: isBlend ? undefined : farm || undefined,
-            variety: isBlend ? undefined : variety || undefined,
-            process: isBlend ? undefined : process || undefined,
-            roast_level: roastLevel || undefined,
-            official_notes: officialNotes,
-            my_notes: myNotes,
-            acidity,
-            nuttiness,
-            richness,
-            smoothness,
-            beans: isBlend ? beans : [],
-          });
-        }
-      }
-
+      resetDraft();
       router.replace(`/cafe/${logId}`);
     } finally {
       setSaving(false);
     }
-  }
+  };
 
-  function onDateChange(_: unknown, selected?: Date) {
+  const onDateChange = (_: unknown, selected?: Date) => {
     if (Platform.OS === 'android') setShowDatePicker(false);
-    if (selected) setDate(selected);
-  }
+    if (selected) setField('visitedAt', selected.toISOString().slice(0, 10));
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: '#fff', paddingTop: insets.top }}>
@@ -434,187 +229,205 @@ export default function NewCafeLogScreen() {
         </Text>
       </View>
 
-      {!recordTypeSelected ? (
-        <CafeLogTypePicker onSelect={selectRecordType} />
-      ) : (
-        <>
-          {/* 진행률 바 */}
-          <View
+      {recordTypeSelected && (
+        <View
+          style={{
+            height: 3,
+            backgroundColor: '#E5E5E5',
+            marginHorizontal: 16,
+            borderRadius: 2,
+            marginVertical: 16,
+          }}
+        >
+          <Animated.View
             style={{
               height: 3,
-              backgroundColor: '#E5E5E5',
-              marginHorizontal: 16,
+              backgroundColor: '#000',
               borderRadius: 2,
-              marginVertical: 16,
+              width: progressAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: ['0%', '100%'],
+              }),
             }}
-          >
-            <Animated.View
-              style={{
-                height: 3,
-                backgroundColor: '#000',
-                borderRadius: 2,
-                width: progressAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: ['0%', '100%'],
-                }),
-              }}
-            />
-          </View>
-
-          <KeyboardAvoidingView
-            style={{ flex: 1 }}
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            keyboardVerticalOffset={0}
-          >
-            {/* 스텝 컨텐츠 */}
-            <ScrollView
-              key={step}
-              style={{ flex: 1 }}
-              contentContainerStyle={{ padding: 20, paddingBottom: 24, gap: 24 }}
-              keyboardShouldPersistTaps="handled"
-            >
-              {step === 1 && (
-                <Step1
-                  photoMode={photoMode}
-                  notePhotos={notePhotos}
-                  menuPhoto={menuPhoto}
-                  cafePhotos={cafePhotos}
-                  scanningNote={scanningNote}
-                  onAddNotePhoto={pickNotePhoto}
-                  onRemoveNotePhoto={(i) => setNotePhotos((p) => p.filter((_, idx) => idx !== i))}
-                  onAddMenuPhoto={pickMenuPhoto}
-                  onRemoveMenuPhoto={() => {
-                    setMenuPhoto(null);
-                    setMenuName('');
-                  }}
-                  onAddCafePhoto={pickCafePhoto}
-                  onRemoveCafePhoto={(i) => setCafePhotos((p) => p.filter((_, idx) => idx !== i))}
-                />
-              )}
-              {step === 2 && (
-                <Step2
-                  selectedPlace={selectedPlace}
-                  visitedAt={visitedAt}
-                  nearbyPlaces={nearbyPlaces}
-                  nearbyLoading={nearbyLoading}
-                  hasCoords={photoCoords !== null}
-                  onSelectNearby={(p) =>
-                    setSelectedPlace({
-                      name: p.place_name,
-                      address: p.road_address_name || p.address_name,
-                    })
-                  }
-                  onOpenSearch={() => setShowAddressSearch(true)}
-                  onClearPlace={() => setSelectedPlace(null)}
-                  onOpenDatePicker={() => setShowDatePicker(true)}
-                />
-              )}
-              {step === 3 && (
-                <Step3
-                  analyzing={analyzing}
-                  analyzed={analyzed}
-                  menuNotDrink={menuNotDrink}
-                  photoMode={photoMode}
-                  onReanalyze={
-                    photoMode === 'handdip' && notePhotos.length > 0
-                      ? runAnalysis
-                      : photoMode === 'menu' && menuPhoto
-                        ? runMenuAnalysis
-                        : undefined
-                  }
-                  menuName={menuName}
-                  onMenuName={setMenuName}
-                  isCoffeeDrink={isCoffeeDrink}
-                  onIsCoffeeDrink={setIsCoffeeDrink}
-                  isBlend={isBlend}
-                  onIsBlend={setIsBlend}
-                  origin={origin}
-                  onOrigin={setOrigin}
-                  farm={farm}
-                  onFarm={setFarm}
-                  variety={variety}
-                  onVariety={setVariety}
-                  process={process}
-                  onProcess={setProcess}
-                  roastLevel={roastLevel}
-                  onRoastLevel={setRoastLevel}
-                  officialNotes={officialNotes}
-                  onOfficialNotes={setOfficialNotes}
-                  beans={beans}
-                  onBeans={setBeans}
-                />
-              )}
-              {step === 4 && (
-                <Step4
-                  photoMode={photoMode}
-                  isCoffeeDrink={isCoffeeDrink}
-                  memo={memo}
-                  onMemo={setMemo}
-                  myNotes={myNotes}
-                  onMyNotes={setMyNotes}
-                  acidity={acidity}
-                  onAcidity={setAcidity}
-                  nuttiness={nuttiness}
-                  onNuttiness={setNuttiness}
-                  richness={richness}
-                  onRichness={setRichness}
-                  smoothness={smoothness}
-                  onSmoothness={setSmoothness}
-                />
-              )}
-            </ScrollView>
-
-            {/* 하단 버튼 */}
-            <View
-              style={{
-                paddingHorizontal: 20,
-                paddingBottom: insets.bottom + 16,
-                paddingTop: 12,
-                backgroundColor: '#fff',
-              }}
-            >
-              {step < TOTAL_STEPS ? (
-                <TouchableOpacity
-                  onPress={goNext}
-                  disabled={nextDisabled}
-                  style={{
-                    backgroundColor: nextDisabled ? '#C0C0C0' : '#111',
-                    borderRadius: 14,
-                    paddingVertical: 15,
-                    alignItems: 'center',
-                  }}
-                >
-                  <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>다음</Text>
-                </TouchableOpacity>
-              ) : (
-                <TouchableOpacity
-                  onPress={handleSave}
-                  disabled={saving || !selectedPlace}
-                  style={{
-                    backgroundColor: saving || !selectedPlace ? '#C0C0C0' : '#111',
-                    borderRadius: 14,
-                    paddingVertical: 15,
-                    alignItems: 'center',
-                  }}
-                >
-                  {saving ? (
-                    <ActivityIndicator color="#fff" />
-                  ) : (
-                    <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>
-                      등록 완료
-                    </Text>
-                  )}
-                </TouchableOpacity>
-              )}
-            </View>
-          </KeyboardAvoidingView>
-        </>
+          />
+        </View>
       )}
+
+      <Animated.View
+        style={{
+          flex: 1,
+          opacity: stageOpacity,
+          transform: [{ translateX: stageTranslateX }],
+        }}
+      >
+        {!recordTypeSelected ? (
+          <CafeLogTypePicker onSelect={selectRecordType} />
+        ) : (
+          <>
+            <KeyboardAvoidingView
+              style={{ flex: 1 }}
+              behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+              keyboardVerticalOffset={0}
+            >
+              {/* 스텝 컨텐츠 */}
+              <ScrollView
+                key={step}
+                style={{ flex: 1 }}
+                contentContainerStyle={{ padding: 20, paddingBottom: 24, gap: 24 }}
+                keyboardShouldPersistTaps="handled"
+              >
+                {step === 1 && (
+                  <Step1
+                    photoMode={photoMode}
+                    notePhotos={notePhotos}
+                    menuPhoto={menuPhoto}
+                    cafePhotos={cafePhotos}
+                    scanningNote={scanningNote}
+                    onAddNotePhoto={pickNotePhoto}
+                    onRemoveNotePhoto={(i) =>
+                      setField(
+                        'notePhotos',
+                        notePhotos.filter((_, index) => index !== i),
+                      )
+                    }
+                    onAddMenuPhoto={pickMenuPhoto}
+                    onRemoveMenuPhoto={() => {
+                      updateDraft({ menuPhoto: null, menuName: '', analyzed: false });
+                    }}
+                    onAddCafePhoto={pickCafePhoto}
+                    onRemoveCafePhoto={(i) =>
+                      setField(
+                        'cafePhotos',
+                        cafePhotos.filter((_, index) => index !== i),
+                      )
+                    }
+                  />
+                )}
+                {step === 2 && (
+                  <Step2
+                    selectedPlace={selectedPlace}
+                    visitedAt={visitedAt}
+                    nearbyPlaces={nearbyPlaces}
+                    nearbyLoading={nearbyLoading}
+                    hasCoords={photoCoords !== null}
+                    onSelectNearby={(p) =>
+                      setField('selectedPlace', {
+                        name: p.place_name,
+                        address: p.road_address_name || p.address_name,
+                      })
+                    }
+                    onOpenSearch={() => setShowAddressSearch(true)}
+                    onClearPlace={() => setField('selectedPlace', null)}
+                    onOpenDatePicker={() => setShowDatePicker(true)}
+                  />
+                )}
+                {step === 3 && (
+                  <Step3
+                    analyzing={analyzing}
+                    analyzed={analyzed}
+                    menuNotDrink={menuNotDrink}
+                    photoMode={photoMode}
+                    onReanalyze={
+                      photoMode === 'handdip' && notePhotos.length > 0
+                        ? runCardAnalysis
+                        : photoMode === 'menu' && menuPhoto
+                          ? runMenuAnalysis
+                          : undefined
+                    }
+                    menuName={menuName}
+                    onMenuName={(value) => setField('menuName', value)}
+                    isCoffeeDrink={isCoffeeDrink}
+                    onIsCoffeeDrink={(value) => setField('isCoffeeDrink', value)}
+                    isBlend={isBlend}
+                    onIsBlend={(value) => setField('isBlend', value)}
+                    origin={origin}
+                    onOrigin={(value) => setField('origin', value)}
+                    farm={farm}
+                    onFarm={(value) => setField('farm', value)}
+                    variety={variety}
+                    onVariety={(value) => setField('variety', value)}
+                    process={process}
+                    onProcess={(value) => setField('process', value)}
+                    roastLevel={roastLevel}
+                    onRoastLevel={(value) => setField('roastLevel', value)}
+                    officialNotes={officialNotes}
+                    onOfficialNotes={(value) => setField('officialNotes', value)}
+                    beans={beans}
+                    onBeans={(value) => setField('beans', value)}
+                  />
+                )}
+                {step === 4 && (
+                  <Step4
+                    photoMode={photoMode}
+                    isCoffeeDrink={isCoffeeDrink}
+                    memo={memo}
+                    onMemo={(value) => setField('memo', value)}
+                    myNotes={myNotes}
+                    onMyNotes={(value) => setField('myNotes', value)}
+                    acidity={acidity}
+                    onAcidity={(value) => setField('acidity', value)}
+                    nuttiness={nuttiness}
+                    onNuttiness={(value) => setField('nuttiness', value)}
+                    richness={richness}
+                    onRichness={(value) => setField('richness', value)}
+                    smoothness={smoothness}
+                    onSmoothness={(value) => setField('smoothness', value)}
+                  />
+                )}
+              </ScrollView>
+
+              {/* 하단 버튼 */}
+              <View
+                style={{
+                  paddingHorizontal: 20,
+                  paddingBottom: insets.bottom + 16,
+                  paddingTop: 12,
+                  backgroundColor: '#fff',
+                }}
+              >
+                {step < TOTAL_STEPS ? (
+                  <TouchableOpacity
+                    onPress={goNext}
+                    disabled={nextDisabled}
+                    style={{
+                      backgroundColor: nextDisabled ? '#C0C0C0' : '#111',
+                      borderRadius: 14,
+                      paddingVertical: 15,
+                      alignItems: 'center',
+                    }}
+                  >
+                    <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>다음</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity
+                    onPress={handleSave}
+                    disabled={saving || !selectedPlace}
+                    style={{
+                      backgroundColor: saving || !selectedPlace ? '#C0C0C0' : '#111',
+                      borderRadius: 14,
+                      paddingVertical: 15,
+                      alignItems: 'center',
+                    }}
+                  >
+                    {saving ? (
+                      <ActivityIndicator color="#fff" />
+                    ) : (
+                      <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>
+                        등록 완료
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                )}
+              </View>
+            </KeyboardAvoidingView>
+          </>
+        )}
+      </Animated.View>
 
       {/* 카페 검색 모달 */}
       <AddressSearchModal
         visible={showAddressSearch}
-        onSelect={(result) => setSelectedPlace(result)}
+        onSelect={(result) => setField('selectedPlace', result)}
         onClose={() => setShowAddressSearch(false)}
       />
 
@@ -680,4 +493,6 @@ export default function NewCafeLogScreen() {
       <AnalysisOverlay visible={analyzing} mode={photoMode} />
     </View>
   );
-}
+};
+
+export default NewCafeLogScreen;
