@@ -1,5 +1,5 @@
+import { useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -10,7 +10,6 @@ import Animated, {
   Extrapolation,
   SharedValue,
 } from 'react-native-reanimated';
-import { getCafeLogs } from '@/src/db/queries/cafeLogs';
 import { CafeLog } from '@/src/types';
 
 import DEFAULT_CARD from '@/assets/default-card.jpg';
@@ -155,6 +154,7 @@ export function CafeCard({
   defaultImageHeight: number;
 }) {
   const router = useRouter();
+  const [imgRatio, setImgRatio] = useState<number | null>(null);
   const noteColors = parseNoteColors(item.first_my_notes);
   const firstPhotoUri: string | undefined = (() => {
     const src = item.photos || item.note_photos;
@@ -166,6 +166,18 @@ export function CafeCard({
     }
   })();
   const hasPhoto = !!firstPhotoUri;
+
+  let actualCardWidth = cardWidth;
+  let actualCardHeight = defaultCardHeight;
+  if (hasPhoto && imgRatio != null) {
+    const naturalHeight = cardWidth / imgRatio;
+    if (naturalHeight > defaultCardHeight) {
+      actualCardHeight = defaultCardHeight;
+      actualCardWidth = defaultCardHeight * imgRatio;
+    } else {
+      actualCardHeight = naturalHeight;
+    }
+  }
 
   const noteGradient =
     noteColors.length > 0
@@ -189,8 +201,8 @@ export function CafeCard({
         index={index}
         scrollX={scrollX}
         itemStep={itemStep}
-        cardWidth={cardWidth}
-        cardHeight={defaultCardHeight}
+        cardWidth={actualCardWidth}
+        cardHeight={actualCardHeight}
       >
         <TouchableOpacity
           className="flex-1 overflow-hidden rounded-[24px]"
@@ -203,6 +215,7 @@ export function CafeCard({
                 source={{ uri: firstPhotoUri! }}
                 style={{ width: '100%', flex: 1 }}
                 contentFit="cover"
+                onLoad={(e) => setImgRatio(e.source.width / e.source.height)}
                 transition={150}
               />
               <LinearGradient
@@ -241,11 +254,7 @@ export function CafeCard({
                       gap: 4,
                       marginTop: 6,
                     }}
-                  >
-                    {Array.from({ length: item.menu_count! }).map((_, i) => (
-                      <Ionicons key={i} name="cafe" size={18} color="rgba(255,255,255,0.85)" />
-                    ))}
-                  </View>
+                  ></View>
                 )}
                 {noteGradient && (
                   <LinearGradient
@@ -280,13 +289,6 @@ export function CafeCard({
                 <Text className="text-xl font-bold text-[#222] text-center" numberOfLines={1}>
                   {item.cafe_name}
                 </Text>
-                {(item.menu_count ?? 0) > 0 && (
-                  <View className="flex-row justify-center gap-1">
-                    {Array.from({ length: item.menu_count! }).map((_, i) => (
-                      <Ionicons key={i} name="cafe" size={18} color="#111111" />
-                    ))}
-                  </View>
-                )}
                 {noteGradient && (
                   <LinearGradient
                     colors={noteGradient}
@@ -408,13 +410,6 @@ export function CafeGridCard({ item }: { item: CafeLog }) {
               >
                 {item.cafe_name}
               </Text>
-              {(item.menu_count ?? 0) > 0 && (
-                <View style={{ flexDirection: 'row', gap: 3, marginTop: 7 }}>
-                  {Array.from({ length: item.menu_count! }).map((_, i) => (
-                    <Ionicons key={i} name="cafe" size={13} color="#111111" />
-                  ))}
-                </View>
-              )}
               {noteGradient && (
                 <LinearGradient
                   colors={noteGradient}

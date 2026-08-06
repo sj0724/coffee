@@ -544,9 +544,6 @@ export default function CafeDetailScreen() {
             }}
           >
             <Text style={{ fontSize: 20, fontWeight: '800', color: '#222' }}>메뉴</Text>
-            <Text style={{ marginLeft: 7, fontSize: 14, fontWeight: '700', color: '#8A847C' }}>
-              {menuItems.length}
-            </Text>
           </View>
 
           {menuItems.length === 0 && (

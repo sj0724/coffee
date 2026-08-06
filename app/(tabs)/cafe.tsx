@@ -121,7 +121,8 @@ export default function CafeScreen() {
           initialScrollDone.current = true;
           scrollX.value = 0;
           requestAnimationFrame(() => {
-            listRef.current?.scrollToIndex({ index: 0, animated: false });
+            listRef.current?.scrollToOffset({ offset: 0, animated: false });
+            scrollX.value = 0;
           });
         }
       });
@@ -129,15 +130,18 @@ export default function CafeScreen() {
   );
 
   useEffect(() => {
-    if (!initialScrollDone.current || viewMode !== 'coverflow') return;
+    if (!initialScrollDone.current || viewMode !== 'coverflow') {
+      return;
+    }
     scrollX.value = 0;
     requestAnimationFrame(() => {
-      listRef.current?.scrollToIndex({ index: 0, animated: false });
+      listRef.current?.scrollToOffset({ offset: 0, animated: false });
+      scrollX.value = 0;
     });
   }, [activeTags, favOnly, viewMode]);
 
   const showFilterBar = logs.length > 0;
-  const cardAreaHeight = listHeight || screenHeight;
+  const cardAreaHeight = listHeight > 100 ? listHeight : screenHeight;
   const defaultCardHeight = cardAreaHeight * 0.72;
   const defaultImageHeight = defaultCardHeight * 0.62;
 
@@ -193,10 +197,11 @@ export default function CafeScreen() {
             }}
           >
             <Ionicons
-              name={favOnly ? 'star' : 'star-outline'}
+              name={favOnly ? 'heart' : 'heart-outline'}
               size={14}
-              color={favOnly ? '#FFD166' : '#999'}
+              color={favOnly ? '#D96C67' : '#817B73'}
             />
+
             <Text style={{ fontSize: 13, fontWeight: '600', color: favOnly ? '#fff' : '#666' }}>
               즐겨찾기
             </Text>
@@ -273,7 +278,10 @@ export default function CafeScreen() {
             scrollEventThrottle={16}
             onScroll={scrollHandler as any}
             onLayout={(e) => {
-              setListHeight(e.nativeEvent.layout.height);
+              const nextListHeight = e.nativeEvent.layout.height;
+              if (nextListHeight > 100) {
+                setListHeight(nextListHeight);
+              }
               if (resetCoverflowOnLayout.current) {
                 resetCoverflowOnLayout.current = false;
                 scrollX.value = 0;
