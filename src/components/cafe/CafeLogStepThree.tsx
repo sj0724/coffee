@@ -392,26 +392,7 @@ function MenuPicker({
         </View>
       </Animated.View>
 
-      <View style={{ gap: 7 }}>
-        <Text style={{ fontSize: 13, fontWeight: '600', color: '#5F5A54' }}>직접 입력</Text>
-        <TextInput
-          value={menuName}
-          onChangeText={onMenuName}
-          placeholder="메뉴명을 입력해주세요"
-          placeholderTextColor="#AAA49C"
-          returnKeyType="done"
-          style={{
-            paddingHorizontal: 13,
-            paddingVertical: 12,
-            borderRadius: 11,
-            borderWidth: 1,
-            borderColor: '#D8D3CC',
-            backgroundColor: '#fff',
-            fontSize: 14,
-            color: '#222',
-          }}
-        />
-      </View>
+      <NoteInput label="메뉴명" value={menuName} onChange={onMenuName} required />
     </View>
   );
 }

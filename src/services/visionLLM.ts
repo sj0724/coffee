@@ -5,6 +5,9 @@ const GEMINI_API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY ?? '';
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 const GENERATION_SEED = 42;
 const ANALYSIS_VERSION = 'v2';
+const GEMINI_MAX_ATTEMPTS = 3;
+const GEMINI_REQUEST_TIMEOUT_MS = 30_000;
+const RETRYABLE_GEMINI_STATUSES = new Set([429, 500, 502, 503, 504]);
 
 type MenuAnalysis = {
   is_drink: boolean;
@@ -197,6 +200,48 @@ function cloneCardAnalysis(result: Partial<HanddripNote>): Partial<HanddripNote>
   };
 }
 
+function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function fetchGemini(body: unknown): Promise<Response> {
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= GEMINI_MAX_ATTEMPTS; attempt++) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), GEMINI_REQUEST_TIMEOUT_MS);
+
+    try {
+      console.log(`[Gemini] 요청 시작 (${attempt}/${GEMINI_MAX_ATTEMPTS})`);
+      const response = await fetch(GEMINI_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      });
+
+      const shouldRetry = RETRYABLE_GEMINI_STATUSES.has(response.status);
+      if (!shouldRetry || attempt === GEMINI_MAX_ATTEMPTS) return response;
+
+      const delayMs = 1000 * 2 ** (attempt - 1);
+      console.warn(`[Gemini] 일시적 오류(${response.status}), ${delayMs / 1000}초 후 다음 시도`);
+      await wait(delayMs);
+    } catch (error) {
+      lastError = error;
+      if (attempt === GEMINI_MAX_ATTEMPTS) throw error;
+
+      const delayMs = 1000 * 2 ** (attempt - 1);
+      const reason = controller.signal.aborted ? '요청 시간 초과' : '네트워크 오류';
+      console.warn(`[Gemini] ${reason}, ${delayMs / 1000}초 후 다음 시도`);
+      await wait(delayMs);
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }
+
+  throw lastError;
+}
+
 const MENU_PROMPT = `
 이 이미지에 카페 음료가 포함되어 있는지 확인하세요.
 
@@ -230,19 +275,15 @@ export async function analyzeMenuPhoto(uri: string): Promise<MenuAnalysis | null
       { text: MENU_PROMPT },
     ];
 
-    const response = await fetch(GEMINI_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ role: 'user', parts }],
-        generationConfig: {
-          seed: GENERATION_SEED,
-          candidateCount: 1,
-          maxOutputTokens: 1024,
-          responseMimeType: 'application/json',
-          responseJsonSchema: MENU_RESPONSE_SCHEMA,
-        },
-      }),
+    const response = await fetchGemini({
+      contents: [{ role: 'user', parts }],
+      generationConfig: {
+        seed: GENERATION_SEED,
+        candidateCount: 1,
+        maxOutputTokens: 1024,
+        responseMimeType: 'application/json',
+        responseJsonSchema: MENU_RESPONSE_SCHEMA,
+      },
     });
 
     if (!response.ok) {
@@ -297,19 +338,15 @@ export async function analyzeCardImages(uris: string[]): Promise<Partial<Handdri
       { text: PROMPT },
     ];
 
-    const response = await fetch(GEMINI_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ role: 'user', parts }],
-        generationConfig: {
-          seed: GENERATION_SEED,
-          candidateCount: 1,
-          maxOutputTokens: 4096,
-          responseMimeType: 'application/json',
-          responseJsonSchema: CARD_RESPONSE_SCHEMA,
-        },
-      }),
+    const response = await fetchGemini({
+      contents: [{ role: 'user', parts }],
+      generationConfig: {
+        seed: GENERATION_SEED,
+        candidateCount: 1,
+        maxOutputTokens: 4096,
+        responseMimeType: 'application/json',
+        responseJsonSchema: CARD_RESPONSE_SCHEMA,
+      },
     });
 
     if (!response.ok) {

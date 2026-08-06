@@ -1,24 +1,65 @@
-import { View, Text, TextInput } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Animated, TextInput } from 'react-native';
 
 export function NoteInput({
   label,
   value,
   onChange,
+  required = false,
 }: {
   label: string;
   value?: string;
   onChange: (v: string) => void;
+  required?: boolean;
 }) {
+  const [focused, setFocused] = useState(false);
+  const labelProgress = useRef(new Animated.Value(value ? 1 : 0)).current;
+  const floated = focused || !!value;
+
+  useEffect(() => {
+    Animated.timing(labelProgress, {
+      toValue: floated ? 1 : 0,
+      duration: 160,
+      useNativeDriver: false,
+    }).start();
+  }, [floated, labelProgress]);
+
   return (
-    <View>
-      <Text className="text-[13px] text-[#666] mb-1">{label}</Text>
+    <Animated.View
+      style={{
+        height: 56,
+        borderBottomWidth: focused ? 1.5 : 1,
+        borderBottomColor: focused ? '#514D47' : '#DEDAD5',
+      }}
+    >
+      <Animated.Text
+        pointerEvents="none"
+        style={{
+          position: 'absolute',
+          left: 0,
+          top: labelProgress.interpolate({ inputRange: [0, 1], outputRange: [18, 5] }),
+          fontSize: labelProgress.interpolate({ inputRange: [0, 1], outputRange: [15, 11] }),
+          color: focused ? '#514D47' : '#817B73',
+        }}
+      >
+        {label}
+        {required ? ' *' : ''}
+      </Animated.Text>
       <TextInput
-        className="border border-coffee-border rounded-lg p-2.5 text-sm text-[#222] bg-white"
+        style={{
+          flex: 1,
+          paddingTop: 19,
+          paddingBottom: 3,
+          paddingHorizontal: 0,
+          fontSize: 15,
+          color: '#222',
+        }}
         value={value ?? ''}
         onChangeText={onChange}
-        placeholderTextColor="#ccc"
-        placeholder={label}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        accessibilityLabel={`${label}${required ? ' 필수' : ''}`}
       />
-    </View>
+    </Animated.View>
   );
 }
