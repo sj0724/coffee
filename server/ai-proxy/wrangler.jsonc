@@ -1,0 +1,25 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "coffee-note-ai-proxy",
+  "main": "src/index.js",
+  "compatibility_date": "2026-08-17",
+  "observability": {
+    "enabled": true,
+  },
+  "vars": {
+    "GEMINI_MODEL": "gemini-3.5-flash",
+  },
+  "secrets": {
+    "required": ["GEMINI_API_KEY"],
+  },
+  "ratelimits": [
+    {
+      "name": "ANALYSIS_RATE_LIMITER",
+      "namespace_id": "1001",
+      "simple": {
+        "limit": 10,
+        "period": 60,
+      },
+    },
+  ],
+}
