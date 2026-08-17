@@ -59,33 +59,6 @@ export const useCafeLogPhotos = () => {
     ]);
   };
 
-  const addMenuPhoto = (uri: string) => {
-    useCafeLogDraftStore.getState().updateDraft({ menuPhoto: uri, analyzed: false });
-  };
-
-  const pickMenuFromCamera = async () => {
-    if (!(await requestCameraPermission())) return;
-    const result = await ImagePicker.launchCameraAsync({ quality: 1 });
-    if (!result.canceled) addMenuPhoto(result.assets[0].uri);
-  };
-
-  const pickMenuFromLibrary = async () => {
-    if (!(await requestLibraryPermission())) return;
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      quality: 1,
-    });
-    if (!result.canceled) addMenuPhoto(result.assets[0].uri);
-  };
-
-  const pickMenuPhoto = () => {
-    Alert.alert('메뉴 사진', undefined, [
-      { text: '카메라', onPress: pickMenuFromCamera },
-      { text: '갤러리', onPress: pickMenuFromLibrary },
-      { text: '취소', style: 'cancel' },
-    ]);
-  };
-
   const setCoordinatesFromExif = (exif: Record<string, unknown> | null | undefined) => {
     if (!exif || useCafeLogDraftStore.getState().photoCoords) return;
     const lat = exif.GPSLatitude;
@@ -130,5 +103,5 @@ export const useCafeLogPhotos = () => {
     ]);
   };
 
-  return { scanningNote, pickNotePhoto, pickMenuPhoto, pickCafePhoto };
+  return { scanningNote, pickNotePhoto, pickCafePhoto };
 };

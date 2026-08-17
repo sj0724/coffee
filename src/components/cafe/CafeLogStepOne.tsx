@@ -6,25 +6,19 @@ import { Section } from './CafeLogFormSection';
 export function Step1({
   photoMode,
   notePhotos,
-  menuPhoto,
   cafePhotos,
   scanningNote,
   onAddNotePhoto,
   onRemoveNotePhoto,
-  onAddMenuPhoto,
-  onRemoveMenuPhoto,
   onAddCafePhoto,
   onRemoveCafePhoto,
 }: {
   photoMode: 'handdip' | 'menu';
   notePhotos: string[];
-  menuPhoto: string | null;
   cafePhotos: string[];
   scanningNote: boolean;
   onAddNotePhoto: () => void;
   onRemoveNotePhoto: (i: number) => void;
-  onAddMenuPhoto: () => void;
-  onRemoveMenuPhoto: () => void;
   onAddCafePhoto: () => void;
   onRemoveCafePhoto: (i: number) => void;
 }) {
@@ -116,70 +110,8 @@ export function Step1({
         </Section>
       )}
 
-      {/* 메뉴 사진 (일반 메뉴 모드) */}
-      {photoMode === 'menu' && (
-        <Section label="메뉴 사진" hint="음료 사진 · 1장 · 선택 · 메뉴명 자동 인식">
-          {menuPhoto ? (
-            <View style={{ position: 'relative', alignSelf: 'flex-start' }}>
-              <Image
-                source={{ uri: menuPhoto }}
-                style={{ width: 120, height: 160, borderRadius: 12 }}
-                contentFit="cover"
-              />
-              <TouchableOpacity
-                style={{
-                  position: 'absolute',
-                  top: 6,
-                  right: 6,
-                  backgroundColor: 'rgba(0,0,0,0.52)',
-                  borderRadius: 12,
-                  padding: 2,
-                }}
-                onPress={onRemoveMenuPhoto}
-              >
-                <Ionicons name="close" size={15} color="#fff" />
-              </TouchableOpacity>
-              <View
-                style={{
-                  position: 'absolute',
-                  bottom: 6,
-                  left: 6,
-                  backgroundColor: 'rgba(92,61,46,0.85)',
-                  borderRadius: 6,
-                  paddingHorizontal: 6,
-                  paddingVertical: 2,
-                }}
-              >
-                <Text style={{ color: '#fff', fontSize: 10, fontWeight: '600' }}>메뉴</Text>
-              </View>
-            </View>
-          ) : (
-            <TouchableOpacity
-              onPress={onAddMenuPhoto}
-              style={{
-                width: 120,
-                height: 160,
-                borderRadius: 12,
-                backgroundColor: '#EDE7DC',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 6,
-                borderWidth: 1.5,
-                borderColor: '#C8BFB0',
-                borderStyle: 'dashed',
-              }}
-            >
-              <>
-                <Ionicons name="cafe-outline" size={26} color="#816F62" />
-                <Text style={{ fontSize: 12, color: '#816F62', fontWeight: '600' }}>메뉴 사진</Text>
-              </>
-            </TouchableOpacity>
-          )}
-        </Section>
-      )}
-
-      {/* 카페 사진 */}
-      <Section label="카페 사진" hint={`최대 10장 · 선택 (${cafePhotos.length}/10)`}>
+      {/* 카페 및 메뉴 사진 */}
+      <Section label="카페 및 음료 사진" hint={`최대 10장 · 선택 (${cafePhotos.length}/10)`}>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}

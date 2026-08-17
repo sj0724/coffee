@@ -1,10 +1,11 @@
 import { View, Text, TextInput } from 'react-native';
 import { MyNotesInput } from './MyNotesInput';
 import { SliderRow } from './SliderRow';
+import type { GeneralMenuType } from '@/src/types';
 
 export function Step4({
   photoMode,
-  isCoffeeDrink,
+  menuType,
   memo,
   onMemo,
   myNotes,
@@ -19,7 +20,7 @@ export function Step4({
   onSmoothness,
 }: {
   photoMode: 'handdip' | 'menu';
-  isCoffeeDrink: boolean;
+  menuType: GeneralMenuType;
   memo: string;
   onMemo: (v: string) => void;
   myNotes: string[];
@@ -33,7 +34,7 @@ export function Step4({
   smoothness?: number;
   onSmoothness: (v?: number) => void;
 }) {
-  const showSliders = photoMode === 'handdip' || isCoffeeDrink;
+  const showSliders = photoMode === 'handdip' || menuType === 'coffee';
 
   return (
     <View style={{ gap: 20 }}>
@@ -64,7 +65,9 @@ export function Step4({
           }}
           value={memo}
           onChangeText={onMemo}
-          placeholder="오늘의 커피 한 줄 감상..."
+          placeholder={
+            photoMode === 'menu' ? '오늘의 메뉴 한 줄 감상...' : '오늘의 커피 한 줄 감상...'
+          }
           placeholderTextColor="#C0C0C0"
           multiline
           numberOfLines={5}

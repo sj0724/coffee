@@ -6,7 +6,7 @@ import type { CafeLogDraft } from '@/src/store/cafeLogDraftStore';
 export const saveCafeLogDraft = async (draft: CafeLogDraft): Promise<number | null> => {
   if (!draft.selectedPlace) return null;
 
-  const photos = [draft.menuPhoto, ...draft.cafePhotos].filter(Boolean) as string[];
+  const photos = draft.cafePhotos;
   const logId = await createCafeLog({
     cafe_name: draft.selectedPlace.name,
     visited_at: draft.visitedAt,
@@ -34,7 +34,14 @@ export const saveCafeLogDraft = async (draft: CafeLogDraft): Promise<number | nu
   const menuId = await createMenuItem({
     cafe_log_id: logId,
     menu_name: draft.menuName.trim() || (draft.photoMode === 'handdip' ? '핸드드립' : '커피'),
-    is_coffee: draft.photoMode === 'menu' ? (draft.isCoffeeDrink ? 1 : 0) : null,
+    is_coffee:
+      draft.photoMode === 'menu'
+        ? draft.menuType === 'coffee'
+          ? 1
+          : draft.menuType === 'dessert'
+            ? 2
+            : 0
+        : null,
   });
   if (menuId == null || !hasCoffeeInfo) return logId;
 

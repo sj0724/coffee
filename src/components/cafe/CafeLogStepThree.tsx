@@ -3,7 +3,7 @@ import { Animated, View, Text, TextInput, TouchableOpacity } from 'react-native'
 import { Ionicons } from '@expo/vector-icons';
 import { NoteInput } from './NoteInput';
 import { TagsInput } from './TagsInput';
-import type { HanddripNoteBean } from '@/src/types';
+import type { GeneralMenuType, HanddripNoteBean } from '@/src/types';
 
 const COFFEE_MENU_PRESETS = [
   '아메리카노',
@@ -14,17 +14,17 @@ const COFFEE_MENU_PRESETS = [
   '콜드브루',
 ];
 const NON_COFFEE_MENU_PRESETS = ['말차라떼', '초코라떼', '밀크티', '차', '에이드', '주스'];
+const DESSERT_MENU_PRESETS = ['케이크', '쿠키', '스콘', '크루아상', '휘낭시에', '아이스크림'];
 
 export function Step3({
   analyzing,
-  menuNotDrink,
   analyzed,
   photoMode,
   onReanalyze,
   menuName,
   onMenuName,
-  isCoffeeDrink,
-  onIsCoffeeDrink,
+  menuType,
+  onMenuType,
   isBlend,
   onIsBlend,
   origin,
@@ -43,14 +43,13 @@ export function Step3({
   onBeans,
 }: {
   analyzing: boolean;
-  menuNotDrink: boolean;
   analyzed: boolean;
   photoMode: 'handdip' | 'menu';
   onReanalyze?: () => void;
   menuName: string;
   onMenuName: (v: string) => void;
-  isCoffeeDrink: boolean;
-  onIsCoffeeDrink: (v: boolean) => void;
+  menuType: GeneralMenuType;
+  onMenuType: (v: GeneralMenuType) => void;
   isBlend: number;
   onIsBlend: (v: number) => void;
   origin: string;
@@ -71,31 +70,7 @@ export function Step3({
   return (
     <View style={{ gap: 20 }}>
       {/* 분석 상태 배너 */}
-      {analyzed && !analyzing && menuNotDrink && (
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: 12,
-            backgroundColor: '#FFF0F0',
-            borderRadius: 12,
-          }}
-        >
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
-            <Ionicons name="warning-outline" size={15} color="#c00" />
-            <Text style={{ fontSize: 13, color: '#c00', fontWeight: '500', flex: 1 }}>
-              카페 음료 사진이 아닌 것 같아요. 이전 단계에서 사진을 변경해주세요.
-            </Text>
-          </View>
-          {onReanalyze && (
-            <TouchableOpacity onPress={onReanalyze} style={{ marginLeft: 8 }}>
-              <Text style={{ fontSize: 12, color: '#c00', fontWeight: '600' }}>재분석</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      )}
-      {analyzed && !analyzing && !menuNotDrink && onReanalyze && (
+      {analyzed && !analyzing && onReanalyze && (
         <View
           style={{
             flexDirection: 'row',
@@ -108,7 +83,9 @@ export function Step3({
         >
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
             <Ionicons name="sparkles-outline" size={15} color="#816F62" />
-            <Text style={{ fontSize: 13, color: '#816F62', fontWeight: '500' }}>자동 분석 완료</Text>
+            <Text style={{ fontSize: 13, color: '#816F62', fontWeight: '500' }}>
+              자동 분석 완료
+            </Text>
           </View>
           <TouchableOpacity onPress={onReanalyze}>
             <Text style={{ fontSize: 12, color: '#816F62', fontWeight: '600' }}>재분석</Text>
@@ -121,8 +98,8 @@ export function Step3({
         <MenuPicker
           menuName={menuName}
           onMenuName={onMenuName}
-          isCoffeeDrink={isCoffeeDrink}
-          onIsCoffeeDrink={onIsCoffeeDrink}
+          menuType={menuType}
+          onMenuType={onMenuType}
         />
       ) : (
         <NoteInput label="메뉴명" value={menuName} onChange={onMenuName} />
@@ -232,38 +209,45 @@ export function Step3({
 function MenuPicker({
   menuName,
   onMenuName,
-  isCoffeeDrink,
-  onIsCoffeeDrink,
+  menuType,
+  onMenuType,
 }: {
   menuName: string;
   onMenuName: (v: string) => void;
-  isCoffeeDrink: boolean;
-  onIsCoffeeDrink: (v: boolean) => void;
+  menuType: GeneralMenuType;
+  onMenuType: (v: GeneralMenuType) => void;
 }) {
-  const presets = isCoffeeDrink ? COFFEE_MENU_PRESETS : NON_COFFEE_MENU_PRESETS;
+  const presets =
+    menuType === 'coffee'
+      ? COFFEE_MENU_PRESETS
+      : menuType === 'dessert'
+        ? DESSERT_MENU_PRESETS
+        : NON_COFFEE_MENU_PRESETS;
   const [typeSelectorWidth, setTypeSelectorWidth] = useState(0);
-  const typeSlide = useRef(new Animated.Value(isCoffeeDrink ? 0 : 1)).current;
+  const typeSlide = useRef(
+    new Animated.Value(menuType === 'coffee' ? 0 : menuType === 'nonCoffee' ? 1 : 2),
+  ).current;
   const presetOpacity = useRef(new Animated.Value(1)).current;
   const changingType = useRef(false);
 
   useEffect(() => {
     Animated.spring(typeSlide, {
-      toValue: isCoffeeDrink ? 0 : 1,
+      toValue: menuType === 'coffee' ? 0 : menuType === 'nonCoffee' ? 1 : 2,
       tension: 90,
       friction: 11,
       useNativeDriver: true,
     }).start();
-  }, [isCoffeeDrink, typeSlide]);
+  }, [menuType, typeSlide]);
 
-  function changeMenuType(nextIsCoffee: boolean) {
-    if (nextIsCoffee === isCoffeeDrink || changingType.current) return;
+  function changeMenuType(nextType: GeneralMenuType) {
+    if (nextType === menuType || changingType.current) return;
     changingType.current = true;
     Animated.timing(presetOpacity, {
       toValue: 0,
       duration: 90,
       useNativeDriver: true,
     }).start(() => {
-      onIsCoffeeDrink(nextIsCoffee);
+      onMenuType(nextType);
       Animated.timing(presetOpacity, {
         toValue: 1,
         duration: 170,
@@ -274,7 +258,7 @@ function MenuPicker({
     });
   }
 
-  const typeOptionWidth = Math.max(0, (typeSelectorWidth - 6) / 2);
+  const typeOptionWidth = Math.max(0, (typeSelectorWidth - 6) / 3);
 
   return (
     <View
@@ -318,8 +302,8 @@ function MenuPicker({
                 transform: [
                   {
                     translateX: typeSlide.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [0, typeOptionWidth],
+                      inputRange: [0, 1, 2],
+                      outputRange: [0, typeOptionWidth, typeOptionWidth * 2],
                     }),
                   },
                 ],
@@ -327,10 +311,11 @@ function MenuPicker({
             />
           )}
           {[
-            { label: '커피', value: true },
-            { label: '논커피', value: false },
+            { label: '커피', value: 'coffee' as const },
+            { label: '논커피', value: 'nonCoffee' as const },
+            { label: '디저트', value: 'dessert' as const },
           ].map((option) => {
-            const selected = isCoffeeDrink === option.value;
+            const selected = menuType === option.value;
             return (
               <TouchableOpacity
                 key={option.label}

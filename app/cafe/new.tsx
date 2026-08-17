@@ -43,15 +43,13 @@ const NewCafeLogScreen = () => {
   const stageTransitioning = useRef(false);
 
   const draft = useCafeLogDraftStore();
-  const { setField, updateDraft, selectRecordType: updateRecordType, resetDraft } = draft;
+  const { setField, selectRecordType: updateRecordType, resetDraft } = draft;
   const {
     step,
     recordTypeSelected,
     photoMode,
     notePhotos,
-    menuPhoto,
-    menuNotDrink,
-    isCoffeeDrink,
+    menuType,
     cafePhotos,
     photoCoords,
     selectedPlace,
@@ -74,8 +72,8 @@ const NewCafeLogScreen = () => {
     memo,
   } = draft;
 
-  const { scanningNote, pickNotePhoto, pickMenuPhoto, pickCafePhoto } = useCafeLogPhotos();
-  const { analyzing, runCardAnalysis, runMenuAnalysis } = useCafeLogAnalysis();
+  const { scanningNote, pickNotePhoto, pickCafePhoto } = useCafeLogPhotos();
+  const { analyzing, runCardAnalysis } = useCafeLogAnalysis();
   const [nearbyPlaces, setNearbyPlaces] = useState<NearbyPlace[]>([]);
   const [nearbyLoading, setNearbyLoading] = useState(false);
   const [showAddressSearch, setShowAddressSearch] = useState(false);
@@ -280,7 +278,6 @@ const NewCafeLogScreen = () => {
                   <Step1
                     photoMode={photoMode}
                     notePhotos={notePhotos}
-                    menuPhoto={menuPhoto}
                     cafePhotos={cafePhotos}
                     scanningNote={scanningNote}
                     onAddNotePhoto={pickNotePhoto}
@@ -290,10 +287,6 @@ const NewCafeLogScreen = () => {
                         notePhotos.filter((_, index) => index !== i),
                       )
                     }
-                    onAddMenuPhoto={pickMenuPhoto}
-                    onRemoveMenuPhoto={() => {
-                      updateDraft({ menuPhoto: null, menuName: '', analyzed: false });
-                    }}
                     onAddCafePhoto={pickCafePhoto}
                     onRemoveCafePhoto={(i) =>
                       setField(
@@ -325,19 +318,14 @@ const NewCafeLogScreen = () => {
                   <Step3
                     analyzing={analyzing}
                     analyzed={analyzed}
-                    menuNotDrink={menuNotDrink}
                     photoMode={photoMode}
                     onReanalyze={
-                      photoMode === 'handdip' && notePhotos.length > 0
-                        ? runCardAnalysis
-                        : photoMode === 'menu' && menuPhoto
-                          ? runMenuAnalysis
-                          : undefined
+                      photoMode === 'handdip' && notePhotos.length > 0 ? runCardAnalysis : undefined
                     }
                     menuName={menuName}
                     onMenuName={(value) => setField('menuName', value)}
-                    isCoffeeDrink={isCoffeeDrink}
-                    onIsCoffeeDrink={(value) => setField('isCoffeeDrink', value)}
+                    menuType={menuType}
+                    onMenuType={(value) => setField('menuType', value)}
                     isBlend={isBlend}
                     onIsBlend={(value) => setField('isBlend', value)}
                     origin={origin}
@@ -359,7 +347,7 @@ const NewCafeLogScreen = () => {
                 {step === 4 && (
                   <Step4
                     photoMode={photoMode}
-                    isCoffeeDrink={isCoffeeDrink}
+                    menuType={menuType}
                     memo={memo}
                     onMemo={(value) => setField('memo', value)}
                     myNotes={myNotes}

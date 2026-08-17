@@ -1,4 +1,5 @@
-export type MenuCategory = 'handdip' | 'espresso' | 'simple';
+export type MenuCategory = 'handdip' | 'espresso' | 'simple' | 'dessert';
+export type GeneralMenuType = 'coffee' | 'nonCoffee' | 'dessert';
 
 export interface CafeLog {
   id?: number;
@@ -19,7 +20,7 @@ export interface CafeMenuItem {
   id?: number;
   cafe_log_id: number;
   menu_name: string;
-  is_coffee?: number | null;
+  is_coffee?: number | null; // 1 = coffee, 0 = non-coffee, 2 = dessert
   created_at?: string;
 }
 

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { HanddripNoteBean } from '../types';
+import type { GeneralMenuType, HanddripNoteBean } from '../types';
 
 export type CafeLogPhotoMode = 'handdip' | 'menu';
 
@@ -18,13 +18,11 @@ export interface CafeLogDraft {
   recordTypeSelected: boolean;
   photoMode: CafeLogPhotoMode;
   notePhotos: string[];
-  menuPhoto: string | null;
   cafePhotos: string[];
   photoCoords: PhotoCoordinates | null;
   selectedPlace: SelectedCafe | null;
   visitedAt: string;
-  menuNotDrink: boolean;
-  isCoffeeDrink: boolean;
+  menuType: GeneralMenuType;
   analyzed: boolean;
   menuName: string;
   isBlend: number;
@@ -55,13 +53,11 @@ const createInitialDraft = (): CafeLogDraft => ({
   recordTypeSelected: false,
   photoMode: 'handdip',
   notePhotos: [],
-  menuPhoto: null,
   cafePhotos: [],
   photoCoords: null,
   selectedPlace: null,
   visitedAt: new Date().toISOString().slice(0, 10),
-  menuNotDrink: false,
-  isCoffeeDrink: true,
+  menuType: 'coffee',
   analyzed: false,
   menuName: '',
   isBlend: 0,
@@ -83,9 +79,7 @@ const createInitialDraft = (): CafeLogDraft => ({
 const createCoffeeDraft = (): Pick<
   CafeLogDraft,
   | 'notePhotos'
-  | 'menuPhoto'
-  | 'menuNotDrink'
-  | 'isCoffeeDrink'
+  | 'menuType'
   | 'analyzed'
   | 'menuName'
   | 'isBlend'
@@ -103,9 +97,7 @@ const createCoffeeDraft = (): Pick<
   | 'beans'
 > => ({
   notePhotos: [],
-  menuPhoto: null,
-  menuNotDrink: false,
-  isCoffeeDrink: true,
+  menuType: 'coffee',
   analyzed: false,
   menuName: '',
   isBlend: 0,

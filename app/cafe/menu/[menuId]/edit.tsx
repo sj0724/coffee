@@ -77,7 +77,7 @@ export default function EditCafeMenuScreen() {
       >
         {loading ? (
           <ActivityIndicator color="#3A1B0F" style={{ marginTop: 40 }} />
-        ) : !item || !category || category === 'simple' ? (
+        ) : !item || !category || category === 'simple' || category === 'dessert' ? (
           <View style={{ paddingVertical: 40, alignItems: 'center' }}>
             <Text style={{ color: '#A59688' }}>수정할 수 있는 메뉴 정보가 없어요.</Text>
           </View>

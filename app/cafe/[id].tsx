@@ -585,7 +585,13 @@ export default function CafeDetailScreen() {
                           }}
                         >
                           <Ionicons
-                            name={category === 'handdip' ? 'water-outline' : 'cafe-outline'}
+                            name={
+                              category === 'handdip'
+                                ? 'water-outline'
+                                : category === 'dessert'
+                                  ? 'restaurant-outline'
+                                  : 'cafe-outline'
+                            }
                             size={18}
                             color="#59534C"
                           />
@@ -599,13 +605,15 @@ export default function CafeDetailScreen() {
                               ? '핸드드립 노트'
                               : category === 'espresso'
                                 ? '커피 노트'
-                                : '일반 메뉴'}
+                                : category === 'dessert'
+                                  ? '디저트'
+                                  : '일반 메뉴'}
                           </Text>
                         </View>
                       </View>
                       <MenuActionDropdown
                         onEdit={
-                          category !== 'simple'
+                          category === 'handdip' || category === 'espresso'
                             ? () => router.push(`/cafe/menu/${item.id}/edit`)
                             : undefined
                         }
@@ -613,7 +621,7 @@ export default function CafeDetailScreen() {
                       />
                     </View>
 
-                    {category !== 'simple' && (
+                    {(category === 'handdip' || category === 'espresso') && (
                       <View
                         style={{
                           height: 1,

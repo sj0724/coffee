@@ -1,31 +1,10 @@
 import { useEffect, useState } from 'react';
-import { analyzeCardImages, analyzeMenuPhoto } from '@/src/services/visionLLM';
+import { analyzeCardImages } from '@/src/services/visionLLM';
 import { useCafeLogDraftStore } from '@/src/store/cafeLogDraftStore';
 
 export const useCafeLogAnalysis = () => {
   const [analyzing, setAnalyzing] = useState(false);
-  const { step, analyzed, photoMode, notePhotos, menuPhoto } = useCafeLogDraftStore();
-
-  const runMenuAnalysis = async () => {
-    const photo = useCafeLogDraftStore.getState().menuPhoto;
-    if (!photo) return;
-    setAnalyzing(true);
-    useCafeLogDraftStore.getState().setField('menuNotDrink', false);
-    try {
-      const result = await analyzeMenuPhoto(photo);
-      if (!result?.is_drink) {
-        useCafeLogDraftStore.getState().setField('menuNotDrink', true);
-      } else {
-        useCafeLogDraftStore.getState().updateDraft({
-          ...(result.menu_name ? { menuName: result.menu_name } : {}),
-          isCoffeeDrink: result.is_coffee,
-        });
-      }
-    } finally {
-      setAnalyzing(false);
-      useCafeLogDraftStore.getState().setField('analyzed', true);
-    }
-  };
+  const { step, analyzed, photoMode, notePhotos } = useCafeLogDraftStore();
 
   const runCardAnalysis = async () => {
     setAnalyzing(true);
@@ -51,8 +30,7 @@ export const useCafeLogAnalysis = () => {
   useEffect(() => {
     if (step !== 3 || analyzed) return;
     if (photoMode === 'handdip' && notePhotos.length > 0) void runCardAnalysis();
-    if (photoMode === 'menu' && menuPhoto) void runMenuAnalysis();
-  }, [step, analyzed, photoMode, notePhotos, menuPhoto]);
+  }, [step, analyzed, photoMode, notePhotos]);
 
-  return { analyzing, runCardAnalysis, runMenuAnalysis };
+  return { analyzing, runCardAnalysis };
 };
