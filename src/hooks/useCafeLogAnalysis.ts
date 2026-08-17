@@ -1,11 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { analyzeCardImages } from '@/src/services/visionLLM';
 import { useCafeLogDraftStore } from '@/src/store/cafeLogDraftStore';
 
 export const useCafeLogAnalysis = () => {
   const [analyzing, setAnalyzing] = useState(false);
-  const { step, analyzed, photoMode, notePhotos } = useCafeLogDraftStore();
-
   const runCardAnalysis = async () => {
     setAnalyzing(true);
     try {
@@ -26,11 +24,6 @@ export const useCafeLogAnalysis = () => {
       useCafeLogDraftStore.getState().setField('analyzed', true);
     }
   };
-
-  useEffect(() => {
-    if (step !== 3 || analyzed) return;
-    if (photoMode === 'handdip' && notePhotos.length > 0) void runCardAnalysis();
-  }, [step, analyzed, photoMode, notePhotos]);
 
   return { analyzing, runCardAnalysis };
 };

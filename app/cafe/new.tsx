@@ -24,6 +24,7 @@ import { Step4 } from '@/src/components/cafe/CafeLogStepFour';
 import { CafeLogTypePicker } from '@/src/components/cafe/CafeLogTypePicker';
 import type { NearbyPlace } from '@/src/components/cafe/cafeLogFormTypes';
 import { AnalysisOverlay } from '@/src/components/cafe/AnalysisOverlay';
+import { AiAnalysisConsentModal } from '@/src/components/cafe/AiAnalysisConsentModal';
 import { useCafeLogDraftStore } from '@/src/store/cafeLogDraftStore';
 import { useCafeLogPhotos } from '@/src/hooks/useCafeLogPhotos';
 import { useCafeLogAnalysis } from '@/src/hooks/useCafeLogAnalysis';
@@ -78,6 +79,8 @@ const NewCafeLogScreen = () => {
   const [nearbyLoading, setNearbyLoading] = useState(false);
   const [showAddressSearch, setShowAddressSearch] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showAiConsent, setShowAiConsent] = useState(false);
+  const [analysisAfterStepChange, setAnalysisAfterStepChange] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const date = new Date(`${visitedAt}T00:00:00`);
@@ -168,8 +171,37 @@ const NewCafeLogScreen = () => {
     });
   };
 
-  const goNext = () => {
+  const moveToNextStep = () => {
     if (step < TOTAL_STEPS) transitionStage(() => setField('step', step + 1), 'forward');
+  };
+
+  const goNext = () => {
+    if (step === 2 && photoMode === 'handdip' && notePhotos.length > 0 && !analyzed) {
+      setAnalysisAfterStepChange(true);
+      setShowAiConsent(true);
+      return;
+    }
+    moveToNextStep();
+  };
+
+  const requestReanalysis = () => {
+    setAnalysisAfterStepChange(false);
+    setShowAiConsent(true);
+  };
+
+  const handleAiAnalysisAgree = () => {
+    setShowAiConsent(false);
+    if (analysisAfterStepChange) {
+      moveToNextStep();
+      setTimeout(() => void runCardAnalysis(), 300);
+    } else {
+      void runCardAnalysis();
+    }
+  };
+
+  const handleAiAnalysisSkip = () => {
+    setShowAiConsent(false);
+    if (analysisAfterStepChange) moveToNextStep();
   };
 
   const goBack = () => {
@@ -320,7 +352,9 @@ const NewCafeLogScreen = () => {
                     analyzed={analyzed}
                     photoMode={photoMode}
                     onReanalyze={
-                      photoMode === 'handdip' && notePhotos.length > 0 ? runCardAnalysis : undefined
+                      photoMode === 'handdip' && notePhotos.length > 0
+                        ? requestReanalysis
+                        : undefined
                     }
                     menuName={menuName}
                     onMenuName={(value) => setField('menuName', value)}
@@ -479,6 +513,11 @@ const NewCafeLogScreen = () => {
 
       {/* 분석 오버레이 */}
       <AnalysisOverlay visible={analyzing} mode={photoMode} />
+      <AiAnalysisConsentModal
+        visible={showAiConsent}
+        onAgree={handleAiAnalysisAgree}
+        onSkip={handleAiAnalysisSkip}
+      />
     </View>
   );
 };
