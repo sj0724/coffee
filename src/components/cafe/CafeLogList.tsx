@@ -210,7 +210,7 @@ export function CafeCard({
         cardHeight={actualCardHeight}
       >
         <TouchableOpacity
-          className="flex-1 overflow-hidden rounded-[24px]"
+          className="flex-1 overflow-hidden rounded-[16px]"
           onPress={() => router.push(`/cafe/${item.id}`)}
           activeOpacity={0.92}
         >
@@ -353,7 +353,7 @@ export function CafeGridCard({
       <TouchableOpacity
         onPress={() => router.push(`/cafe/${item.id}`)}
         activeOpacity={0.9}
-        style={{ borderRadius: 16, overflow: 'hidden' }}
+        style={{ borderRadius: 10, overflow: 'hidden' }}
       >
         {firstPhotoUri ? (
           <View style={{ aspectRatio: imgRatio }}>

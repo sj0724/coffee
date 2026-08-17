@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View, Text, TextInput } from 'react-native';
+import { NoteInput } from './NoteInput';
 
 export function TagsInput({
   label,
@@ -17,23 +17,18 @@ export function TagsInput({
   }, [value]);
 
   return (
-    <View>
-      <Text className="text-[13px] text-[#816F62] mb-1">{label}</Text>
-      <TextInput
-        className="border border-coffee-border rounded-lg p-2.5 text-sm text-[#3A1B0F] bg-coffee-cream"
-        value={raw}
-        onChangeText={setRaw}
-        onBlur={() =>
-          onChange(
-            raw
-              .split(',')
-              .map((s) => s.trim())
-              .filter(Boolean),
-          )
-        }
-        placeholderTextColor="#C8BFB0"
-        placeholder="자스민, 복숭아, 꿀..."
-      />
-    </View>
+    <NoteInput
+      label={label}
+      value={raw}
+      onChange={setRaw}
+      onBlur={() =>
+        onChange(
+          raw
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean),
+        )
+      }
+    />
   );
 }

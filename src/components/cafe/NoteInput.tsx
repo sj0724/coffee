@@ -5,11 +5,13 @@ export function NoteInput({
   label,
   value,
   onChange,
+  onBlur,
   required = false,
 }: {
   label: string;
   value?: string;
   onChange: (v: string) => void;
+  onBlur?: () => void;
   required?: boolean;
 }) {
   const [focused, setFocused] = useState(false);
@@ -57,7 +59,10 @@ export function NoteInput({
         value={value ?? ''}
         onChangeText={onChange}
         onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
+        onBlur={() => {
+          setFocused(false);
+          onBlur?.();
+        }}
         accessibilityLabel={`${label}${required ? ' 필수' : ''}`}
       />
     </Animated.View>
