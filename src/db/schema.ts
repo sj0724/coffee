@@ -1,4 +1,4 @@
-export const DB_VERSION = 13;
+export const DB_VERSION = 14;
 
 export const CREATE_TABLES_SQL = `
 CREATE TABLE IF NOT EXISTS cafe_logs (
@@ -55,36 +55,4 @@ CREATE TABLE IF NOT EXISTS espresso_notes (
   tags              TEXT NOT NULL DEFAULT '[]'
 );
 
-CREATE TABLE IF NOT EXISTS recipes (
-  id            INTEGER PRIMARY KEY AUTOINCREMENT,
-  name          TEXT NOT NULL,
-  brew_method   TEXT NOT NULL,
-  bean_name     TEXT,
-  bean_amount   REAL,
-  water_amount  REAL,
-  water_temp    INTEGER,
-  grind_size    TEXT,
-  memo          TEXT,
-  is_favorite   INTEGER DEFAULT 0,
-  created_at    TEXT DEFAULT (datetime('now'))
-);
-
-CREATE TABLE IF NOT EXISTS recipe_steps (
-  id          INTEGER PRIMARY KEY AUTOINCREMENT,
-  recipe_id   INTEGER NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
-  step_order  INTEGER NOT NULL,
-  title       TEXT NOT NULL,
-  description TEXT,
-  duration    INTEGER
-);
-
-CREATE TABLE IF NOT EXISTS brew_logs (
-  id          INTEGER PRIMARY KEY AUTOINCREMENT,
-  recipe_id   INTEGER REFERENCES recipes(id),
-  brewed_at   TEXT NOT NULL,
-  rating      INTEGER,
-  my_notes    TEXT,
-  memo        TEXT,
-  created_at  TEXT DEFAULT (datetime('now'))
-);
 `;

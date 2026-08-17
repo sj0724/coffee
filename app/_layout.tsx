@@ -38,9 +38,6 @@ export default function RootLayout() {
       <Stack.Screen name="cafe/new" options={{ headerShown: false, presentation: 'card' }} />
       <Stack.Screen name="cafe/[id]" options={{ title: '' }} />
       <Stack.Screen name="cafe/menu/[menuId]/edit" options={{ title: '메뉴 수정' }} />
-      <Stack.Screen name="brew/new" options={{ title: '레시피 추가', presentation: 'modal' }} />
-      <Stack.Screen name="brew/[id]" options={{ title: '레시피' }} />
-      <Stack.Screen name="brew/timer/[id]" options={{ title: '타이머', headerShown: false }} />
     </Stack>
   );
 }

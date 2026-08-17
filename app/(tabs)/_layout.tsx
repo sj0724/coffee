@@ -115,7 +115,6 @@ export default function TabLayout() {
           ),
         }}
       />
-      <Tabs.Screen name="brew" options={{ href: null }} />
       <Tabs.Screen
         name="settings"
         options={{
