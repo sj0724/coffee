@@ -181,7 +181,7 @@ export default function TimerScreen() {
             onPress={handleStepPress}
           >
             <Text className="text-coffee text-[15px] font-bold">다음 단계</Text>
-            <Ionicons name="arrow-forward" size={20} color="#111111" />
+            <Ionicons name="arrow-forward" size={20} color="#3A1B0F" />
           </TouchableOpacity>
         </View>
       )}

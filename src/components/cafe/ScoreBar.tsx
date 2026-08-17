@@ -1,6 +1,6 @@
 import { View, Text } from 'react-native';
 
-const COFFEE = '#111111';
+const COFFEE = '#E6531E';
 const EMPTY = '#D9D5CE';
 
 export function ScoreBar({ label, value }: { label: string; value: number }) {

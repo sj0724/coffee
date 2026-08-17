@@ -18,9 +18,9 @@ export function TagsInput({
 
   return (
     <View>
-      <Text className="text-[13px] text-[#666] mb-1">{label}</Text>
+      <Text className="text-[13px] text-[#816F62] mb-1">{label}</Text>
       <TextInput
-        className="border border-coffee-border rounded-lg p-2.5 text-sm text-[#222] bg-white"
+        className="border border-coffee-border rounded-lg p-2.5 text-sm text-[#3A1B0F] bg-coffee-cream"
         value={raw}
         onChangeText={setRaw}
         onBlur={() =>
@@ -31,7 +31,7 @@ export function TagsInput({
               .filter(Boolean),
           )
         }
-        placeholderTextColor="#ccc"
+        placeholderTextColor="#C8BFB0"
         placeholder="자스민, 복숭아, 꿀..."
       />
     </View>

@@ -49,7 +49,7 @@ function MenuActionDropdown({ onEdit, onDelete }: { onEdit?: () => void; onDelet
   return (
     <View ref={anchorRef} collapsable={false}>
       <TouchableOpacity onPress={show} style={{ padding: 6, margin: -6 }}>
-        <Ionicons name="ellipsis-horizontal" size={20} color="#666" />
+        <Ionicons name="ellipsis-horizontal" size={20} color="#816F62" />
       </TouchableOpacity>
       <Modal transparent visible={open} animationType="fade" onRequestClose={() => setOpen(false)}>
         <Pressable style={{ flex: 1 }} onPress={() => setOpen(false)}>
@@ -61,7 +61,7 @@ function MenuActionDropdown({ onEdit, onDelete }: { onEdit?: () => void; onDelet
               minWidth: 132,
               paddingVertical: 6,
               borderRadius: 12,
-              backgroundColor: '#fff',
+              backgroundColor: '#FFFFFF',
               shadowColor: '#000',
               shadowOffset: { width: 0, height: 4 },
               shadowOpacity: 0.14,
@@ -74,8 +74,8 @@ function MenuActionDropdown({ onEdit, onDelete }: { onEdit?: () => void; onDelet
                 onPress={() => run(onEdit)}
                 style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12 }}
               >
-                <Ionicons name="pencil-outline" size={18} color="#333" />
-                <Text style={{ fontSize: 14, color: '#333', fontWeight: '600' }}>수정</Text>
+                <Ionicons name="pencil-outline" size={18} color="#5E493D" />
+                <Text style={{ fontSize: 14, color: '#5E493D', fontWeight: '600' }}>수정</Text>
               </TouchableOpacity>
             )}
             <TouchableOpacity
@@ -241,7 +241,7 @@ export default function CafeDetailScreen() {
     : (['#fff', '#fff', '#fff'] as const);
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#F8F8F8' }}>
+    <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
       <Stack.Screen options={{ headerShown: false }} />
       <StatusBar style={noteCardOpen ? 'light' : 'dark'} />
       <LinearGradient
@@ -380,7 +380,7 @@ export default function CafeDetailScreen() {
                   height: 92,
                   padding: 3,
                   borderRadius: 12,
-                  backgroundColor: '#fff',
+                  backgroundColor: '#FFFFFF',
                   shadowColor: '#000',
                   shadowOffset: { width: 0, height: 4 },
                   shadowOpacity: 0.25,
@@ -421,7 +421,7 @@ export default function CafeDetailScreen() {
             marginTop: 4,
             padding: 20,
             borderRadius: 20,
-            backgroundColor: '#fff',
+            backgroundColor: '#FFFFFF',
             borderWidth: 1,
             borderColor: '#ECEAE6',
           }}
@@ -543,11 +543,11 @@ export default function CafeDetailScreen() {
               marginBottom: 12,
             }}
           >
-            <Text style={{ fontSize: 20, fontWeight: '800', color: '#222' }}>메뉴</Text>
+            <Text style={{ fontSize: 20, fontWeight: '800', color: '#3A1B0F' }}>메뉴</Text>
           </View>
 
           {menuItems.length === 0 && (
-            <View className="px-5 py-8 mx-5 bg-white border border-coffee-border rounded-2xl">
+            <View className="px-5 py-8 mx-5 bg-coffee-cream border border-coffee-border rounded-2xl">
               <Text className="text-sm text-center text-gray-300">등록된 메뉴가 없어요.</Text>
             </View>
           )}
@@ -565,7 +565,7 @@ export default function CafeDetailScreen() {
                     style={{
                       padding: 18,
                       borderRadius: 18,
-                      backgroundColor: '#fff',
+                      backgroundColor: '#FFFFFF',
                       borderWidth: 1,
                       borderColor: '#E3DFD9',
                     }}
@@ -591,7 +591,7 @@ export default function CafeDetailScreen() {
                           />
                         </View>
                         <View style={{ flex: 1 }}>
-                          <Text className="text-[17px] font-bold text-[#222]">
+                          <Text className="text-[17px] font-bold text-[#3A1B0F]">
                             {item.menu_name}
                           </Text>
                           <Text style={{ marginTop: 2, fontSize: 12, color: '#777169' }}>

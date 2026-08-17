@@ -71,22 +71,22 @@ export default function EditCafeMenuScreen() {
     <>
       <Stack.Screen options={{ title: item?.menu_name ?? '메뉴 수정' }} />
       <ScrollView
-        style={{ flex: 1, backgroundColor: '#fff' }}
+        style={{ flex: 1, backgroundColor: '#FFFFFF' }}
         contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
         keyboardShouldPersistTaps="handled"
       >
         {loading ? (
-          <ActivityIndicator color="#111" style={{ marginTop: 40 }} />
+          <ActivityIndicator color="#3A1B0F" style={{ marginTop: 40 }} />
         ) : !item || !category || category === 'simple' ? (
           <View style={{ paddingVertical: 40, alignItems: 'center' }}>
-            <Text style={{ color: '#999' }}>수정할 수 있는 메뉴 정보가 없어요.</Text>
+            <Text style={{ color: '#A59688' }}>수정할 수 있는 메뉴 정보가 없어요.</Text>
           </View>
         ) : category === 'handdip' ? (
           <NoteForm form={handdripForm} onChange={setHanddripForm} onSave={save} />
         ) : (
           <EspressoNoteForm tags={espressoTags} onChange={setEspressoTags} onSave={save} />
         )}
-        {saving && <ActivityIndicator color="#111" style={{ marginTop: 16 }} />}
+        {saving && <ActivityIndicator color="#3A1B0F" style={{ marginTop: 16 }} />}
       </ScrollView>
     </>
   );

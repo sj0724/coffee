@@ -102,16 +102,16 @@ export function Step3({
             alignItems: 'center',
             justifyContent: 'space-between',
             padding: 12,
-            backgroundColor: '#F5F5F5',
+            backgroundColor: '#EDE7DC',
             borderRadius: 12,
           }}
         >
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <Ionicons name="sparkles-outline" size={15} color="#555" />
-            <Text style={{ fontSize: 13, color: '#555', fontWeight: '500' }}>자동 분석 완료</Text>
+            <Ionicons name="sparkles-outline" size={15} color="#816F62" />
+            <Text style={{ fontSize: 13, color: '#816F62', fontWeight: '500' }}>자동 분석 완료</Text>
           </View>
           <TouchableOpacity onPress={onReanalyze}>
-            <Text style={{ fontSize: 12, color: '#555', fontWeight: '600' }}>재분석</Text>
+            <Text style={{ fontSize: 12, color: '#816F62', fontWeight: '600' }}>재분석</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -132,13 +132,13 @@ export function Step3({
       {photoMode === 'handdip' && (
         <>
           <View>
-            <Text style={{ fontSize: 13, color: '#666', marginBottom: 8 }}>원두 종류</Text>
+            <Text style={{ fontSize: 13, color: '#816F62', marginBottom: 8 }}>원두 종류</Text>
             <View
               style={{
                 flexDirection: 'row',
                 borderRadius: 10,
                 borderWidth: 1,
-                borderColor: '#E0E0E0',
+                borderColor: '#C8BFB0',
                 overflow: 'hidden',
               }}
             >
@@ -147,7 +147,7 @@ export function Step3({
                   flex: 1,
                   paddingVertical: 10,
                   alignItems: 'center',
-                  backgroundColor: isBlend === 0 ? '#111' : '#fff',
+                  backgroundColor: isBlend === 0 ? '#E6531E' : '#FFFFFF',
                 }}
                 onPress={() => onIsBlend(0)}
               >
@@ -155,7 +155,7 @@ export function Step3({
                   style={{
                     fontSize: 13,
                     fontWeight: '600',
-                    color: isBlend === 0 ? '#fff' : '#999',
+                    color: isBlend === 0 ? '#fff' : '#A59688',
                   }}
                 >
                   싱글 오리진
@@ -166,7 +166,7 @@ export function Step3({
                   flex: 1,
                   paddingVertical: 10,
                   alignItems: 'center',
-                  backgroundColor: isBlend === 1 ? '#111' : '#fff',
+                  backgroundColor: isBlend === 1 ? '#E6531E' : '#FFFFFF',
                 }}
                 onPress={() => onIsBlend(1)}
               >
@@ -174,7 +174,7 @@ export function Step3({
                   style={{
                     fontSize: 13,
                     fontWeight: '600',
-                    color: isBlend === 1 ? '#fff' : '#999',
+                    color: isBlend === 1 ? '#fff' : '#A59688',
                   }}
                 >
                   블랜드
@@ -205,7 +205,7 @@ export function Step3({
                 }}
                 onPress={() => onBeans([...beans, {}])}
               >
-                <Text style={{ fontSize: 13, color: '#999' }}>+ 원두 추가</Text>
+                <Text style={{ fontSize: 13, color: '#A59688' }}>+ 원두 추가</Text>
               </TouchableOpacity>
             </View>
           ) : (
@@ -310,7 +310,7 @@ function MenuPicker({
                 left: 3,
                 width: typeOptionWidth,
                 borderRadius: 9,
-                backgroundColor: '#fff',
+                backgroundColor: '#FFFFFF',
                 shadowColor: '#000',
                 shadowOffset: { width: 0, height: 1 },
                 shadowOpacity: 0.08,
@@ -348,7 +348,7 @@ function MenuPicker({
                   style={{
                     fontSize: 13,
                     fontWeight: '700',
-                    color: selected ? '#222' : '#8A847C',
+                    color: selected ? '#3A1B0F' : '#8A847C',
                   }}
                 >
                   {option.label}
@@ -373,8 +373,8 @@ function MenuPicker({
                   paddingVertical: 8,
                   borderRadius: 999,
                   borderWidth: 1,
-                  borderColor: selected ? '#222' : '#D8D3CC',
-                  backgroundColor: selected ? '#222' : '#fff',
+                  borderColor: selected ? '#3A1B0F' : '#D8D3CC',
+                  backgroundColor: selected ? '#E6531E' : '#FFFFFF',
                 }}
               >
                 <Text
@@ -412,10 +412,10 @@ function BeanEditor({
 }) {
   return (
     <View
-      style={{ borderWidth: 1, borderColor: '#E0E0E0', borderRadius: 12, padding: 14, gap: 12 }}
+      style={{ borderWidth: 1, borderColor: '#C8BFB0', borderRadius: 12, padding: 14, gap: 12 }}
     >
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Text style={{ fontSize: 13, fontWeight: '600', color: '#666' }}>원두 {index + 1}</Text>
+        <Text style={{ fontSize: 13, fontWeight: '600', color: '#816F62' }}>원두 {index + 1}</Text>
         <TouchableOpacity onPress={onRemove}>
           <Text style={{ fontSize: 13, color: '#E07070' }}>삭제</Text>
         </TouchableOpacity>
@@ -437,16 +437,16 @@ function BeanEditor({
         onChange={(v) => onChange({ ...bean, process: v })}
       />
       <View>
-        <Text style={{ fontSize: 13, color: '#666', marginBottom: 6 }}>비율 (%)</Text>
+        <Text style={{ fontSize: 13, color: '#816F62', marginBottom: 6 }}>비율 (%)</Text>
         <TextInput
           style={{
             borderWidth: 1,
-            borderColor: '#E0E0E0',
+            borderColor: '#C8BFB0',
             borderRadius: 10,
             padding: 10,
             fontSize: 14,
-            color: '#222',
-            backgroundColor: '#fff',
+            color: '#3A1B0F',
+            backgroundColor: '#FFFFFF',
           }}
           keyboardType="numeric"
           value={bean.ratio != null ? String(bean.ratio) : ''}

@@ -135,7 +135,7 @@ export function CardScanSection({ onAnalyzed }: Props) {
             }}
           >
             <ActivityIndicator size="small" color="#8B5E3C" />
-            <Text style={{ fontSize: 10, color: '#888' }}>크롭 중</Text>
+            <Text style={{ fontSize: 10, color: '#8B7A6D' }}>크롭 중</Text>
           </View>
         )}
 

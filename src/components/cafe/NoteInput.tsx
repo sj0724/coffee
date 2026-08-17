@@ -52,7 +52,7 @@ export function NoteInput({
           paddingBottom: 3,
           paddingHorizontal: 0,
           fontSize: 15,
-          color: '#222',
+          color: '#3A1B0F',
         }}
         value={value ?? ''}
         onChangeText={onChange}

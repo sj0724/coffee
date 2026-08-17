@@ -23,13 +23,13 @@ export default function RootLayout() {
   return (
     <Stack
       screenOptions={({ navigation }) => ({
-        headerStyle: { backgroundColor: '#fff' },
-        headerTintColor: '#111111',
+        headerStyle: { backgroundColor: '#FFFFFF' },
+        headerTintColor: '#3A1B0F',
         headerTitleStyle: { fontWeight: '700' as const },
         headerLeft: ({ canGoBack }) =>
           canGoBack ? (
             <TouchableOpacity onPress={navigation.goBack} style={{ padding: 4, marginLeft: -4 }}>
-              <Ionicons name="chevron-back" size={26} color="#111111" />
+              <Ionicons name="chevron-back" size={26} color="#3A1B0F" />
             </TouchableOpacity>
           ) : null,
       })}

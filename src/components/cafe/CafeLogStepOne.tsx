@@ -87,22 +87,22 @@ export function Step1({
                       width: 120,
                       height: 160,
                       borderRadius: 12,
-                      backgroundColor: '#F5F5F5',
+                      backgroundColor: '#EDE7DC',
                       alignItems: 'center',
                       justifyContent: 'center',
                       gap: 6,
                       borderWidth: 1.5,
-                      borderColor: '#D0D0D0',
+                      borderColor: '#C8BFB0',
                       borderStyle: 'dashed',
                       opacity: scanningNote ? 0.5 : 1,
                     }}
                   >
                     {scanningNote && i === notePhotos.length ? (
-                      <ActivityIndicator color="#555" />
+                      <ActivityIndicator color="#816F62" />
                     ) : (
                       <>
-                        <Ionicons name="add" size={26} color="#555" />
-                        <Text style={{ fontSize: 12, color: '#555', fontWeight: '600' }}>
+                        <Ionicons name="add" size={26} color="#816F62" />
+                        <Text style={{ fontSize: 12, color: '#816F62', fontWeight: '600' }}>
                           {i === 0 ? '앞면' : '뒷면'}
                         </Text>
                       </>
@@ -160,18 +160,18 @@ export function Step1({
                 width: 120,
                 height: 160,
                 borderRadius: 12,
-                backgroundColor: '#F5F5F5',
+                backgroundColor: '#EDE7DC',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: 6,
                 borderWidth: 1.5,
-                borderColor: '#D0D0D0',
+                borderColor: '#C8BFB0',
                 borderStyle: 'dashed',
               }}
             >
               <>
-                <Ionicons name="cafe-outline" size={26} color="#555" />
-                <Text style={{ fontSize: 12, color: '#555', fontWeight: '600' }}>메뉴 사진</Text>
+                <Ionicons name="cafe-outline" size={26} color="#816F62" />
+                <Text style={{ fontSize: 12, color: '#816F62', fontWeight: '600' }}>메뉴 사진</Text>
               </>
             </TouchableOpacity>
           )}
@@ -189,7 +189,7 @@ export function Step1({
             <View key={i} style={{ position: 'relative' }}>
               <Image
                 source={{ uri }}
-                style={{ width: 100, height: 133, borderRadius: 10, backgroundColor: '#F1F1F1' }}
+                style={{ width: 100, height: 133, borderRadius: 10, backgroundColor: '#EDE7DC' }}
                 contentFit="contain"
               />
               <TouchableOpacity
@@ -214,17 +214,17 @@ export function Step1({
                 width: 100,
                 height: 133,
                 borderRadius: 10,
-                backgroundColor: '#F5F5F5',
+                backgroundColor: '#EDE7DC',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: 6,
                 borderWidth: 1.5,
-                borderColor: '#D0D0D0',
+                borderColor: '#C8BFB0',
                 borderStyle: 'dashed',
               }}
             >
-              <Ionicons name="add" size={24} color="#111" />
-              <Text style={{ fontSize: 11, color: '#111', fontWeight: '600' }}>사진 추가</Text>
+              <Ionicons name="add" size={24} color="#3A1B0F" />
+              <Text style={{ fontSize: 11, color: '#3A1B0F', fontWeight: '600' }}>사진 추가</Text>
             </TouchableOpacity>
           )}
         </ScrollView>

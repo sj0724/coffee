@@ -105,11 +105,11 @@ export default function NewBrewScreen() {
       >
         <Field label="레시피 이름 *">
           <TextInput
-            className="border border-coffee-border rounded-lg p-3 text-[15px] text-[#222] bg-white"
+            className="border border-coffee-border rounded-lg p-3 text-[15px] text-[#3A1B0F] bg-coffee-cream"
             value={name}
             onChangeText={setName}
             placeholder="나의 드립 레시피"
-            placeholderTextColor="#ccc"
+            placeholderTextColor="#C8BFB0"
           />
         </Field>
 
@@ -120,13 +120,13 @@ export default function NewBrewScreen() {
                 <TouchableOpacity
                   key={m}
                   className={`px-3.5 py-2 rounded-full border ${
-                    m === brewMethod ? 'bg-coffee border-coffee' : 'bg-white border-coffee-border'
+                    m === brewMethod ? 'bg-coffee border-coffee' : 'bg-coffee-cream border-coffee-border'
                   }`}
                   onPress={() => setBrewMethod(m)}
                 >
                   <Text
                     className={`text-[13px] ${
-                      m === brewMethod ? 'text-white font-semibold' : 'text-[#666]'
+                      m === brewMethod ? 'text-white font-semibold' : 'text-[#816F62]'
                     }`}
                   >
                     {m}
@@ -139,11 +139,11 @@ export default function NewBrewScreen() {
 
         <Field label="원두">
           <TextInput
-            className="border border-coffee-border rounded-lg p-3 text-[15px] text-[#222] bg-white"
+            className="border border-coffee-border rounded-lg p-3 text-[15px] text-[#3A1B0F] bg-coffee-cream"
             value={beanName}
             onChangeText={setBeanName}
             placeholder="에티오피아 예가체프"
-            placeholderTextColor="#ccc"
+            placeholderTextColor="#C8BFB0"
           />
         </Field>
 
@@ -151,24 +151,24 @@ export default function NewBrewScreen() {
           <View className="flex-1">
             <Field label="원두 (g)">
               <TextInput
-                className="border border-coffee-border rounded-lg p-3 text-[15px] text-[#222] bg-white"
+                className="border border-coffee-border rounded-lg p-3 text-[15px] text-[#3A1B0F] bg-coffee-cream"
                 value={beanAmount}
                 onChangeText={setBeanAmount}
                 keyboardType="decimal-pad"
                 placeholder="15"
-                placeholderTextColor="#ccc"
+                placeholderTextColor="#C8BFB0"
               />
             </Field>
           </View>
           <View className="flex-1">
             <Field label="물 (ml)">
               <TextInput
-                className="border border-coffee-border rounded-lg p-3 text-[15px] text-[#222] bg-white"
+                className="border border-coffee-border rounded-lg p-3 text-[15px] text-[#3A1B0F] bg-coffee-cream"
                 value={waterAmount}
                 onChangeText={setWaterAmount}
                 keyboardType="decimal-pad"
                 placeholder="250"
-                placeholderTextColor="#ccc"
+                placeholderTextColor="#C8BFB0"
               />
             </Field>
           </View>
@@ -178,23 +178,23 @@ export default function NewBrewScreen() {
           <View className="flex-1">
             <Field label="물 온도 (°C)">
               <TextInput
-                className="border border-coffee-border rounded-lg p-3 text-[15px] text-[#222] bg-white"
+                className="border border-coffee-border rounded-lg p-3 text-[15px] text-[#3A1B0F] bg-coffee-cream"
                 value={waterTemp}
                 onChangeText={setWaterTemp}
                 keyboardType="number-pad"
                 placeholder="93"
-                placeholderTextColor="#ccc"
+                placeholderTextColor="#C8BFB0"
               />
             </Field>
           </View>
           <View className="flex-1">
             <Field label="분쇄도">
               <TextInput
-                className="border border-coffee-border rounded-lg p-3 text-[15px] text-[#222] bg-white"
+                className="border border-coffee-border rounded-lg p-3 text-[15px] text-[#3A1B0F] bg-coffee-cream"
                 value={grindSize}
                 onChangeText={setGrindSize}
                 placeholder="중간"
-                placeholderTextColor="#ccc"
+                placeholderTextColor="#C8BFB0"
               />
             </Field>
           </View>
@@ -202,55 +202,55 @@ export default function NewBrewScreen() {
 
         <Field label="메모">
           <TextInput
-            className="border border-coffee-border rounded-lg p-3 text-[15px] text-[#222] bg-white"
+            className="border border-coffee-border rounded-lg p-3 text-[15px] text-[#3A1B0F] bg-coffee-cream"
             style={{ height: 70, textAlignVertical: 'top' }}
             value={memo}
             onChangeText={setMemo}
             placeholder="특이사항..."
-            placeholderTextColor="#ccc"
+            placeholderTextColor="#C8BFB0"
             multiline
             numberOfLines={2}
           />
         </Field>
 
         <View className="gap-3">
-          <Text className="text-[15px] font-bold text-[#333]">타이머 단계</Text>
+          <Text className="text-[15px] font-bold text-[#5E493D]">타이머 단계</Text>
           {steps.map((step, i) => (
-            <View key={i} className="bg-white rounded-[10px] p-3 gap-2 shadow-sm">
+            <View key={i} className="bg-coffee-cream rounded-[10px] p-3 gap-2 shadow-sm">
               <View className="flex-row items-center justify-between">
                 <Text className="text-[13px] font-semibold text-coffee">단계 {i + 1}</Text>
                 {steps.length > 1 && (
                   <TouchableOpacity onPress={() => removeStep(i)}>
-                    <Ionicons name="close-circle-outline" size={20} color="#E76F51" />
+                    <Ionicons name="close-circle-outline" size={20} color="#E6531E" />
                   </TouchableOpacity>
                 )}
               </View>
               <TextInput
-                className="border border-coffee-border rounded-lg p-3 text-[15px] text-[#222] bg-white"
+                className="border border-coffee-border rounded-lg p-3 text-[15px] text-[#3A1B0F] bg-coffee-cream"
                 value={step.title}
                 onChangeText={(v) => updateStep(i, 'title', v)}
                 placeholder="뜸들이기"
-                placeholderTextColor="#ccc"
+                placeholderTextColor="#C8BFB0"
               />
               <TextInput
-                className="border border-coffee-border rounded-lg p-3 text-[15px] text-[#222] bg-white"
+                className="border border-coffee-border rounded-lg p-3 text-[15px] text-[#3A1B0F] bg-coffee-cream"
                 value={step.description}
                 onChangeText={(v) => updateStep(i, 'description', v)}
                 placeholder="설명 (선택)"
-                placeholderTextColor="#ccc"
+                placeholderTextColor="#C8BFB0"
               />
               <TextInput
-                className="border border-coffee-border rounded-lg p-3 text-[15px] text-[#222] bg-white"
+                className="border border-coffee-border rounded-lg p-3 text-[15px] text-[#3A1B0F] bg-coffee-cream"
                 value={step.duration}
                 onChangeText={(v) => updateStep(i, 'duration', v)}
                 keyboardType="number-pad"
                 placeholder="시간 (초, 선택)"
-                placeholderTextColor="#ccc"
+                placeholderTextColor="#C8BFB0"
               />
             </View>
           ))}
           <TouchableOpacity className="flex-row items-center gap-1.5 py-1" onPress={addStep}>
-            <Ionicons name="add-circle-outline" size={20} color="#111111" />
+            <Ionicons name="add-circle-outline" size={20} color="#3A1B0F" />
             <Text className="text-sm font-semibold text-coffee">단계 추가</Text>
           </TouchableOpacity>
         </View>

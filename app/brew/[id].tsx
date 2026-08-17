@@ -62,23 +62,23 @@ export default function BrewDetailScreen() {
     >
       <View className="flex-row items-center gap-2">
         <View className="flex-1">
-          <Text className="text-[22px] font-bold text-[#222]">{recipe.name}</Text>
+          <Text className="text-[22px] font-bold text-[#3A1B0F]">{recipe.name}</Text>
           <Text className="text-sm text-coffee mt-1">{recipe.brew_method}</Text>
         </View>
         <TouchableOpacity className="p-1" onPress={handleToggleFavorite}>
           <Ionicons
             name={recipe.is_favorite === 1 ? 'heart' : 'heart-outline'}
             size={24}
-            color="#E76F51"
+            color="#E6531E"
           />
         </TouchableOpacity>
         <TouchableOpacity className="p-1" onPress={handleDelete}>
-          <Ionicons name="trash-outline" size={22} color="#E76F51" />
+          <Ionicons name="trash-outline" size={22} color="#E6531E" />
         </TouchableOpacity>
       </View>
 
-      <View className="bg-white rounded-xl p-4 gap-3 shadow-sm">
-        <Text className="text-[15px] font-bold text-[#333]">레시피 정보</Text>
+      <View className="bg-coffee-cream rounded-xl p-4 gap-3 shadow-sm">
+        <Text className="text-[15px] font-bold text-[#5E493D]">레시피 정보</Text>
         <View className="flex-row flex-wrap gap-2.5">
           {recipe.bean_name && <InfoItem label="원두" value={recipe.bean_name} />}
           {recipe.bean_amount != null && (
@@ -98,13 +98,13 @@ export default function BrewDetailScreen() {
             />
           )}
         </View>
-        {recipe.memo ? <Text className="text-sm text-[#555] leading-5">{recipe.memo}</Text> : null}
+        {recipe.memo ? <Text className="text-sm text-[#816F62] leading-5">{recipe.memo}</Text> : null}
       </View>
 
       {steps.length > 0 && (
-        <View className="bg-white rounded-xl p-4 gap-3 shadow-sm">
+        <View className="bg-coffee-cream rounded-xl p-4 gap-3 shadow-sm">
           <View className="flex-row justify-between items-center">
-            <Text className="text-[15px] font-bold text-[#333]">단계별 레시피</Text>
+            <Text className="text-[15px] font-bold text-[#5E493D]">단계별 레시피</Text>
             <TouchableOpacity
               className="flex-row items-center gap-1 bg-coffee rounded-full px-3 py-1.5"
               onPress={() => router.push(`/brew/timer/${id}`)}
@@ -119,9 +119,9 @@ export default function BrewDetailScreen() {
                 <Text className="text-white text-[13px] font-bold">{i + 1}</Text>
               </View>
               <View className="flex-1">
-                <Text className="text-[15px] font-semibold text-[#222]">{step.title}</Text>
+                <Text className="text-[15px] font-semibold text-[#3A1B0F]">{step.title}</Text>
                 {step.description ? (
-                  <Text className="text-[13px] text-[#666] mt-0.5">{step.description}</Text>
+                  <Text className="text-[13px] text-[#816F62] mt-0.5">{step.description}</Text>
                 ) : null}
                 {step.duration != null && (
                   <Text className="text-xs text-accent mt-0.5 font-semibold">
@@ -135,8 +135,8 @@ export default function BrewDetailScreen() {
       )}
 
       {logs.length > 0 && (
-        <View className="bg-white rounded-xl p-4 gap-3 shadow-sm">
-          <Text className="text-[15px] font-bold text-[#333]">추출 기록</Text>
+        <View className="bg-coffee-cream rounded-xl p-4 gap-3 shadow-sm">
+          <Text className="text-[15px] font-bold text-[#5E493D]">추출 기록</Text>
           {logs.map((log) => (
             <View key={log.id} className="border-t border-coffee-separator pt-2.5 gap-0.5">
               <Text className="text-[13px] text-gray-400">{log.brewed_at}</Text>
@@ -144,9 +144,9 @@ export default function BrewDetailScreen() {
                 <Text className="text-base text-accent">{'★'.repeat(log.rating)}</Text>
               )}
               {(log.my_notes?.length ?? 0) > 0 && (
-                <Text className="text-[13px] text-[#555]">{log.my_notes!.join(', ')}</Text>
+                <Text className="text-[13px] text-[#816F62]">{log.my_notes!.join(', ')}</Text>
               )}
-              {log.memo ? <Text className="text-[13px] text-[#888]">{log.memo}</Text> : null}
+              {log.memo ? <Text className="text-[13px] text-[#8B7A6D]">{log.memo}</Text> : null}
             </View>
           ))}
         </View>

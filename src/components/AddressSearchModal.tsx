@@ -91,7 +91,7 @@ export function AddressSearchModal({ visible, onSelect, onClose }: Props) {
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <View style={{ flex: 1, paddingTop: insets.top, backgroundColor: '#fff' }}>
+        <View style={{ flex: 1, paddingTop: insets.top, backgroundColor: '#FFFFFF' }}>
           {/* 헤더 */}
           <View
             style={{
@@ -103,11 +103,11 @@ export function AddressSearchModal({ visible, onSelect, onClose }: Props) {
               borderBottomColor: '#eee',
             }}
           >
-            <Text style={{ flex: 1, fontSize: 17, fontWeight: '600', color: '#222' }}>
+            <Text style={{ flex: 1, fontSize: 17, fontWeight: '600', color: '#3A1B0F' }}>
               카페 검색
             </Text>
             <TouchableOpacity onPress={handleClose}>
-              <Ionicons name="close" size={24} color="#666" />
+              <Ionicons name="close" size={24} color="#816F62" />
             </TouchableOpacity>
           </View>
 
@@ -119,17 +119,17 @@ export function AddressSearchModal({ visible, onSelect, onClose }: Props) {
               margin: 16,
               paddingHorizontal: 14,
               paddingVertical: 10,
-              backgroundColor: '#F5F5F5',
+              backgroundColor: '#EDE7DC',
               borderRadius: 12,
               gap: 8,
             }}
           >
-            <Ionicons name="search" size={18} color="#111111" />
+            <Ionicons name="search" size={18} color="#3A1B0F" />
             <TextInput
               ref={inputRef}
-              style={{ flex: 1, fontSize: 15, color: '#222' }}
+              style={{ flex: 1, fontSize: 15, color: '#3A1B0F' }}
               placeholder="카페 이름으로 검색..."
-              placeholderTextColor="#aaa"
+              placeholderTextColor="#A59688"
               value={query}
               onChangeText={setQuery}
               onSubmitEditing={search}
@@ -144,7 +144,7 @@ export function AddressSearchModal({ visible, onSelect, onClose }: Props) {
                   setSearched(false);
                 }}
               >
-                <Ionicons name="close-circle" size={18} color="#aaa" />
+                <Ionicons name="close-circle" size={18} color="#A59688" />
               </TouchableOpacity>
             )}
           </View>
@@ -167,7 +167,7 @@ export function AddressSearchModal({ visible, onSelect, onClose }: Props) {
           {/* 결과 */}
           {loading ? (
             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-              <ActivityIndicator size="large" color="#111111" />
+              <ActivityIndicator size="large" color="#3A1B0F" />
             </View>
           ) : (
             <FlatList
@@ -178,12 +178,12 @@ export function AddressSearchModal({ visible, onSelect, onClose }: Props) {
               ListEmptyComponent={
                 searched ? (
                   <View style={{ alignItems: 'center', paddingTop: 60 }}>
-                    <Text style={{ color: '#aaa', fontSize: 15 }}>검색 결과가 없어요.</Text>
+                    <Text style={{ color: '#A59688', fontSize: 15 }}>검색 결과가 없어요.</Text>
                   </View>
                 ) : (
                   <View style={{ alignItems: 'center', paddingTop: 60 }}>
-                    <Ionicons name="cafe-outline" size={40} color="#ddd" />
-                    <Text style={{ color: '#bbb', fontSize: 14, marginTop: 12 }}>
+                    <Ionicons name="cafe-outline" size={40} color="#C8BFB0" />
+                    <Text style={{ color: '#A59688', fontSize: 14, marginTop: 12 }}>
                       카페 이름을 검색해보세요
                     </Text>
                   </View>
@@ -199,16 +199,16 @@ export function AddressSearchModal({ visible, onSelect, onClose }: Props) {
                     borderBottomColor: '#f0f0f0',
                   }}
                 >
-                  <Text style={{ fontSize: 15, fontWeight: '600', color: '#222' }}>
+                  <Text style={{ fontSize: 15, fontWeight: '600', color: '#3A1B0F' }}>
                     {item.place_name}
                   </Text>
                   {item.road_address_name ? (
-                    <Text style={{ fontSize: 13, color: '#666', marginTop: 3 }}>
+                    <Text style={{ fontSize: 13, color: '#816F62', marginTop: 3 }}>
                       {item.road_address_name}
                     </Text>
                   ) : null}
                   {item.category_name ? (
-                    <Text style={{ fontSize: 12, color: '#aaa', marginTop: 2 }} numberOfLines={1}>
+                    <Text style={{ fontSize: 12, color: '#A59688', marginTop: 2 }} numberOfLines={1}>
                       {item.category_name}
                     </Text>
                   ) : null}

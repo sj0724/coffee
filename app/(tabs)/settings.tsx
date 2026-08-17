@@ -26,16 +26,16 @@ function SettingRow({
         alignItems: 'center',
         paddingVertical: 16,
         paddingHorizontal: 20,
-        backgroundColor: '#fff',
+        backgroundColor: '#FFFFFF',
         gap: 14,
       }}
     >
-      <Ionicons name={icon} size={20} color="#555" />
-      <Text style={{ flex: 1, fontSize: 15, color: '#222' }}>{label}</Text>
+      <Ionicons name={icon} size={20} color="#816F62" />
+      <Text style={{ flex: 1, fontSize: 15, color: '#3A1B0F' }}>{label}</Text>
       {value ? (
-        <Text style={{ fontSize: 14, color: '#aaa' }}>{value}</Text>
+        <Text style={{ fontSize: 14, color: '#A59688' }}>{value}</Text>
       ) : onPress ? (
-        <Ionicons name="chevron-forward" size={16} color="#ccc" />
+        <Ionicons name="chevron-forward" size={16} color="#C8BFB0" />
       ) : null}
     </TouchableOpacity>
   );
@@ -47,7 +47,7 @@ function SectionHeader({ title }: { title: string }) {
       style={{
         fontSize: 12,
         fontWeight: '600',
-        color: '#aaa',
+        color: '#A59688',
         letterSpacing: 0.5,
         paddingHorizontal: 20,
         paddingTop: 28,
@@ -72,10 +72,10 @@ export default function SettingsScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#F8F8F8' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
       {/* 헤더 */}
       <View style={{ paddingHorizontal: 20, paddingVertical: 16 }}>
-        <Text style={{ fontSize: 24, fontWeight: '700', color: '#111' }}>설정</Text>
+        <Text style={{ fontSize: 24, fontWeight: '700', color: '#3A1B0F' }}>설정</Text>
       </View>
 
       <SectionHeader title="앱 정보" />

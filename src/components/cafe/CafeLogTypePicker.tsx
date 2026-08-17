@@ -22,7 +22,7 @@ export function CafeLogTypePicker({ onSelect }: { onSelect: (type: 'handdip' | '
       style={{ flex: 1 }}
       contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 34, paddingBottom: 40 }}
     >
-      <Text style={{ fontSize: 26, fontWeight: '800', color: '#222', letterSpacing: -0.5 }}>
+      <Text style={{ fontSize: 26, fontWeight: '800', color: '#3A1B0F', letterSpacing: -0.5 }}>
         무엇을 기록할까요?
       </Text>
       <Text

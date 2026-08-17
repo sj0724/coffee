@@ -43,12 +43,12 @@ function BeanEditor({
       <View className="flex-row items-center gap-2">
         <Text className="text-[13px] text-gray-500 w-[60px]">비율 (%)</Text>
         <TextInput
-          className="flex-1 border-b border-gray-200 py-1 text-[14px] text-[#333]"
+          className="flex-1 border-b border-gray-200 py-1 text-[14px] text-[#5E493D]"
           keyboardType="numeric"
           value={bean.ratio != null ? String(bean.ratio) : ''}
           onChangeText={(v) => onChange({ ...bean, ratio: v ? Number(v) : undefined })}
           placeholder="선택"
-          placeholderTextColor="#ccc"
+          placeholderTextColor="#C8BFB0"
         />
       </View>
     </View>
@@ -106,7 +106,7 @@ export function NoteForm({
       {/* 싱글 오리진 / 블랜드 토글 */}
       <View className="flex-row overflow-hidden border border-gray-200 rounded-lg">
         <TouchableOpacity
-          className={`flex-1 py-2 items-center ${!isBlend ? 'bg-coffee' : 'bg-white'}`}
+          className={`flex-1 py-2 items-center ${!isBlend ? 'bg-coffee' : 'bg-coffee-cream'}`}
           onPress={() => toggleBlend(false)}
         >
           <Text
@@ -116,7 +116,7 @@ export function NoteForm({
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          className={`flex-1 py-2 items-center ${isBlend ? 'bg-coffee' : 'bg-white'}`}
+          className={`flex-1 py-2 items-center ${isBlend ? 'bg-coffee' : 'bg-coffee-cream'}`}
           onPress={() => toggleBlend(true)}
         >
           <Text className={`text-[13px] font-semibold ${isBlend ? 'text-white' : 'text-gray-400'}`}>

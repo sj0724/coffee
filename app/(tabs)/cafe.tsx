@@ -34,15 +34,6 @@ import {
   splitIntoMasonryColumns,
 } from '@/src/components/cafe/CafeLogList';
 
-function getMonthKey(date: string): string {
-  return date.slice(0, 7);
-}
-
-function formatMonth(date: string): { month: string; year: string } {
-  const [year, month] = getMonthKey(date).split('-');
-  return { month: String(Number(month)), year };
-}
-
 export default function CafeScreen() {
   const [logs, setLogs] = useState<CafeLog[]>([]);
   const [activeTags, setActiveTags] = useState<string[]>([]);
@@ -51,6 +42,7 @@ export default function CafeScreen() {
   const [viewTransitioning, setViewTransitioning] = useState(false);
   const [listHeight, setListHeight] = useState(0);
   const [activeCoverIndex, setActiveCoverIndex] = useState(0);
+  const [gridImageRatios, setGridImageRatios] = useState<Map<number, number>>(() => new Map());
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const router = useRouter();
 
@@ -97,23 +89,19 @@ export default function CafeScreen() {
     });
   }, [logs, favOnly, activeTags]);
 
-  const monthGroups = useMemo(() => {
-    const grouped = new Map<string, CafeLog[]>();
-    for (const log of filteredLogs) {
-      const key = getMonthKey(log.visited_at);
-      const monthLogs = grouped.get(key);
-      if (monthLogs) monthLogs.push(log);
-      else grouped.set(key, [log]);
-    }
+  const gridColumns = useMemo(() => {
+    const [left, right] = splitIntoMasonryColumns(filteredLogs, gridCardWidth, gridImageRatios);
+    return { key: 'all-cafes', left, right };
+  }, [filteredLogs, gridCardWidth, gridImageRatios]);
 
-    return Array.from(grouped, ([key, monthLogs]) => {
-      const [left, right] = splitIntoMasonryColumns(monthLogs, gridCardWidth);
-      return { key, label: formatMonth(monthLogs[0].visited_at), left, right };
+  const rememberGridImageRatio = useCallback((itemId: number, ratio: number) => {
+    setGridImageRatios((current) => {
+      if (current.get(itemId) === ratio) return current;
+      const next = new Map(current);
+      next.set(itemId, ratio);
+      return next;
     });
-  }, [filteredLogs, gridCardWidth]);
-
-  const activeCoverLog = filteredLogs[Math.min(activeCoverIndex, filteredLogs.length - 1)];
-  const activeMonth = activeCoverLog ? formatMonth(activeCoverLog.visited_at) : null;
+  }, []);
 
   function toggleTag(tag: string) {
     setActiveTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]));
@@ -187,7 +175,7 @@ export default function CafeScreen() {
   const defaultImageHeight = defaultCardHeight * 0.62;
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-coffee-light" edges={['top']}>
       {/* 헤더 */}
       <View
         style={{
@@ -197,7 +185,7 @@ export default function CafeScreen() {
           paddingVertical: 12,
         }}
       >
-        <Text style={{ flex: 1, fontSize: 24, fontWeight: '800', color: '#111' }}>카페</Text>
+        <Text style={{ flex: 1, fontSize: 24, fontWeight: '800', color: '#3A1B0F' }}>카페</Text>
         <TouchableOpacity
           onPress={toggleViewMode}
           disabled={viewTransitioning}
@@ -207,11 +195,11 @@ export default function CafeScreen() {
           <Ionicons
             name={viewMode === 'coverflow' ? 'grid-outline' : 'albums-outline'}
             size={22}
-            color="#111"
+            color="#3A1B0F"
           />
         </TouchableOpacity>
         <TouchableOpacity onPress={() => router.push('/cafe/new')} style={{ padding: 6 }}>
-          <Ionicons name="add" size={26} color="#111" />
+          <Ionicons name="add" size={26} color="#3A1B0F" />
         </TouchableOpacity>
       </View>
 
@@ -232,25 +220,25 @@ export default function CafeScreen() {
               paddingHorizontal: 14,
               paddingVertical: 7,
               borderRadius: 20,
-              backgroundColor: favOnly ? '#111111' : '#fff',
+              backgroundColor: favOnly ? '#E6531E' : '#FFFFFF',
               borderWidth: 1,
-              borderColor: '#ccc',
+              borderColor: '#C8BFB0',
             }}
           >
             <Ionicons
               name={favOnly ? 'heart' : 'heart-outline'}
               size={14}
-              color={favOnly ? '#D96C67' : '#817B73'}
+              color={favOnly ? '#fff' : '#817B73'}
             />
 
-            <Text style={{ fontSize: 13, fontWeight: '600', color: favOnly ? '#fff' : '#666' }}>
+            <Text style={{ fontSize: 13, fontWeight: '600', color: favOnly ? '#fff' : '#816F62' }}>
               즐겨찾기
             </Text>
           </TouchableOpacity>
 
           {uniqueTags.map((tag) => {
             const isActive = activeTags.includes(tag);
-            const color = FLAVOR_COLORS[tag] ?? '#111111';
+            const color = FLAVOR_COLORS[tag] ?? '#E6531E';
             return (
               <TouchableOpacity
                 key={tag}
@@ -259,13 +247,13 @@ export default function CafeScreen() {
                   paddingHorizontal: 14,
                   paddingVertical: 7,
                   borderRadius: 20,
-                  backgroundColor: isActive ? color : '#fff',
+                  backgroundColor: isActive ? color : '#FFFFFF',
                   borderWidth: 1,
-                  borderColor: isActive ? color : '#ccc',
+                  borderColor: isActive ? color : '#C8BFB0',
                 }}
               >
                 <Text
-                  style={{ fontSize: 13, fontWeight: '600', color: isActive ? '#fff' : '#666' }}
+                  style={{ fontSize: 13, fontWeight: '600', color: isActive ? '#fff' : '#816F62' }}
                 >
                   {tag}
                 </Text>
@@ -280,114 +268,44 @@ export default function CafeScreen() {
         {viewMode === 'grid' ? (
           filteredLogs.length === 0 ? (
             <View style={{ alignItems: 'center', paddingTop: 80 }}>
-              <Text style={{ color: '#bbb', fontSize: 15 }}>기록이 없어요.</Text>
+              <Text style={{ color: '#A59688', fontSize: 15 }}>기록이 없어요.</Text>
             </View>
           ) : (
             <SectionList
               style={{ flex: 1 }}
               contentContainerStyle={{ paddingBottom: 100 }}
-              sections={monthGroups.map((group) => ({ ...group, data: [group] }))}
+              sections={[{ ...gridColumns, data: [gridColumns] }]}
               keyExtractor={(group) => group.key}
-              stickySectionHeadersEnabled={true}
+              stickySectionHeadersEnabled={false}
               showsVerticalScrollIndicator={false}
-              renderSectionHeader={({ section }) => (
-                <LinearGradient
-                  colors={['rgba(255,255,255,1)', 'rgba(255,255,255,0.96)', 'rgba(255,255,255,0)']}
-                  locations={[0, 0.68, 1]}
-                  start={{ x: 0.5, y: 0 }}
-                  end={{ x: 0.5, y: 1 }}
-                  style={{
-                    width: '100%',
-                    flexDirection: 'row',
-                    alignItems: 'baseline',
-                    gap: 9,
-                    paddingHorizontal: GRID_PADDING,
-                    paddingTop: 14,
-                    paddingBottom: 50,
-                    marginBottom: -38,
-                    zIndex: 10,
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontSize: 50,
-                      lineHeight: 65,
-                      fontWeight: '800',
-                      letterSpacing: -1,
-                      color: '#292622',
-                    }}
-                  >
-                    {section.label.month}
-                  </Text>
-                  <Text
-                    style={{
-                      fontSize: 13,
-                      fontWeight: '600',
-                      letterSpacing: 1.4,
-                      color: '#8E877E',
-                    }}
-                  >
-                    {section.label.year}
-                  </Text>
-                </LinearGradient>
-              )}
               renderItem={({ item: group }) => (
                 <View style={{ paddingHorizontal: GRID_PADDING }}>
                   <View style={{ flexDirection: 'row', gap: GRID_GAP }}>
                     <View style={{ flex: 1, gap: GRID_GAP }}>
                       {group.left.map((item) => (
-                        <CafeGridCard key={item.id} item={item} />
+                        <CafeGridCard
+                          key={item.id}
+                          item={item}
+                          onAspectRatio={rememberGridImageRatio}
+                        />
                       ))}
                     </View>
                     <View style={{ flex: 1, gap: GRID_GAP }}>
                       {group.right.map((item) => (
-                        <CafeGridCard key={item.id} item={item} />
+                        <CafeGridCard
+                          key={item.id}
+                          item={item}
+                          onAspectRatio={rememberGridImageRatio}
+                        />
                       ))}
                     </View>
                   </View>
                 </View>
               )}
-              renderSectionFooter={() => <View style={{ height: 22 }} />}
             />
           )
         ) : (
           <View style={{ flex: 1 }}>
-            {activeMonth && (
-              <View
-                style={{
-                  width: '100%',
-                  flexDirection: 'row',
-                  alignItems: 'baseline',
-                  gap: 10,
-                  paddingHorizontal: 24,
-                  paddingTop: 10,
-                  paddingBottom: 5,
-                  backgroundColor: '#fff',
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: 70,
-                    lineHeight: 85,
-                    fontWeight: '800',
-                    letterSpacing: -1.2,
-                    color: '#292622',
-                  }}
-                >
-                  {activeMonth.month}
-                </Text>
-                <Text
-                  style={{
-                    fontSize: 13,
-                    fontWeight: '600',
-                    letterSpacing: 1.5,
-                    color: '#8E877E',
-                  }}
-                >
-                  {activeMonth.year}
-                </Text>
-              </View>
-            )}
             <AnimatedFlatList
               ref={listRef}
               data={filteredLogs}
@@ -432,7 +350,7 @@ export default function CafeScreen() {
                     flex: 1,
                   }}
                 >
-                  <Text style={{ color: '#bbb', fontSize: 15 }}>
+                  <Text style={{ color: '#A59688', fontSize: 15 }}>
                     + 버튼으로 첫 카페를 기록해보세요.
                   </Text>
                 </View>

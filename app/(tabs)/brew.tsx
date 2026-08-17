@@ -17,23 +17,23 @@ export default function BrewScreen() {
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-coffee-light" edges={['top']}>
       <FlatList
         data={recipes}
         keyExtractor={(item) => String(item.id)}
         renderItem={({ item }) => (
           <TouchableOpacity
-            className="flex-row items-center p-4 bg-white shadow-sm rounded-xl"
+            className="flex-row items-center p-4 bg-coffee-cream shadow-sm rounded-xl"
             onPress={() => router.push(`/brew/${item.id}`)}
           >
             <View className="flex-1">
-              <Text className="text-base font-semibold text-[#222]">{item.name}</Text>
+              <Text className="text-base font-semibold text-[#3A1B0F]">{item.name}</Text>
               <Text className="text-sm text-coffee mt-0.5">{item.brew_method}</Text>
               {item.bean_name && (
                 <Text className="text-xs text-gray-400 mt-0.5">{item.bean_name}</Text>
               )}
             </View>
-            {item.is_favorite === 1 && <Ionicons name="heart" size={20} color="#E76F51" />}
+            {item.is_favorite === 1 && <Ionicons name="heart" size={20} color="#E6531E" />}
           </TouchableOpacity>
         )}
         contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 100 }}

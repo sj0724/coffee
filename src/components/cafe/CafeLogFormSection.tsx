@@ -13,7 +13,7 @@ export function Section({
   return (
     <View style={{ gap: 10 }}>
       <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6 }}>
-        <Text style={{ fontSize: 15, fontWeight: '700', color: '#333' }}>{label}</Text>
+        <Text style={{ fontSize: 15, fontWeight: '700', color: '#5E493D' }}>{label}</Text>
         {hint && <Text style={{ fontSize: 12, color: '#AAA' }}>{hint}</Text>}
       </View>
       {children}

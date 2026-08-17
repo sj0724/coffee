@@ -74,6 +74,19 @@ export const CAROUSEL_GAP = 16;
 export const CAROUSEL_INSET = 56;
 export const AnimatedFlatList = Animated.createAnimatedComponent(FlatList) as typeof FlatList;
 
+function getFirstPhotoUri(item: CafeLog): string | undefined {
+  for (const source of [item.photos, item.note_photos]) {
+    if (!source) continue;
+    try {
+      const firstPhoto = (JSON.parse(source) as string[])[0];
+      if (firstPhoto) return firstPhoto;
+    } catch {
+      // Ignore malformed photo data and try the next source.
+    }
+  }
+  return undefined;
+}
+
 // ─── Coverflow animated wrapper ──────────────────────────────────────────────
 
 function CoverflowWrapper({
@@ -156,15 +169,7 @@ export function CafeCard({
   const router = useRouter();
   const [imgRatio, setImgRatio] = useState<number | null>(null);
   const noteColors = parseNoteColors(item.first_my_notes);
-  const firstPhotoUri: string | undefined = (() => {
-    const src = item.photos || item.note_photos;
-    if (!src) return undefined;
-    try {
-      return (JSON.parse(src) as string[])[0];
-    } catch {
-      return undefined;
-    }
-  })();
+  const firstPhotoUri = getFirstPhotoUri(item);
   const hasPhoto = !!firstPhotoUri;
 
   let actualCardWidth = cardWidth;
@@ -275,18 +280,18 @@ export function CafeCard({
                   contentFit="cover"
                 />
                 <LinearGradient
-                  colors={['rgba(255,255,255,0)', '#ffffff']}
+                  colors={['rgba(255,255,255,0)', '#FFFFFF']}
                   style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 48 }}
                 />
               </View>
               <View
-                className="flex-1 bg-white px-5 pt-3 justify-center gap-1.5"
+                className="flex-1 bg-coffee-cream px-5 pt-3 justify-center gap-1.5"
                 style={{ paddingBottom: noteColors.length > 0 ? 6 : 14 }}
               >
                 <Text className="text-lg text-center text-gray-400">
                   {item.visited_at.replace(/-/g, '.')}
                 </Text>
-                <Text className="text-xl font-bold text-[#222] text-center" numberOfLines={1}>
+                <Text className="text-xl font-bold text-[#3A1B0F] text-center" numberOfLines={1}>
                   {item.cafe_name}
                 </Text>
                 {noteGradient && (
@@ -311,18 +316,17 @@ export function CafeCard({
 export const GRID_GAP = 10;
 export const GRID_PADDING = 16;
 
-export function CafeGridCard({ item }: { item: CafeLog }) {
+export function CafeGridCard({
+  item,
+  onAspectRatio,
+}: {
+  item: CafeLog;
+  onAspectRatio?: (itemId: number, ratio: number) => void;
+}) {
   const router = useRouter();
+  const [imgRatio, setImgRatio] = useState(3 / 4);
   const noteColors = parseNoteColors(item.first_my_notes);
-  const firstPhotoUri: string | undefined = (() => {
-    const src = item.photos || item.note_photos;
-    if (!src) return undefined;
-    try {
-      return (JSON.parse(src) as string[])[0];
-    } catch {
-      return undefined;
-    }
-  })();
+  const firstPhotoUri = getFirstPhotoUri(item);
 
   const noteGradient =
     noteColors.length > 0
@@ -338,7 +342,7 @@ export function CafeGridCard({ item }: { item: CafeLog }) {
       style={{
         width: '100%',
         borderRadius: 16,
-        backgroundColor: '#fff',
+        backgroundColor: '#FFFFFF',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 3 },
         shadowOpacity: 0.12,
@@ -352,12 +356,19 @@ export function CafeGridCard({ item }: { item: CafeLog }) {
         style={{ borderRadius: 16, overflow: 'hidden' }}
       >
         {firstPhotoUri ? (
-          // 그리드 높이를 고정해 이미지 로딩 후에도 카드가 움직이지 않게 한다.
-          <View style={{ aspectRatio: 3 / 4 }}>
+          <View style={{ aspectRatio: imgRatio }}>
             <Image
               source={{ uri: firstPhotoUri }}
               style={{ width: '100%', height: '100%' }}
               contentFit="cover"
+              onLoad={(event) => {
+                const { width, height } = event.source;
+                if (width > 0 && height > 0) {
+                  const ratio = width / height;
+                  setImgRatio(ratio);
+                  if (item.id != null) onAspectRatio?.(item.id, ratio);
+                }
+              }}
               transition={150}
             />
             <LinearGradient
@@ -396,16 +407,16 @@ export function CafeGridCard({ item }: { item: CafeLog }) {
                 contentFit="cover"
               />
               <LinearGradient
-                colors={['rgba(255,255,255,0)', '#fff']}
+                colors={['rgba(255,255,255,0)', '#FFFFFF']}
                 style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 32 }}
               />
             </View>
-            <View style={{ padding: 12, backgroundColor: '#fff' }}>
-              <Text style={{ color: '#bbb', fontSize: 11, marginBottom: 3 }}>
+            <View style={{ padding: 12, backgroundColor: '#FFFFFF' }}>
+              <Text style={{ color: '#A59688', fontSize: 11, marginBottom: 3 }}>
                 {item.visited_at.replace(/-/g, '.')}
               </Text>
               <Text
-                style={{ color: '#222', fontSize: 13, fontWeight: '700', lineHeight: 19 }}
+                style={{ color: '#3A1B0F', fontSize: 13, fontWeight: '700', lineHeight: 19 }}
                 numberOfLines={2}
               >
                 {item.cafe_name}
@@ -431,15 +442,17 @@ export function CafeGridCard({ item }: { item: CafeLog }) {
 export function splitIntoMasonryColumns(
   items: CafeLog[],
   cardWidth: number,
+  imageRatios: ReadonlyMap<number, number> = new Map(),
 ): [CafeLog[], CafeLog[]] {
-  const photoH = cardWidth * (4 / 3); // 3:4 portrait default
   const noPhotoH = cardWidth * (3 / 4) + 72; // 4:3 thumbnail + text
   const left: CafeLog[] = [];
   const right: CafeLog[] = [];
   let lh = 0,
     rh = 0;
   for (const item of items) {
-    const h = item.photos || item.note_photos ? photoH : noPhotoH;
+    const hasPhoto = !!getFirstPhotoUri(item);
+    const imageRatio = item.id == null ? undefined : imageRatios.get(item.id);
+    const h = hasPhoto ? cardWidth / (imageRatio ?? 3 / 4) : noPhotoH;
     if (lh <= rh) {
       left.push(item);
       lh += h + GRID_GAP;

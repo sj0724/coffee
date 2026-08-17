@@ -211,7 +211,7 @@ const NewCafeLogScreen = () => {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#fff', paddingTop: insets.top }}>
+    <View style={{ flex: 1, backgroundColor: '#FFFFFF', paddingTop: insets.top }}>
       {/* 헤더 */}
       <View
         style={{
@@ -222,9 +222,9 @@ const NewCafeLogScreen = () => {
         }}
       >
         <TouchableOpacity onPress={goBack} style={{ padding: 4, marginRight: 8 }}>
-          <Ionicons name="chevron-back" size={24} color="#222" />
+          <Ionicons name="chevron-back" size={24} color="#3A1B0F" />
         </TouchableOpacity>
-        <Text style={{ flex: 1, fontSize: 17, fontWeight: '700', color: '#222' }}>
+        <Text style={{ flex: 1, fontSize: 17, fontWeight: '700', color: '#3A1B0F' }}>
           새 카페 기록
         </Text>
       </View>
@@ -242,7 +242,7 @@ const NewCafeLogScreen = () => {
           <Animated.View
             style={{
               height: 3,
-              backgroundColor: '#000',
+              backgroundColor: '#E6531E',
               borderRadius: 2,
               width: progressAnim.interpolate({
                 inputRange: [0, 1],
@@ -382,7 +382,7 @@ const NewCafeLogScreen = () => {
                   paddingHorizontal: 20,
                   paddingBottom: insets.bottom + 16,
                   paddingTop: 12,
-                  backgroundColor: '#fff',
+                  backgroundColor: '#FFFFFF',
                 }}
               >
                 {step < TOTAL_STEPS ? (
@@ -390,7 +390,7 @@ const NewCafeLogScreen = () => {
                     onPress={goNext}
                     disabled={nextDisabled}
                     style={{
-                      backgroundColor: nextDisabled ? '#C0C0C0' : '#111',
+                      backgroundColor: nextDisabled ? '#C0C0C0' : '#3A1B0F',
                       borderRadius: 14,
                       paddingVertical: 15,
                       alignItems: 'center',
@@ -403,7 +403,7 @@ const NewCafeLogScreen = () => {
                     onPress={handleSave}
                     disabled={saving || !selectedPlace}
                     style={{
-                      backgroundColor: saving || !selectedPlace ? '#C0C0C0' : '#111',
+                      backgroundColor: saving || !selectedPlace ? '#C0C0C0' : '#3A1B0F',
                       borderRadius: 14,
                       paddingVertical: 15,
                       alignItems: 'center',
@@ -446,7 +446,7 @@ const NewCafeLogScreen = () => {
           >
             <View
               style={{
-                backgroundColor: '#fff',
+                backgroundColor: '#FFFFFF',
                 borderRadius: 20,
                 padding: 16,
                 width: '90%',
@@ -460,13 +460,13 @@ const NewCafeLogScreen = () => {
                 onChange={onDateChange}
                 maximumDate={new Date()}
                 locale="ko-KR"
-                accentColor="#000"
+                accentColor="#E6531E"
                 style={{ width: '100%' }}
               />
               <TouchableOpacity
                 style={{
                   marginTop: 8,
-                  backgroundColor: '#111',
+                  backgroundColor: '#E6531E',
                   borderRadius: 10,
                   paddingVertical: 10,
                   paddingHorizontal: 32,
