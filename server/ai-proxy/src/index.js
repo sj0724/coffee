@@ -169,7 +169,13 @@ async function callGemini(env, images) {
     contents: [
       {
         role: 'user',
-        parts: [...images.map((image) => ({ inlineData: image })), { text: PROMPT }],
+        parts: [
+          ...images.map((image) => ({
+            inlineData: image,
+            mediaResolution: { level: 'media_resolution_high' },
+          })),
+          { text: PROMPT },
+        ],
       },
     ],
     generationConfig: {

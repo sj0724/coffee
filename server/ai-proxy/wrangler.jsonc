@@ -3,6 +3,7 @@
   "name": "coffee-note-ai-proxy",
   "main": "src/index.js",
   "compatibility_date": "2026-08-17",
+  "preview_urls": false,
   "observability": {
     "enabled": true,
   },

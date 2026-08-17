@@ -1,29 +1,32 @@
-import * as FileSystem from 'expo-file-system/legacy';
+import { Image } from 'expo-image';
+import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import type { HanddripNote } from '../types';
 
 const ANALYSIS_API_URL = process.env.EXPO_PUBLIC_ANALYSIS_API_URL?.replace(/\/$/, '') ?? '';
-const ANALYSIS_VERSION = 'v3';
+const ANALYSIS_VERSION = 'v4';
 const MAX_ATTEMPTS = 3;
 const REQUEST_TIMEOUT_MS = 45_000;
 const RETRYABLE_STATUSES = new Set([429, 500, 502, 503, 504]);
 const cardAnalysisCache = new Map<string, Partial<HanddripNote>>();
+const MAX_IMAGE_EDGE = 2400;
+const JPEG_QUALITY = 0.85;
 
 type ProxyImage = { data: string; mimeType: string };
 
 async function imageToBase64(uri: string): Promise<ProxyImage> {
-  const data = await FileSystem.readAsStringAsync(uri, {
-    encoding: FileSystem.EncodingType.Base64,
+  const source = await Image.loadAsync(uri, {
+    maxWidth: MAX_IMAGE_EDGE,
+    maxHeight: MAX_IMAGE_EDGE,
   });
-  const extension = uri.split('?')[0].split('.').pop()?.toLowerCase();
-  const mimeType =
-    extension === 'png'
-      ? 'image/png'
-      : extension === 'webp'
-        ? 'image/webp'
-        : extension === 'heic' || extension === 'heif'
-          ? `image/${extension}`
-          : 'image/jpeg';
-  return { data, mimeType };
+  const context = ImageManipulator.manipulate(source);
+  const rendered = await context.renderAsync();
+  const result = await rendered.saveAsync({
+    base64: true,
+    compress: JPEG_QUALITY,
+    format: SaveFormat.JPEG,
+  });
+  if (!result.base64) throw new Error('이미지 최적화 결과를 생성하지 못했습니다.');
+  return { data: result.base64, mimeType: 'image/jpeg' };
 }
 
 function hashBase64(value: string): string {
