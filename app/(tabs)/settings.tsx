@@ -1,7 +1,11 @@
+import { useCallback, useState } from 'react';
 import { View, Text, TouchableOpacity, Linking, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
+import { useFocusEffect } from 'expo-router';
+import { hasCurrentAiConsent, revokeAiConsent } from '@/src/services/aiConsent';
+import { PRIVACY_POLICY_URL, SUPPORT_URL, TERMS_OF_SERVICE_URL } from '@/src/config/legal';
 
 const APP_VERSION = Constants.expoConfig?.version ?? '1.0.0';
 const CONTACT_EMAIL = 'sj07245@gmail.com';
@@ -60,15 +64,40 @@ function SectionHeader({ title }: { title: string }) {
 }
 
 export default function SettingsScreen() {
+  const [aiConsented, setAiConsented] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      void hasCurrentAiConsent().then(setAiConsented);
+    }, []),
+  );
+
   async function handleContact() {
     const subject = encodeURIComponent('[Coffee Note] 문의');
     const url = `mailto:${CONTACT_EMAIL}?subject=${subject}`;
-    const supported = await Linking.canOpenURL(url);
-    if (supported) {
+    try {
       await Linking.openURL(url);
-    } else {
+    } catch {
       Alert.alert('문의하기', `${CONTACT_EMAIL}으로 메일을 보내주세요.`);
     }
+  }
+
+  async function openWebPage(url: string) {
+    const supported = await Linking.canOpenURL(url);
+    if (supported) await Linking.openURL(url);
+    else Alert.alert('페이지를 열 수 없어요.', '잠시 후 다시 시도해주세요.');
+  }
+
+  function handleRevokeAiConsent() {
+    if (!aiConsented) return;
+    Alert.alert('AI 분석 동의 철회', '철회하면 다음 AI 분석 전에 다시 동의를 요청합니다.', [
+      { text: '취소', style: 'cancel' },
+      {
+        text: '철회',
+        style: 'destructive',
+        onPress: () => void revokeAiConsent().then(() => setAiConsented(false)),
+      },
+    ]);
   }
 
   return (
@@ -85,7 +114,32 @@ export default function SettingsScreen() {
 
       <SectionHeader title="지원" />
       <View style={{ marginHorizontal: 16, borderRadius: 12, overflow: 'hidden' }}>
+        <SettingRow
+          icon="help-circle-outline"
+          label="고객 지원"
+          onPress={() => void openWebPage(SUPPORT_URL)}
+        />
         <SettingRow icon="mail-outline" label="문의하기" onPress={handleContact} />
+      </View>
+
+      <SectionHeader title="약관 및 개인정보" />
+      <View style={{ marginHorizontal: 16, borderRadius: 12, overflow: 'hidden' }}>
+        <SettingRow
+          icon="shield-checkmark-outline"
+          label="개인정보처리방침"
+          onPress={() => void openWebPage(PRIVACY_POLICY_URL)}
+        />
+        <SettingRow
+          icon="document-text-outline"
+          label="서비스 이용약관"
+          onPress={() => void openWebPage(TERMS_OF_SERVICE_URL)}
+        />
+        <SettingRow
+          icon="sparkles-outline"
+          label="AI 분석 동의"
+          value={aiConsented ? '동의함' : '동의 안 함'}
+          onPress={aiConsented ? handleRevokeAiConsent : undefined}
+        />
       </View>
 
       <View style={{ height: 100 }} />

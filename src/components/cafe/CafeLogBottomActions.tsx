@@ -13,7 +13,7 @@ export function CafeLogBottomActions({
   onRequestAnalysis,
 }: {
   onMoveNext: () => void;
-  onRequestAnalysis: () => void;
+  onRequestAnalysis: () => void | Promise<void>;
 }) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -36,7 +36,7 @@ export function CafeLogBottomActions({
 
   const handleNext = () => {
     if (step === 2 && photoMode === 'handdip' && notePhotos.length > 0 && !analyzed) {
-      onRequestAnalysis();
+      void onRequestAnalysis();
       return;
     }
     onMoveNext();

@@ -8,6 +8,7 @@ import {
   Platform,
   Animated,
   Easing,
+  Linking,
 } from 'react-native';
 import { useRouter, useNavigation } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -25,6 +26,8 @@ import { CafeLogBottomActions } from '@/src/components/cafe/CafeLogBottomActions
 import { useCafeLogDraftStore } from '@/src/store/cafeLogDraftStore';
 import { useCafeLogPhotos } from '@/src/hooks/useCafeLogPhotos';
 import { useCafeLogAnalysis } from '@/src/hooks/useCafeLogAnalysis';
+import { grantAiConsent, hasCurrentAiConsent } from '@/src/services/aiConsent';
+import { PRIVACY_POLICY_URL } from '@/src/config/legal';
 
 const TOTAL_STEPS = 4;
 
@@ -127,17 +130,27 @@ const NewCafeLogScreen = () => {
     if (step < TOTAL_STEPS) transitionStage(() => setField('step', step + 1), 'forward');
   };
 
-  const requestAnalysisBeforeNext = () => {
+  const requestAnalysisBeforeNext = async () => {
+    if (await hasCurrentAiConsent()) {
+      moveToNextStep();
+      setTimeout(() => void runCardAnalysis(), 300);
+      return;
+    }
     setAnalysisAfterStepChange(true);
     setShowAiConsent(true);
   };
 
-  const requestReanalysis = () => {
+  const requestReanalysis = async () => {
+    if (await hasCurrentAiConsent()) {
+      void runCardAnalysis();
+      return;
+    }
     setAnalysisAfterStepChange(false);
     setShowAiConsent(true);
   };
 
-  const handleAiAnalysisAgree = () => {
+  const handleAiAnalysisAgree = async () => {
+    await grantAiConsent();
     setShowAiConsent(false);
     if (analysisAfterStepChange) {
       moveToNextStep();
@@ -276,6 +289,10 @@ const NewCafeLogScreen = () => {
         visible={showAiConsent}
         onAgree={handleAiAnalysisAgree}
         onSkip={handleAiAnalysisSkip}
+        onViewPrivacy={() => {
+          setShowAiConsent(false);
+          void Linking.openURL(PRIVACY_POLICY_URL);
+        }}
       />
     </View>
   );

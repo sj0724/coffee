@@ -5,9 +5,10 @@ type Props = {
   visible: boolean;
   onAgree: () => void;
   onSkip: () => void;
+  onViewPrivacy: () => void;
 };
 
-export function AiAnalysisConsentModal({ visible, onAgree, onSkip }: Props) {
+export function AiAnalysisConsentModal({ visible, onAgree, onSkip, onViewPrivacy }: Props) {
   return (
     <Modal
       transparent
@@ -50,8 +51,8 @@ export function AiAnalysisConsentModal({ visible, onAgree, onSkip }: Props) {
               marginTop: 10,
             }}
           >
-            선택한 원두 카드 사진이 정보 추출을 위해 Cloudflare를 거쳐 Google Gemini로
-            전송됩니다. 사진은 분석 결과를 만드는 용도로만 사용됩니다.
+            선택한 원두 카드 사진이 정보 추출을 위해 Cloudflare를 거쳐 Google Gemini로 전송됩니다.
+            사진은 분석 결과를 만드는 용도로만 사용됩니다.
           </Text>
 
           <View
@@ -81,13 +82,19 @@ export function AiAnalysisConsentModal({ visible, onAgree, onSkip }: Props) {
               marginTop: 20,
             }}
           >
-            <Text style={{ color: '#FFFFFF', fontSize: 15, fontWeight: '700' }}>
-              동의하고 분석
-            </Text>
+            <Text style={{ color: '#FFFFFF', fontSize: 15, fontWeight: '700' }}>동의하고 분석</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={onSkip} style={{ alignItems: 'center', paddingVertical: 14 }}>
             <Text style={{ color: '#816F62', fontSize: 14, fontWeight: '600' }}>
               분석 없이 계속
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={onViewPrivacy}
+            style={{ alignItems: 'center', paddingVertical: 4 }}
+          >
+            <Text style={{ color: '#A59688', fontSize: 12, textDecorationLine: 'underline' }}>
+              개인정보처리방침 보기
             </Text>
           </TouchableOpacity>
         </View>
