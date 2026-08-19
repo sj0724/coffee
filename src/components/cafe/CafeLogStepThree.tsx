@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { Animated, View, Text, TextInput, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useShallow } from 'zustand/react/shallow';
 import { NoteInput } from './NoteInput';
 import { TagsInput } from './TagsInput';
 import type { GeneralMenuType, HanddripNoteBean } from '@/src/types';
+import { useCafeLogDraftStore } from '@/src/store/cafeLogDraftStore';
 
 const COFFEE_MENU_PRESETS = [
   '아메리카노',
@@ -18,55 +20,53 @@ const DESSERT_MENU_PRESETS = ['케이크', '쿠키', '스콘', '크루아상', '
 
 export function Step3({
   analyzing,
-  analyzed,
-  photoMode,
   onReanalyze,
-  menuName,
-  onMenuName,
-  menuType,
-  onMenuType,
-  isBlend,
-  onIsBlend,
-  origin,
-  onOrigin,
-  farm,
-  onFarm,
-  variety,
-  onVariety,
-  process,
-  onProcess,
-  roastLevel,
-  onRoastLevel,
-  officialNotes,
-  onOfficialNotes,
-  beans,
-  onBeans,
 }: {
   analyzing: boolean;
-  analyzed: boolean;
-  photoMode: 'handdip' | 'menu';
   onReanalyze?: () => void;
-  menuName: string;
-  onMenuName: (v: string) => void;
-  menuType: GeneralMenuType;
-  onMenuType: (v: GeneralMenuType) => void;
-  isBlend: number;
-  onIsBlend: (v: number) => void;
-  origin: string;
-  onOrigin: (v: string) => void;
-  farm: string;
-  onFarm: (v: string) => void;
-  variety: string;
-  onVariety: (v: string) => void;
-  process: string;
-  onProcess: (v: string) => void;
-  roastLevel: string;
-  onRoastLevel: (v: string) => void;
-  officialNotes: string[];
-  onOfficialNotes: (v: string[]) => void;
-  beans: HanddripNoteBean[];
-  onBeans: (v: HanddripNoteBean[]) => void;
 }) {
+  const {
+    analyzed,
+    photoMode,
+    menuName,
+    menuType,
+    isBlend,
+    origin,
+    farm,
+    variety,
+    process,
+    roastLevel,
+    officialNotes,
+    beans,
+    setField,
+  } = useCafeLogDraftStore(
+    useShallow((state) => ({
+      analyzed: state.analyzed,
+      photoMode: state.photoMode,
+      menuName: state.menuName,
+      menuType: state.menuType,
+      isBlend: state.isBlend,
+      origin: state.origin,
+      farm: state.farm,
+      variety: state.variety,
+      process: state.process,
+      roastLevel: state.roastLevel,
+      officialNotes: state.officialNotes,
+      beans: state.beans,
+      setField: state.setField,
+    })),
+  );
+
+  const onMenuName = (value: string) => setField('menuName', value);
+  const onMenuType = (value: GeneralMenuType) => setField('menuType', value);
+  const onIsBlend = (value: number) => setField('isBlend', value);
+  const onOrigin = (value: string) => setField('origin', value);
+  const onFarm = (value: string) => setField('farm', value);
+  const onVariety = (value: string) => setField('variety', value);
+  const onProcess = (value: string) => setField('process', value);
+  const onRoastLevel = (value: string) => setField('roastLevel', value);
+  const onOfficialNotes = (value: string[]) => setField('officialNotes', value);
+  const onBeans = (value: typeof beans) => setField('beans', value);
   return (
     <View style={{ gap: 20 }}>
       {/* 분석 상태 배너 */}

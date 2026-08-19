@@ -1,28 +1,42 @@
 import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
+import { useShallow } from 'zustand/react/shallow';
 import { Section } from './CafeLogFormSection';
+import { useCafeLogDraftStore } from '@/src/store/cafeLogDraftStore';
 
 export function Step1({
-  photoMode,
-  notePhotos,
-  cafePhotos,
   scanningNote,
   onAddNotePhoto,
-  onRemoveNotePhoto,
   onAddCafePhoto,
-  onRemoveCafePhoto,
 }: {
-  photoMode: 'handdip' | 'menu';
-  notePhotos: string[];
-  cafePhotos: string[];
   scanningNote: boolean;
   onAddNotePhoto: () => void;
-  onRemoveNotePhoto: (i: number) => void;
   onAddCafePhoto: () => void;
-  onRemoveCafePhoto: (i: number) => void;
 }) {
+  const { photoMode, notePhotos, cafePhotos, setField } = useCafeLogDraftStore(
+    useShallow((state) => ({
+      photoMode: state.photoMode,
+      notePhotos: state.notePhotos,
+      cafePhotos: state.cafePhotos,
+      setField: state.setField,
+    })),
+  );
   const noteSlots = [0, 1];
+
+  const removeNotePhoto = (index: number) => {
+    setField(
+      'notePhotos',
+      notePhotos.filter((_, photoIndex) => photoIndex !== index),
+    );
+  };
+
+  const removeCafePhoto = (index: number) => {
+    setField(
+      'cafePhotos',
+      cafePhotos.filter((_, photoIndex) => photoIndex !== index),
+    );
+  };
 
   return (
     <View style={{ gap: 24 }}>
@@ -49,7 +63,7 @@ export function Step1({
                         borderRadius: 12,
                         padding: 2,
                       }}
-                      onPress={() => onRemoveNotePhoto(i)}
+                      onPress={() => removeNotePhoto(i)}
                     >
                       <Ionicons name="close" size={15} color="#fff" />
                     </TouchableOpacity>
@@ -133,7 +147,7 @@ export function Step1({
                   borderRadius: 12,
                   padding: 2,
                 }}
-                onPress={() => onRemoveCafePhoto(i)}
+                onPress={() => removeCafePhoto(i)}
               >
                 <Ionicons name="close" size={14} color="#fff" />
               </TouchableOpacity>

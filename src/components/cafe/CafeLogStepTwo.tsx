@@ -1,29 +1,61 @@
+import { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useShallow } from 'zustand/react/shallow';
 import { Section } from './CafeLogFormSection';
 import type { NearbyPlace } from './cafeLogFormTypes';
+import { useCafeLogDraftStore } from '@/src/store/cafeLogDraftStore';
+import { CafeLogDatePicker } from './CafeLogDatePicker';
 
-export function Step2({
-  selectedPlace,
-  visitedAt,
-  nearbyPlaces,
-  nearbyLoading,
-  hasCoords,
-  onSelectNearby,
-  onOpenSearch,
-  onClearPlace,
-  onOpenDatePicker,
-}: {
-  selectedPlace: { name: string; address: string } | null;
-  visitedAt: string;
-  nearbyPlaces: NearbyPlace[];
-  nearbyLoading: boolean;
-  hasCoords: boolean;
-  onSelectNearby: (p: NearbyPlace) => void;
-  onOpenSearch: () => void;
-  onClearPlace: () => void;
-  onOpenDatePicker: () => void;
-}) {
+const KAKAO_API_KEY = process.env.EXPO_PUBLIC_KAKAO_REST_API_KEY ?? '';
+
+export function Step2({ onOpenSearch }: { onOpenSearch: () => void }) {
+  const { selectedPlace, photoCoords, setField } = useCafeLogDraftStore(
+    useShallow((state) => ({
+      selectedPlace: state.selectedPlace,
+      photoCoords: state.photoCoords,
+      setField: state.setField,
+    })),
+  );
+  const [nearbyPlaces, setNearbyPlaces] = useState<NearbyPlace[]>([]);
+  const [nearbyLoading, setNearbyLoading] = useState(false);
+  const hasCoords = photoCoords !== null;
+
+  useEffect(() => {
+    if (!photoCoords) return;
+
+    const controller = new AbortController();
+
+    const fetchNearby = async () => {
+      setNearbyLoading(true);
+      try {
+        const response = await fetch(
+          `https://dapi.kakao.com/v2/local/search/category.json?category_group_code=CE7&x=${photoCoords.lng}&y=${photoCoords.lat}&radius=500&sort=distance&size=10`,
+          {
+            headers: { Authorization: `KakaoAK ${KAKAO_API_KEY}` },
+            signal: controller.signal,
+          },
+        );
+        const json = await response.json();
+        setNearbyPlaces(json.documents ?? []);
+      } catch (error) {
+        if (error instanceof Error && error.name === 'AbortError') return;
+        setNearbyPlaces([]);
+      } finally {
+        if (!controller.signal.aborted) setNearbyLoading(false);
+      }
+    };
+
+    void fetchNearby();
+    return () => controller.abort();
+  }, [photoCoords]);
+
+  const selectNearby = (place: NearbyPlace) => {
+    setField('selectedPlace', {
+      name: place.place_name,
+      address: place.road_address_name || place.address_name,
+    });
+  };
   function formatDistance(d?: string) {
     if (!d) return '';
     const n = Number(d);
@@ -61,7 +93,10 @@ export function Step2({
                   </View>
                 ) : null}
               </View>
-              <TouchableOpacity onPress={onClearPlace} style={{ padding: 2, marginLeft: 8 }}>
+              <TouchableOpacity
+                onPress={() => setField('selectedPlace', null)}
+                style={{ padding: 2, marginLeft: 8 }}
+              >
                 <Ionicons name="close-circle" size={20} color="#A59688" />
               </TouchableOpacity>
             </View>
@@ -97,7 +132,7 @@ export function Step2({
                 {nearbyPlaces.map((p) => (
                   <TouchableOpacity
                     key={p.id}
-                    onPress={() => onSelectNearby(p)}
+                    onPress={() => selectNearby(p)}
                     style={{
                       backgroundColor: '#FFFFFF',
                       borderRadius: 12,
@@ -117,7 +152,10 @@ export function Step2({
                       ) : null}
                     </View>
                     {p.road_address_name || p.address_name ? (
-                      <Text style={{ fontSize: 12, color: '#A59688', marginTop: 3 }} numberOfLines={1}>
+                      <Text
+                        style={{ fontSize: 12, color: '#A59688', marginTop: 3 }}
+                        numberOfLines={1}
+                      >
                         {p.road_address_name || p.address_name}
                       </Text>
                     ) : null}
@@ -174,22 +212,7 @@ export function Step2({
       </Section>
 
       <Section label="방문 날짜">
-        <TouchableOpacity
-          onPress={onOpenDatePicker}
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: 14,
-            backgroundColor: '#FFFFFF',
-            borderRadius: 12,
-            borderWidth: 1,
-            borderColor: '#C8BFB0',
-          }}
-        >
-          <Text style={{ fontSize: 15, color: '#3A1B0F' }}>{visitedAt}</Text>
-          <Ionicons name="calendar-outline" size={18} color="#A59688" />
-        </TouchableOpacity>
+        <CafeLogDatePicker />
       </Section>
     </View>
   );
