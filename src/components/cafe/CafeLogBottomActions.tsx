@@ -74,7 +74,7 @@ export function CafeLogBottomActions({
           onPress={handleNext}
           disabled={nextDisabled}
           style={{
-            backgroundColor: nextDisabled ? '#C0C0C0' : '#3A1B0F',
+            backgroundColor: nextDisabled ? '#C0C0C0' : '#101114',
             borderRadius: 14,
             paddingVertical: 15,
             alignItems: 'center',
@@ -87,7 +87,7 @@ export function CafeLogBottomActions({
           onPress={handleSave}
           disabled={disabled}
           style={{
-            backgroundColor: disabled ? '#C0C0C0' : '#3A1B0F',
+            backgroundColor: disabled ? '#C0C0C0' : '#101114',
             borderRadius: 14,
             paddingVertical: 15,
             alignItems: 'center',

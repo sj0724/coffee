@@ -22,11 +22,11 @@ export function CafeLogTypePicker({ onSelect }: { onSelect: (type: 'handdip' | '
       style={{ flex: 1 }}
       contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 34, paddingBottom: 40 }}
     >
-      <Text style={{ fontSize: 26, fontWeight: '800', color: '#3A1B0F', letterSpacing: -0.5 }}>
+      <Text style={{ fontSize: 26, fontWeight: '800', color: '#101114', letterSpacing: -0.5 }}>
         무엇을 기록할까요?
       </Text>
       <Text
-        style={{ marginTop: 8, marginBottom: 28, fontSize: 15, lineHeight: 22, color: '#716B64' }}
+        style={{ marginTop: 8, marginBottom: 28, fontSize: 15, lineHeight: 22, color: '#70757E' }}
       >
         기록할 종류를 먼저 선택하면 필요한 항목만 보여드릴게요.
       </Text>
@@ -42,8 +42,8 @@ export function CafeLogTypePicker({ onSelect }: { onSelect: (type: 'handdip' | '
               padding: 20,
               borderRadius: 20,
               borderWidth: 1,
-              borderColor: '#E3DFD9',
-              backgroundColor: '#FAF9F7',
+              borderColor: '#D8DADE',
+              backgroundColor: '#F8F9FA',
               flexDirection: 'row',
               alignItems: 'center',
               gap: 16,
@@ -56,16 +56,16 @@ export function CafeLogTypePicker({ onSelect }: { onSelect: (type: 'handdip' | '
                 borderRadius: 17,
                 alignItems: 'center',
                 justifyContent: 'center',
-                backgroundColor: '#EEEAE4',
+                backgroundColor: '#ECEDEF',
               }}
             >
-              <Ionicons name={option.icon} size={25} color="#37332F" />
+              <Ionicons name={option.icon} size={25} color="#3F4248" />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 19, fontWeight: '800', color: '#272522' }}>
+              <Text style={{ fontSize: 19, fontWeight: '800', color: '#101114' }}>
                 {option.title}
               </Text>
-              <Text style={{ marginTop: 7, fontSize: 14, lineHeight: 21, color: '#68625B' }}>
+              <Text style={{ marginTop: 7, fontSize: 14, lineHeight: 21, color: '#5F636B' }}>
                 {option.description}
               </Text>
             </View>

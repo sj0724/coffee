@@ -49,7 +49,7 @@ function MenuActionDropdown({ onEdit, onDelete }: { onEdit?: () => void; onDelet
   return (
     <View ref={anchorRef} collapsable={false}>
       <TouchableOpacity onPress={show} style={{ padding: 6, margin: -6 }}>
-        <Ionicons name="ellipsis-horizontal" size={20} color="#816F62" />
+        <Ionicons name="ellipsis-horizontal" size={20} color="#5F636B" />
       </TouchableOpacity>
       <Modal transparent visible={open} animationType="fade" onRequestClose={() => setOpen(false)}>
         <Pressable style={{ flex: 1 }} onPress={() => setOpen(false)}>
@@ -74,8 +74,8 @@ function MenuActionDropdown({ onEdit, onDelete }: { onEdit?: () => void; onDelet
                 onPress={() => run(onEdit)}
                 style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12 }}
               >
-                <Ionicons name="pencil-outline" size={18} color="#5E493D" />
-                <Text style={{ fontSize: 14, color: '#5E493D', fontWeight: '600' }}>수정</Text>
+                <Ionicons name="pencil-outline" size={18} color="#3F4248" />
+                <Text style={{ fontSize: 14, color: '#3F4248', fontWeight: '600' }}>수정</Text>
               </TouchableOpacity>
             )}
             <TouchableOpacity
@@ -234,8 +234,6 @@ export default function CafeDetailScreen() {
   const photoW = screenWidth - 40;
   const headerOnPhoto = cafePhotoUris.length > 0;
   const headerColor = '#1D1D1B';
-  const headerButtonBackground = headerOnPhoto ? 'rgba(255,255,255,0.58)' : '#F4F3F1';
-  const headerBorderColor = headerOnPhoto ? 'rgba(255,255,255,0.48)' : '#ECEAE6';
   const headerGradientColors = headerOnPhoto
     ? (['rgba(255,255,255,0.78)', 'rgba(255,255,255,0.38)', 'rgba(255,255,255,0)'] as const)
     : (['#fff', '#fff', '#fff'] as const);
@@ -269,9 +267,6 @@ export default function CafeDetailScreen() {
               borderRadius: 20,
               alignItems: 'center',
               justifyContent: 'center',
-              backgroundColor: headerButtonBackground,
-              borderWidth: 1,
-              borderColor: headerBorderColor,
             }}
           >
             <Ionicons name="chevron-back" size={24} color={headerColor} />
@@ -312,7 +307,7 @@ export default function CafeDetailScreen() {
             style={{
               width: screenWidth,
               height: screenWidth / cafePhotoAspectRatio,
-              backgroundColor: '#EEECE8',
+              backgroundColor: '#ECEDEF',
             }}
           >
             <ScrollView
@@ -423,7 +418,7 @@ export default function CafeDetailScreen() {
             borderRadius: 20,
             backgroundColor: '#FFFFFF',
             borderWidth: 1,
-            borderColor: '#ECEAE6',
+            borderColor: '#ECEDEF',
           }}
         >
           <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
@@ -453,7 +448,7 @@ export default function CafeDetailScreen() {
                 <Ionicons
                   name={isFav ? 'heart' : 'heart-outline'}
                   size={20}
-                  color={isFav ? '#D96C67' : '#817B73'}
+                  color={isFav ? '#D96C67' : '#70757E'}
                 />
               </TouchableOpacity>
               <TouchableOpacity
@@ -467,7 +462,7 @@ export default function CafeDetailScreen() {
                   justifyContent: 'center',
                 }}
               >
-                <Ionicons name="ellipsis-horizontal" size={20} color="#817B73" />
+                <Ionicons name="ellipsis-horizontal" size={20} color="#70757E" />
               </TouchableOpacity>
             </View>
           </View>
@@ -480,12 +475,12 @@ export default function CafeDetailScreen() {
                   borderRadius: 15,
                   alignItems: 'center',
                   justifyContent: 'center',
-                  backgroundColor: '#F4F2EE',
+                  backgroundColor: '#F1F2F4',
                 }}
               >
-                <Ionicons name="calendar-outline" size={15} color="#69645D" />
+                <Ionicons name="calendar-outline" size={15} color="#5F636B" />
               </View>
-              <Text style={{ fontSize: 14, color: '#68645E' }}>{log.visited_at}</Text>
+              <Text style={{ fontSize: 14, color: '#5F636B' }}>{log.visited_at}</Text>
             </View>
             {log.address ? (
               <TouchableOpacity
@@ -502,15 +497,15 @@ export default function CafeDetailScreen() {
                     borderRadius: 15,
                     alignItems: 'center',
                     justifyContent: 'center',
-                    backgroundColor: '#F4F2EE',
+                    backgroundColor: '#F1F2F4',
                   }}
                 >
-                  <Ionicons name="location-outline" size={16} color="#69645D" />
+                  <Ionicons name="location-outline" size={16} color="#5F636B" />
                 </View>
-                <Text style={{ flex: 1, fontSize: 14, color: '#3F3C38' }} numberOfLines={2}>
+                <Text style={{ flex: 1, fontSize: 14, color: '#3F4248' }} numberOfLines={2}>
                   {log.address}
                 </Text>
-                <Ionicons name="chevron-forward" size={16} color="#B5B0A8" />
+                <Ionicons name="chevron-forward" size={16} color="#B8BCC4" />
               </TouchableOpacity>
             ) : null}
           </View>
@@ -521,13 +516,13 @@ export default function CafeDetailScreen() {
                 marginTop: 18,
                 paddingTop: 16,
                 borderTopWidth: 1,
-                borderTopColor: '#EFEDE9',
+                borderTopColor: '#ECEDEF',
                 flexDirection: 'row',
                 gap: 10,
               }}
             >
-              <Ionicons name="chatbubble-ellipses-outline" size={17} color="#918A80" />
-              <Text style={{ flex: 1, fontSize: 14, lineHeight: 21, color: '#55514C' }}>
+              <Ionicons name="chatbubble-ellipses-outline" size={17} color="#8D929B" />
+              <Text style={{ flex: 1, fontSize: 14, lineHeight: 21, color: '#3F4248' }}>
                 {log.memo}
               </Text>
             </View>
@@ -543,11 +538,11 @@ export default function CafeDetailScreen() {
               marginBottom: 12,
             }}
           >
-            <Text style={{ fontSize: 20, fontWeight: '800', color: '#3A1B0F' }}>메뉴</Text>
+            <Text style={{ fontSize: 20, fontWeight: '800', color: '#101114' }}>메뉴</Text>
           </View>
 
           {menuItems.length === 0 && (
-            <View className="px-5 py-8 mx-5 bg-coffee-cream border border-coffee-border rounded-2xl">
+            <View className="px-5 py-8 mx-5 border bg-coffee-cream border-coffee-border rounded-2xl">
               <Text className="text-sm text-center text-gray-300">등록된 메뉴가 없어요.</Text>
             </View>
           )}
@@ -567,7 +562,7 @@ export default function CafeDetailScreen() {
                       borderRadius: 18,
                       backgroundColor: '#FFFFFF',
                       borderWidth: 1,
-                      borderColor: '#E3DFD9',
+                      borderColor: '#D8DADE',
                     }}
                   >
                     <View className="flex-row items-center justify-between">
@@ -581,7 +576,7 @@ export default function CafeDetailScreen() {
                             borderRadius: 11,
                             alignItems: 'center',
                             justifyContent: 'center',
-                            backgroundColor: '#F2EFEA',
+                            backgroundColor: '#F1F2F4',
                           }}
                         >
                           <Ionicons
@@ -593,14 +588,14 @@ export default function CafeDetailScreen() {
                                   : 'cafe-outline'
                             }
                             size={18}
-                            color="#59534C"
+                            color="#3F4248"
                           />
                         </View>
                         <View style={{ flex: 1 }}>
-                          <Text className="text-[17px] font-bold text-[#3A1B0F]">
+                          <Text className="text-[17px] font-bold text-[#101114]">
                             {item.menu_name}
                           </Text>
-                          <Text style={{ marginTop: 2, fontSize: 12, color: '#777169' }}>
+                          <Text style={{ marginTop: 2, fontSize: 12, color: '#70757E' }}>
                             {category === 'handdip'
                               ? '핸드드립 노트'
                               : category === 'espresso'
@@ -627,7 +622,7 @@ export default function CafeDetailScreen() {
                           height: 1,
                           marginTop: 14,
                           marginBottom: 16,
-                          backgroundColor: '#ECE8E2',
+                          backgroundColor: '#ECEDEF',
                         }}
                       />
                     )}

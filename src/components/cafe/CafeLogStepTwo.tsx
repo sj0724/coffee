@@ -72,22 +72,22 @@ export function Step2({ onOpenSearch }: { onOpenSearch: () => void }) {
               backgroundColor: '#FFFFFF',
               borderRadius: 12,
               borderWidth: 1.5,
-              borderColor: '#3A1B0F',
+              borderColor: '#101114',
               padding: 14,
               gap: 4,
             }}
           >
             <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 16, fontWeight: '700', color: '#3A1B0F' }}>
+                <Text style={{ fontSize: 16, fontWeight: '700', color: '#101114' }}>
                   {selectedPlace.name}
                 </Text>
                 {selectedPlace.address ? (
                   <View
                     style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}
                   >
-                    <Ionicons name="location-outline" size={13} color="#A59688" />
-                    <Text style={{ fontSize: 13, color: '#8B7A6D' }} numberOfLines={2}>
+                    <Ionicons name="location-outline" size={13} color="#8D929B" />
+                    <Text style={{ fontSize: 13, color: '#70757E' }} numberOfLines={2}>
                       {selectedPlace.address}
                     </Text>
                   </View>
@@ -97,14 +97,14 @@ export function Step2({ onOpenSearch }: { onOpenSearch: () => void }) {
                 onPress={() => setField('selectedPlace', null)}
                 style={{ padding: 2, marginLeft: 8 }}
               >
-                <Ionicons name="close-circle" size={20} color="#A59688" />
+                <Ionicons name="close-circle" size={20} color="#8D929B" />
               </TouchableOpacity>
             </View>
             <TouchableOpacity
               onPress={onOpenSearch}
               style={{ marginTop: 6, alignSelf: 'flex-start' }}
             >
-              <Text style={{ fontSize: 12, color: '#3A1B0F', fontWeight: '600' }}>직접 검색</Text>
+              <Text style={{ fontSize: 12, color: '#101114', fontWeight: '600' }}>직접 검색</Text>
             </TouchableOpacity>
           </View>
         ) : hasCoords ? (
@@ -114,8 +114,8 @@ export function Step2({ onOpenSearch }: { onOpenSearch: () => void }) {
               <View
                 style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 16 }}
               >
-                <ActivityIndicator size="small" color="#3A1B0F" />
-                <Text style={{ fontSize: 13, color: '#A59688' }}>
+                <ActivityIndicator size="small" color="#101114" />
+                <Text style={{ fontSize: 13, color: '#8D929B' }}>
                   사진 위치로 근처 카페 검색 중...
                 </Text>
               </View>
@@ -124,8 +124,8 @@ export function Step2({ onOpenSearch }: { onOpenSearch: () => void }) {
                 <View
                   style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 2 }}
                 >
-                  <Ionicons name="location" size={13} color="#3A1B0F" />
-                  <Text style={{ fontSize: 12, color: '#3A1B0F', fontWeight: '600' }}>
+                  <Ionicons name="location" size={13} color="#101114" />
+                  <Text style={{ fontSize: 12, color: '#101114', fontWeight: '600' }}>
                     반경 500m 근처 카페
                   </Text>
                 </View>
@@ -137,23 +137,23 @@ export function Step2({ onOpenSearch }: { onOpenSearch: () => void }) {
                       backgroundColor: '#FFFFFF',
                       borderRadius: 12,
                       borderWidth: 1,
-                      borderColor: '#C8BFB0',
+                      borderColor: '#D8DADE',
                       padding: 14,
                     }}
                   >
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                      <Text style={{ flex: 1, fontSize: 15, fontWeight: '600', color: '#3A1B0F' }}>
+                      <Text style={{ flex: 1, fontSize: 15, fontWeight: '600', color: '#101114' }}>
                         {p.place_name}
                       </Text>
                       {p.distance ? (
-                        <Text style={{ fontSize: 12, color: '#3A1B0F', fontWeight: '500' }}>
+                        <Text style={{ fontSize: 12, color: '#101114', fontWeight: '500' }}>
                           {formatDistance(p.distance)}
                         </Text>
                       ) : null}
                     </View>
                     {p.road_address_name || p.address_name ? (
                       <Text
-                        style={{ fontSize: 12, color: '#A59688', marginTop: 3 }}
+                        style={{ fontSize: 12, color: '#8D929B', marginTop: 3 }}
                         numberOfLines={1}
                       >
                         {p.road_address_name || p.address_name}
@@ -164,7 +164,7 @@ export function Step2({ onOpenSearch }: { onOpenSearch: () => void }) {
               </>
             ) : (
               <Text
-                style={{ fontSize: 13, color: '#A59688', textAlign: 'center', paddingVertical: 12 }}
+                style={{ fontSize: 13, color: '#8D929B', textAlign: 'center', paddingVertical: 12 }}
               >
                 근처 카페를 찾지 못했어요.
               </Text>
@@ -179,13 +179,13 @@ export function Step2({ onOpenSearch }: { onOpenSearch: () => void }) {
                 paddingVertical: 12,
                 borderRadius: 10,
                 borderWidth: 1,
-                borderColor: '#C8BFB0',
+                borderColor: '#D8DADE',
                 borderStyle: 'dashed',
                 marginTop: 4,
               }}
             >
-              <Ionicons name="search" size={15} color="#816F62" />
-              <Text style={{ fontSize: 13, color: '#816F62', fontWeight: '600' }}>직접 검색</Text>
+              <Ionicons name="search" size={15} color="#5F636B" />
+              <Text style={{ fontSize: 13, color: '#5F636B', fontWeight: '600' }}>직접 검색</Text>
             </TouchableOpacity>
           </View>
         ) : (
@@ -201,12 +201,12 @@ export function Step2({ onOpenSearch }: { onOpenSearch: () => void }) {
               backgroundColor: '#FFFFFF',
               borderRadius: 12,
               borderWidth: 1.5,
-              borderColor: '#C8BFB0',
+              borderColor: '#D8DADE',
               borderStyle: 'dashed',
             }}
           >
-            <Ionicons name="search" size={18} color="#3A1B0F" />
-            <Text style={{ fontSize: 15, color: '#3A1B0F', fontWeight: '600' }}>카페 검색</Text>
+            <Ionicons name="search" size={18} color="#101114" />
+            <Text style={{ fontSize: 15, color: '#101114', fontWeight: '600' }}>카페 검색</Text>
           </TouchableOpacity>
         )}
       </Section>

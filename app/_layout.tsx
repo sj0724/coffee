@@ -24,12 +24,12 @@ export default function RootLayout() {
     <Stack
       screenOptions={({ navigation }) => ({
         headerStyle: { backgroundColor: '#FFFFFF' },
-        headerTintColor: '#3A1B0F',
+        headerTintColor: '#101114',
         headerTitleStyle: { fontWeight: '700' as const },
         headerLeft: ({ canGoBack }) =>
           canGoBack ? (
             <TouchableOpacity onPress={navigation.goBack} style={{ padding: 4, marginLeft: -4 }}>
-              <Ionicons name="chevron-back" size={26} color="#3A1B0F" />
+              <Ionicons name="chevron-back" size={26} color="#101114" />
             </TouchableOpacity>
           ) : null,
       })}

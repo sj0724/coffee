@@ -26,7 +26,6 @@ import {
   CafeGridCard,
   CAROUSEL_GAP,
   CAROUSEL_INSET,
-  FLAVOR_COLORS,
   GRID_GAP,
   GRID_PADDING,
   parseAllNotes,
@@ -184,7 +183,7 @@ export default function CafeScreen() {
           paddingVertical: 12,
         }}
       >
-        <Text style={{ flex: 1, fontSize: 24, fontWeight: '800', color: '#3A1B0F' }}>카페</Text>
+        <Text style={{ flex: 1, fontSize: 24, fontWeight: '800', color: '#101114' }}>카페</Text>
         <TouchableOpacity
           onPress={toggleViewMode}
           disabled={viewTransitioning}
@@ -194,11 +193,11 @@ export default function CafeScreen() {
           <Ionicons
             name={viewMode === 'coverflow' ? 'grid-outline' : 'albums-outline'}
             size={22}
-            color="#3A1B0F"
+            color="#101114"
           />
         </TouchableOpacity>
         <TouchableOpacity onPress={() => router.push('/cafe/new')} style={{ padding: 6 }}>
-          <Ionicons name="add" size={26} color="#3A1B0F" />
+          <Ionicons name="add" size={26} color="#101114" />
         </TouchableOpacity>
       </View>
 
@@ -219,25 +218,25 @@ export default function CafeScreen() {
               paddingHorizontal: 14,
               paddingVertical: 7,
               borderRadius: 20,
-              backgroundColor: favOnly ? '#E6531E' : '#FFFFFF',
+              backgroundColor: favOnly ? '#F2DF36' : '#FFFFFF',
               borderWidth: 1,
-              borderColor: '#C8BFB0',
+              borderColor: favOnly ? '#F2DF36' : '#D8DADE',
             }}
           >
             <Ionicons
               name={favOnly ? 'heart' : 'heart-outline'}
               size={14}
-              color={favOnly ? '#fff' : '#817B73'}
+              color={favOnly ? '#101114' : '#70757E'}
             />
 
-            <Text style={{ fontSize: 13, fontWeight: '600', color: favOnly ? '#fff' : '#816F62' }}>
+            <Text style={{ fontSize: 13, fontWeight: '700', color: favOnly ? '#101114' : '#5F636B' }}>
               즐겨찾기
             </Text>
           </TouchableOpacity>
 
           {uniqueTags.map((tag) => {
             const isActive = activeTags.includes(tag);
-            const color = FLAVOR_COLORS[tag] ?? '#E6531E';
+            const color = '#123C96';
             return (
               <TouchableOpacity
                 key={tag}
@@ -248,11 +247,11 @@ export default function CafeScreen() {
                   borderRadius: 20,
                   backgroundColor: isActive ? color : '#FFFFFF',
                   borderWidth: 1,
-                  borderColor: isActive ? color : '#C8BFB0',
+                  borderColor: isActive ? color : '#D8DADE',
                 }}
               >
                 <Text
-                  style={{ fontSize: 13, fontWeight: '600', color: isActive ? '#fff' : '#816F62' }}
+                  style={{ fontSize: 13, fontWeight: '600', color: isActive ? '#fff' : '#5F636B' }}
                 >
                   {tag}
                 </Text>
@@ -267,7 +266,7 @@ export default function CafeScreen() {
         {viewMode === 'grid' ? (
           filteredLogs.length === 0 ? (
             <View style={{ alignItems: 'center', paddingTop: 80 }}>
-              <Text style={{ color: '#A59688', fontSize: 15 }}>기록이 없어요.</Text>
+              <Text style={{ color: '#8D929B', fontSize: 15 }}>기록이 없어요.</Text>
             </View>
           ) : (
             <SectionList
@@ -349,7 +348,7 @@ export default function CafeScreen() {
                     flex: 1,
                   }}
                 >
-                  <Text style={{ color: '#A59688', fontSize: 15 }}>
+                  <Text style={{ color: '#8D929B', fontSize: 15 }}>
                     + 버튼으로 첫 카페를 기록해보세요.
                   </Text>
                 </View>

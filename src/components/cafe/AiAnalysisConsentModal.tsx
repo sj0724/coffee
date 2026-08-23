@@ -33,19 +33,19 @@ export function AiAnalysisConsentModal({ visible, onAgree, onSkip, onViewPrivacy
               borderRadius: 22,
               alignItems: 'center',
               justifyContent: 'center',
-              backgroundColor: '#FFF0E9',
+              backgroundColor: '#FFF9C9',
               marginBottom: 16,
             }}
           >
-            <Ionicons name="sparkles-outline" size={22} color="#E6531E" />
+            <Ionicons name="sparkles-outline" size={22} color="#101114" />
           </View>
 
-          <Text style={{ color: '#3A1B0F', fontSize: 19, fontWeight: '700' }}>
+          <Text style={{ color: '#101114', fontSize: 19, fontWeight: '700' }}>
             AI로 사진을 분석할까요?
           </Text>
           <Text
             style={{
-              color: '#6F625A',
+              color: '#5F636B',
               fontSize: 14,
               lineHeight: 21,
               marginTop: 10,
@@ -61,13 +61,13 @@ export function AiAnalysisConsentModal({ visible, onAgree, onSkip, onViewPrivacy
               alignItems: 'flex-start',
               gap: 8,
               borderRadius: 12,
-              backgroundColor: '#F7F3F0',
+              backgroundColor: '#F4F5F7',
               padding: 12,
               marginTop: 16,
             }}
           >
-            <Ionicons name="shield-checkmark-outline" size={17} color="#816F62" />
-            <Text style={{ flex: 1, color: '#816F62', fontSize: 12, lineHeight: 18 }}>
+            <Ionicons name="shield-checkmark-outline" size={17} color="#123C96" />
+            <Text style={{ flex: 1, color: '#5F636B', fontSize: 12, lineHeight: 18 }}>
               동의하지 않아도 직접 입력하여 기록을 계속할 수 있습니다.
             </Text>
           </View>
@@ -77,7 +77,7 @@ export function AiAnalysisConsentModal({ visible, onAgree, onSkip, onViewPrivacy
             style={{
               alignItems: 'center',
               borderRadius: 14,
-              backgroundColor: '#3A1B0F',
+              backgroundColor: '#123C96',
               paddingVertical: 15,
               marginTop: 20,
             }}
@@ -85,7 +85,7 @@ export function AiAnalysisConsentModal({ visible, onAgree, onSkip, onViewPrivacy
             <Text style={{ color: '#FFFFFF', fontSize: 15, fontWeight: '700' }}>동의하고 분석</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={onSkip} style={{ alignItems: 'center', paddingVertical: 14 }}>
-            <Text style={{ color: '#816F62', fontSize: 14, fontWeight: '600' }}>
+            <Text style={{ color: '#5F636B', fontSize: 14, fontWeight: '600' }}>
               분석 없이 계속
             </Text>
           </TouchableOpacity>
@@ -93,7 +93,7 @@ export function AiAnalysisConsentModal({ visible, onAgree, onSkip, onViewPrivacy
             onPress={onViewPrivacy}
             style={{ alignItems: 'center', paddingVertical: 4 }}
           >
-            <Text style={{ color: '#A59688', fontSize: 12, textDecorationLine: 'underline' }}>
+            <Text style={{ color: '#8D929B', fontSize: 12, textDecorationLine: 'underline' }}>
               개인정보처리방침 보기
             </Text>
           </TouchableOpacity>

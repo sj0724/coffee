@@ -95,22 +95,22 @@ export function Step1({
                       width: 120,
                       height: 160,
                       borderRadius: 12,
-                      backgroundColor: '#EDE7DC',
+                      backgroundColor: '#F1F2F4',
                       alignItems: 'center',
                       justifyContent: 'center',
                       gap: 6,
                       borderWidth: 1.5,
-                      borderColor: '#C8BFB0',
+                      borderColor: '#D8DADE',
                       borderStyle: 'dashed',
                       opacity: scanningNote ? 0.5 : 1,
                     }}
                   >
                     {scanningNote && i === notePhotos.length ? (
-                      <ActivityIndicator color="#816F62" />
+                      <ActivityIndicator color="#5F636B" />
                     ) : (
                       <>
-                        <Ionicons name="add" size={26} color="#816F62" />
-                        <Text style={{ fontSize: 12, color: '#816F62', fontWeight: '600' }}>
+                        <Ionicons name="add" size={26} color="#5F636B" />
+                        <Text style={{ fontSize: 12, color: '#5F636B', fontWeight: '600' }}>
                           {i === 0 ? '앞면' : '뒷면'}
                         </Text>
                       </>
@@ -135,7 +135,7 @@ export function Step1({
             <View key={i} style={{ position: 'relative' }}>
               <Image
                 source={{ uri }}
-                style={{ width: 100, height: 133, borderRadius: 10, backgroundColor: '#EDE7DC' }}
+                style={{ width: 100, height: 133, borderRadius: 10, backgroundColor: '#F1F2F4' }}
                 contentFit="contain"
               />
               <TouchableOpacity
@@ -160,17 +160,17 @@ export function Step1({
                 width: 100,
                 height: 133,
                 borderRadius: 10,
-                backgroundColor: '#EDE7DC',
+                backgroundColor: '#F1F2F4',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: 6,
                 borderWidth: 1.5,
-                borderColor: '#C8BFB0',
+                borderColor: '#D8DADE',
                 borderStyle: 'dashed',
               }}
             >
-              <Ionicons name="add" size={24} color="#3A1B0F" />
-              <Text style={{ fontSize: 11, color: '#3A1B0F', fontWeight: '600' }}>사진 추가</Text>
+              <Ionicons name="add" size={24} color="#101114" />
+              <Text style={{ fontSize: 11, color: '#101114', fontWeight: '600' }}>사진 추가</Text>
             </TouchableOpacity>
           )}
         </ScrollView>

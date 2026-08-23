@@ -32,11 +32,11 @@ export function CafeLogDatePicker() {
           backgroundColor: '#FFFFFF',
           borderRadius: 12,
           borderWidth: 1,
-          borderColor: '#C8BFB0',
+          borderColor: '#D8DADE',
         }}
       >
-        <Text style={{ fontSize: 15, color: '#3A1B0F' }}>{visitedAt}</Text>
-        <Ionicons name="calendar-outline" size={18} color="#A59688" />
+        <Text style={{ fontSize: 15, color: '#101114' }}>{visitedAt}</Text>
+        <Ionicons name="calendar-outline" size={18} color="#8D929B" />
       </TouchableOpacity>
 
       {Platform.OS === 'ios' && (
@@ -67,13 +67,13 @@ export function CafeLogDatePicker() {
                 onChange={handleChange}
                 maximumDate={new Date()}
                 locale="ko-KR"
-                accentColor="#E6531E"
+                accentColor="#123C96"
                 style={{ width: '100%' }}
               />
               <TouchableOpacity
                 style={{
                   marginTop: 8,
-                  backgroundColor: '#E6531E',
+                  backgroundColor: '#123C96',
                   borderRadius: 10,
                   paddingVertical: 10,
                   paddingHorizontal: 32,

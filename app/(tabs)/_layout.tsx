@@ -39,9 +39,9 @@ function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
         borderRadius: 100,
         backgroundColor: '#FFFFFF',
         borderWidth: 1,
-        borderColor: '#C8BFB0',
+        borderColor: '#D8DADE',
         flexDirection: 'row',
-        shadowColor: '#3A1B0F',
+        shadowColor: '#101114',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.1,
         shadowRadius: 12,
@@ -58,7 +58,7 @@ function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
             width: tabWidth - 10,
             left: 4,
             borderRadius: 100,
-            backgroundColor: '#E6531E',
+            backgroundColor: '#123C96',
             transform: [
               {
                 translateX: slideAnim.interpolate({
@@ -93,7 +93,7 @@ function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
           >
             {options.tabBarIcon?.({
               focused: isFocused,
-              color: isFocused ? '#fff' : '#A59688',
+              color: isFocused ? '#fff' : '#8D929B',
               size: 24,
             })}
           </TouchableOpacity>

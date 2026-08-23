@@ -53,16 +53,16 @@ export function Step4() {
       )}
 
       <View style={{ gap: 8 }}>
-        <Text style={{ fontSize: 13, color: '#816F62' }}>한 줄 감상</Text>
+        <Text style={{ fontSize: 13, color: '#5F636B' }}>한 줄 감상</Text>
         <TextInput
           style={{
             backgroundColor: '#FFFFFF',
             borderRadius: 12,
             borderWidth: 1,
-            borderColor: '#C8BFB0',
+            borderColor: '#D8DADE',
             padding: 14,
             fontSize: 15,
-            color: '#3A1B0F',
+            color: '#101114',
             minHeight: 120,
             textAlignVertical: 'top',
           }}

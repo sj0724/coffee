@@ -192,9 +192,9 @@ const NewCafeLogScreen = () => {
         }}
       >
         <TouchableOpacity onPress={goBack} style={{ padding: 4, marginRight: 8 }}>
-          <Ionicons name="chevron-back" size={24} color="#3A1B0F" />
+          <Ionicons name="chevron-back" size={24} color="#101114" />
         </TouchableOpacity>
-        <Text style={{ flex: 1, fontSize: 17, fontWeight: '700', color: '#3A1B0F' }}>
+        <Text style={{ flex: 1, fontSize: 17, fontWeight: '700', color: '#101114' }}>
           새 카페 기록
         </Text>
       </View>
@@ -212,7 +212,7 @@ const NewCafeLogScreen = () => {
           <Animated.View
             style={{
               height: 3,
-              backgroundColor: '#E6531E',
+              backgroundColor: '#123C96',
               borderRadius: 2,
               width: progressAnim.interpolate({
                 inputRange: [0, 1],

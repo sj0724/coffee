@@ -29,7 +29,7 @@ export function MyNotesInput({
   return (
     <View className="gap-3 mb-1">
       <View className="flex-row items-center justify-between">
-        <Text className="text-[13px] text-[#816F62]">내 노트</Text>
+        <Text className="text-[13px] text-[#5F636B]">내 노트</Text>
         <Text className="text-[12px] text-gray-400">
           {selected.length}/{MAX_MY_NOTES}
         </Text>
@@ -56,7 +56,7 @@ export function MyNotesInput({
                 >
                   <Text
                     className={`text-[12px] ${
-                      isSelected ? 'text-white' : isDisabled ? 'text-gray-300' : 'text-[#816F62]'
+                      isSelected ? 'text-white' : isDisabled ? 'text-gray-300' : 'text-[#5F636B]'
                     }`}
                   >
                     {tag}

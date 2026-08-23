@@ -31,7 +31,7 @@ export function NoteInput({
       style={{
         height: 56,
         borderBottomWidth: focused ? 1.5 : 1,
-        borderBottomColor: focused ? '#514D47' : '#DEDAD5',
+        borderBottomColor: focused ? '#123C96' : '#D8DADE',
       }}
     >
       <Animated.Text
@@ -41,7 +41,7 @@ export function NoteInput({
           left: 0,
           top: labelProgress.interpolate({ inputRange: [0, 1], outputRange: [18, 5] }),
           fontSize: labelProgress.interpolate({ inputRange: [0, 1], outputRange: [15, 11] }),
-          color: focused ? '#514D47' : '#817B73',
+          color: focused ? '#123C96' : '#70757E',
         }}
       >
         {label}
@@ -54,7 +54,7 @@ export function NoteInput({
           paddingBottom: 3,
           paddingHorizontal: 0,
           fontSize: 15,
-          color: '#3A1B0F',
+          color: '#101114',
         }}
         value={value ?? ''}
         onChangeText={onChange}

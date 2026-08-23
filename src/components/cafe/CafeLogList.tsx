@@ -291,7 +291,7 @@ export function CafeCard({
                 <Text className="text-lg text-center text-gray-400">
                   {item.visited_at.replace(/-/g, '.')}
                 </Text>
-                <Text className="text-xl font-bold text-[#3A1B0F] text-center" numberOfLines={1}>
+                <Text className="text-xl font-bold text-[#101114] text-center" numberOfLines={1}>
                   {item.cafe_name}
                 </Text>
                 {noteGradient && (
@@ -412,11 +412,11 @@ export function CafeGridCard({
               />
             </View>
             <View style={{ padding: 12, backgroundColor: '#FFFFFF' }}>
-              <Text style={{ color: '#A59688', fontSize: 11, marginBottom: 3 }}>
+              <Text style={{ color: '#8D929B', fontSize: 11, marginBottom: 3 }}>
                 {item.visited_at.replace(/-/g, '.')}
               </Text>
               <Text
-                style={{ color: '#3A1B0F', fontSize: 13, fontWeight: '700', lineHeight: 19 }}
+                style={{ color: '#101114', fontSize: 13, fontWeight: '700', lineHeight: 19 }}
                 numberOfLines={2}
               >
                 {item.cafe_name}

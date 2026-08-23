@@ -29,11 +29,11 @@ export function EspressoNoteForm({
                 paddingVertical: 9,
                 borderRadius: 999,
                 borderWidth: 1.5,
-                borderColor: active ? '#3A1B0F' : '#DDD',
-                backgroundColor: active ? '#E6531E' : '#FFFFFF',
+                borderColor: active ? '#101114' : '#DDD',
+                backgroundColor: active ? '#123C96' : '#FFFFFF',
               }}
             >
-              <Text style={{ fontSize: 14, fontWeight: '600', color: active ? '#fff' : '#8B7A6D' }}>
+              <Text style={{ fontSize: 14, fontWeight: '600', color: active ? '#fff' : '#70757E' }}>
                 {tag}
               </Text>
             </TouchableOpacity>

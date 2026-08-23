@@ -52,12 +52,12 @@ export function AnalysisOverlay({ visible, mode }: { visible: boolean; mode: 'ha
         gap: 28,
       }}
     >
-      <ActivityIndicator size="large" color="#3A1B0F" />
+      <ActivityIndicator size="large" color="#101114" />
       <Animated.Text
         style={{
           opacity: fadeAnim,
           fontSize: 16,
-          color: '#3A1B0F',
+          color: '#101114',
           fontWeight: '600',
           textAlign: 'center',
         }}

@@ -91,7 +91,7 @@ export function CardScanSection({ onAnalyzed }: Props) {
   return (
     <View className="gap-2 p-3 rounded-xl bg-coffee-cream border border-coffee-border">
       <View className="flex-row items-center gap-1.5">
-        <Ionicons name="scan-outline" size={15} color="#8B5E3C" />
+        <Ionicons name="scan-outline" size={15} color="#123C96" />
         <Text className="text-[13px] font-semibold text-coffee">원두 카드 스캔</Text>
         <Text className="text-[11px] text-gray-400">(선택 · 최대 2장)</Text>
       </View>
@@ -134,8 +134,8 @@ export function CardScanSection({ onAnalyzed }: Props) {
               gap: 4,
             }}
           >
-            <ActivityIndicator size="small" color="#8B5E3C" />
-            <Text style={{ fontSize: 10, color: '#8B7A6D' }}>크롭 중</Text>
+            <ActivityIndicator size="small" color="#123C96" />
+            <Text style={{ fontSize: 10, color: '#70757E' }}>크롭 중</Text>
           </View>
         )}
 
@@ -147,18 +147,18 @@ export function CardScanSection({ onAnalyzed }: Props) {
               width: 80,
               height: 106,
               borderRadius: 8,
-              backgroundColor: '#F5F0EB',
+              backgroundColor: '#F4F5F7',
               alignItems: 'center',
               justifyContent: 'center',
               gap: 4,
               borderWidth: 1.5,
-              borderColor: '#D6C4B0',
+              borderColor: '#D8DADE',
               borderStyle: 'dashed',
               opacity: isBusy ? 0.4 : 1,
             }}
           >
-            <Ionicons name="add" size={22} color="#8B5E3C" />
-            <Text style={{ fontSize: 11, color: '#8B5E3C', fontWeight: '600' }}>
+            <Ionicons name="add" size={22} color="#123C96" />
+            <Text style={{ fontSize: 11, color: '#123C96', fontWeight: '600' }}>
               {cards.length === 0 ? '앞면' : '뒷면'}
             </Text>
           </TouchableOpacity>
@@ -167,7 +167,7 @@ export function CardScanSection({ onAnalyzed }: Props) {
 
       {analyzing && (
         <View className="flex-row items-center justify-center gap-2 py-1">
-          <ActivityIndicator size="small" color="#8B5E3C" />
+          <ActivityIndicator size="small" color="#123C96" />
           <Text className="text-[12px] text-coffee">Gemini 분석 중...</Text>
         </View>
       )}
