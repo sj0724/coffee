@@ -6,7 +6,9 @@ export interface CafeLog {
   cafe_name: string;
   visited_at: string;
   photos?: string; // JSON array of cafe/menu photo URIs
+  photo_aspect_ratios?: string; // JSON array matching photos
   note_photos?: string; // JSON array of note card photo URIs
+  note_photo_aspect_ratios?: string; // JSON array matching note_photos
   address?: string;
   memo?: string;
   is_favorite?: number;

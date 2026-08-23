@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -11,6 +10,7 @@ import Animated, {
   SharedValue,
 } from 'react-native-reanimated';
 import { CafeLog } from '@/src/types';
+import { parseAspectRatios } from '@/src/services/imageAspectRatios';
 
 import DEFAULT_CARD from '@/assets/default-card.jpg';
 
@@ -82,6 +82,26 @@ function getFirstPhotoUri(item: CafeLog): string | undefined {
       if (firstPhoto) return firstPhoto;
     } catch {
       // Ignore malformed photo data and try the next source.
+    }
+  }
+  return undefined;
+}
+
+function getFirstPhotoAspectRatio(item: CafeLog): number | undefined {
+  const sources = [
+    [item.photos, item.photo_aspect_ratios],
+    [item.note_photos, item.note_photo_aspect_ratios],
+  ] as const;
+  for (const [urisJson, ratiosJson] of sources) {
+    if (!urisJson) continue;
+    try {
+      const uris = JSON.parse(urisJson) as string[];
+      if (uris[0]) {
+        const ratio = parseAspectRatios(ratiosJson)[0];
+        return ratio > 0 ? ratio : undefined;
+      }
+    } catch {
+      // Ignore malformed metadata and try the next photo source.
     }
   }
   return undefined;
@@ -167,7 +187,7 @@ export function CafeCard({
   defaultImageHeight: number;
 }) {
   const router = useRouter();
-  const [imgRatio, setImgRatio] = useState<number | null>(null);
+  const imgRatio = getFirstPhotoAspectRatio(item);
   const noteColors = parseNoteColors(item.first_my_notes);
   const firstPhotoUri = getFirstPhotoUri(item);
   const hasPhoto = !!firstPhotoUri;
@@ -220,7 +240,6 @@ export function CafeCard({
                 source={{ uri: firstPhotoUri! }}
                 style={{ width: '100%', flex: 1 }}
                 contentFit="cover"
-                onLoad={(e) => setImgRatio(e.source.width / e.source.height)}
                 transition={150}
               />
               <LinearGradient
@@ -316,15 +335,9 @@ export function CafeCard({
 export const GRID_GAP = 10;
 export const GRID_PADDING = 16;
 
-export function CafeGridCard({
-  item,
-  onAspectRatio,
-}: {
-  item: CafeLog;
-  onAspectRatio?: (itemId: number, ratio: number) => void;
-}) {
+export function CafeGridCard({ item }: { item: CafeLog }) {
   const router = useRouter();
-  const [imgRatio, setImgRatio] = useState(3 / 4);
+  const imgRatio = getFirstPhotoAspectRatio(item) ?? 3 / 4;
   const noteColors = parseNoteColors(item.first_my_notes);
   const firstPhotoUri = getFirstPhotoUri(item);
 
@@ -361,14 +374,6 @@ export function CafeGridCard({
               source={{ uri: firstPhotoUri }}
               style={{ width: '100%', height: '100%' }}
               contentFit="cover"
-              onLoad={(event) => {
-                const { width, height } = event.source;
-                if (width > 0 && height > 0) {
-                  const ratio = width / height;
-                  setImgRatio(ratio);
-                  if (item.id != null) onAspectRatio?.(item.id, ratio);
-                }
-              }}
               transition={150}
             />
             <LinearGradient
@@ -442,7 +447,6 @@ export function CafeGridCard({
 export function splitIntoMasonryColumns(
   items: CafeLog[],
   cardWidth: number,
-  imageRatios: ReadonlyMap<number, number> = new Map(),
 ): [CafeLog[], CafeLog[]] {
   const noPhotoH = cardWidth * (3 / 4) + 72; // 4:3 thumbnail + text
   const left: CafeLog[] = [];
@@ -451,7 +455,7 @@ export function splitIntoMasonryColumns(
     rh = 0;
   for (const item of items) {
     const hasPhoto = !!getFirstPhotoUri(item);
-    const imageRatio = item.id == null ? undefined : imageRatios.get(item.id);
+    const imageRatio = getFirstPhotoAspectRatio(item);
     const h = hasPhoto ? cardWidth / (imageRatio ?? 3 / 4) : noPhotoH;
     if (lh <= rh) {
       left.push(item);

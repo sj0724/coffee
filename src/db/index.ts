@@ -27,5 +27,16 @@ export async function getDB(): Promise<SQLite.SQLiteDatabase> {
     await db.execAsync(`PRAGMA user_version = ${DB_VERSION};`);
   }
 
+  // DB 버전을 올리면 기존 데이터를 초기화하는 앱의 레거시 정책과 분리해,
+  // 이미지 메타데이터 컬럼은 기존 기록을 보존하는 additive migration으로 추가한다.
+  const cafeLogColumns = await db.getAllAsync<{ name: string }>('PRAGMA table_info(cafe_logs)');
+  const cafeLogColumnNames = new Set(cafeLogColumns.map((column) => column.name));
+  if (!cafeLogColumnNames.has('photo_aspect_ratios')) {
+    await db.execAsync('ALTER TABLE cafe_logs ADD COLUMN photo_aspect_ratios TEXT;');
+  }
+  if (!cafeLogColumnNames.has('note_photo_aspect_ratios')) {
+    await db.execAsync('ALTER TABLE cafe_logs ADD COLUMN note_photo_aspect_ratios TEXT;');
+  }
+
   return db;
 }

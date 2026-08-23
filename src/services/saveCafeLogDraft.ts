@@ -2,16 +2,24 @@ import { createCafeLog } from '@/src/db/queries/cafeLogs';
 import { createMenuItem } from '@/src/db/queries/cafeMenuItems';
 import { upsertTastingNote } from '@/src/db/queries/tastingNotes';
 import type { CafeLogDraft } from '@/src/store/cafeLogDraftStore';
+import { measureImageAspectRatios } from '@/src/services/imageAspectRatios';
 
 export const saveCafeLogDraft = async (draft: CafeLogDraft): Promise<number | null> => {
   if (!draft.selectedPlace) return null;
 
   const photos = draft.cafePhotos;
+  const [photoAspectRatios, notePhotoAspectRatios] = await Promise.all([
+    measureImageAspectRatios(photos),
+    measureImageAspectRatios(draft.notePhotos),
+  ]);
   const logId = await createCafeLog({
     cafe_name: draft.selectedPlace.name,
     visited_at: draft.visitedAt,
     photos: photos.length > 0 ? JSON.stringify(photos) : undefined,
+    photo_aspect_ratios: photos.length > 0 ? JSON.stringify(photoAspectRatios) : undefined,
     note_photos: draft.notePhotos.length > 0 ? JSON.stringify(draft.notePhotos) : undefined,
+    note_photo_aspect_ratios:
+      draft.notePhotos.length > 0 ? JSON.stringify(notePhotoAspectRatios) : undefined,
     address: draft.selectedPlace.address || undefined,
     memo: draft.memo.trim() || undefined,
   });

@@ -45,14 +45,40 @@ export async function createCafeLog(
   try {
     const db = await getDB();
     const result = await db.runAsync(
-      `INSERT INTO cafe_logs (cafe_name, visited_at, photos, note_photos, address, memo) VALUES (?, ?, ?, ?, ?, ?)`,
-      [log.cafe_name, log.visited_at, log.photos ?? null, log.note_photos ?? null, log.address ?? null, log.memo ?? null],
+      `INSERT INTO cafe_logs (
+        cafe_name, visited_at, photos, photo_aspect_ratios,
+        note_photos, note_photo_aspect_ratios, address, memo
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        log.cafe_name,
+        log.visited_at,
+        log.photos ?? null,
+        log.photo_aspect_ratios ?? null,
+        log.note_photos ?? null,
+        log.note_photo_aspect_ratios ?? null,
+        log.address ?? null,
+        log.memo ?? null,
+      ],
     );
     return result.lastInsertRowId;
   } catch (e) {
     console.error('createCafeLog error:', e);
     return null;
   }
+}
+
+export async function updateCafeLogImageRatios(
+  id: number,
+  photoAspectRatios?: string,
+  notePhotoAspectRatios?: string,
+): Promise<void> {
+  const db = await getDB();
+  await db.runAsync(
+    `UPDATE cafe_logs
+     SET photo_aspect_ratios = ?, note_photo_aspect_ratios = ?
+     WHERE id = ?`,
+    [photoAspectRatios ?? null, notePhotoAspectRatios ?? null, id],
+  );
 }
 
 export async function setFavorite(id: number, value: 0 | 1): Promise<boolean> {

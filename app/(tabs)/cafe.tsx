@@ -20,6 +20,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { getCafeLogs } from '@/src/db/queries/cafeLogs';
 import { CafeLog } from '@/src/types';
+import { hydrateCafeLogsImageRatios } from '@/src/services/imageAspectRatios';
 import {
   AnimatedFlatList,
   CafeCard,
@@ -40,8 +41,7 @@ export default function CafeScreen() {
   const [viewTransitioning, setViewTransitioning] = useState(false);
   const [listHeight, setListHeight] = useState(0);
   const [activeCoverIndex, setActiveCoverIndex] = useState(0);
-  const [gridImageRatios, setGridImageRatios] = useState<Map<number, number>>(() => new Map());
-  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  const { width: screenWidth } = useWindowDimensions();
   const router = useRouter();
 
   const cardWidth = screenWidth - CAROUSEL_INSET * 2;
@@ -88,18 +88,9 @@ export default function CafeScreen() {
   }, [logs, favOnly, activeTags]);
 
   const gridColumns = useMemo(() => {
-    const [left, right] = splitIntoMasonryColumns(filteredLogs, gridCardWidth, gridImageRatios);
+    const [left, right] = splitIntoMasonryColumns(filteredLogs, gridCardWidth);
     return { key: 'all-cafes', left, right };
-  }, [filteredLogs, gridCardWidth, gridImageRatios]);
-
-  const rememberGridImageRatio = useCallback((itemId: number, ratio: number) => {
-    setGridImageRatios((current) => {
-      if (current.get(itemId) === ratio) return current;
-      const next = new Map(current);
-      next.set(itemId, ratio);
-      return next;
-    });
-  }, []);
+  }, [filteredLogs, gridCardWidth]);
 
   function toggleTag(tag: string) {
     setActiveTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]));
@@ -140,8 +131,9 @@ export default function CafeScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      getCafeLogs().then((data) => {
-        setLogs(data);
+      getCafeLogs().then(async (data) => {
+        const hydratedData = await hydrateCafeLogsImageRatios(data);
+        setLogs(hydratedData);
         if (!initialScrollDone.current && data.length > 0) {
           initialScrollDone.current = true;
           scrollX.value = 0;
@@ -168,7 +160,7 @@ export default function CafeScreen() {
   }, [activeTags, favOnly, viewMode]);
 
   const showFilterBar = logs.length > 0;
-  const cardAreaHeight = listHeight > 100 ? listHeight : screenHeight;
+  const cardAreaHeight = listHeight;
   const defaultCardHeight = cardAreaHeight * 0.72;
   const defaultImageHeight = defaultCardHeight * 0.62;
 
@@ -229,7 +221,9 @@ export default function CafeScreen() {
               color={favOnly ? '#101114' : '#70757E'}
             />
 
-            <Text style={{ fontSize: 13, fontWeight: '700', color: favOnly ? '#101114' : '#5F636B' }}>
+            <Text
+              style={{ fontSize: 13, fontWeight: '700', color: favOnly ? '#101114' : '#5F636B' }}
+            >
               즐겨찾기
             </Text>
           </TouchableOpacity>
@@ -281,20 +275,12 @@ export default function CafeScreen() {
                   <View style={{ flexDirection: 'row', gap: GRID_GAP }}>
                     <View style={{ flex: 1, gap: GRID_GAP }}>
                       {group.left.map((item) => (
-                        <CafeGridCard
-                          key={item.id}
-                          item={item}
-                          onAspectRatio={rememberGridImageRatio}
-                        />
+                        <CafeGridCard key={item.id} item={item} />
                       ))}
                     </View>
                     <View style={{ flex: 1, gap: GRID_GAP }}>
                       {group.right.map((item) => (
-                        <CafeGridCard
-                          key={item.id}
-                          item={item}
-                          onAspectRatio={rememberGridImageRatio}
-                        />
+                        <CafeGridCard key={item.id} item={item} />
                       ))}
                     </View>
                   </View>
@@ -353,18 +339,20 @@ export default function CafeScreen() {
                   </Text>
                 </View>
               }
-              renderItem={({ item, index }) => (
-                <CafeCard
-                  item={item as CafeLog}
-                  index={index}
-                  scrollX={scrollX}
-                  cardWidth={cardWidth}
-                  itemStep={itemStep}
-                  screenHeight={cardAreaHeight}
-                  defaultCardHeight={defaultCardHeight}
-                  defaultImageHeight={defaultImageHeight}
-                />
-              )}
+              renderItem={({ item, index }) =>
+                listHeight > 100 ? (
+                  <CafeCard
+                    item={item as CafeLog}
+                    index={index}
+                    scrollX={scrollX}
+                    cardWidth={cardWidth}
+                    itemStep={itemStep}
+                    screenHeight={cardAreaHeight}
+                    defaultCardHeight={defaultCardHeight}
+                    defaultImageHeight={defaultImageHeight}
+                  />
+                ) : null
+              }
             />
           </View>
         )}

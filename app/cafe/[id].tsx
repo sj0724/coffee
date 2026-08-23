@@ -27,6 +27,7 @@ import { NoteView } from '@/src/components/cafe/NoteView';
 import { EspressoNoteView } from '@/src/components/cafe/EspressoNoteView';
 import { FlipCard } from '@/src/components/cafe/FlipCard';
 import { getMenuCategory } from '@/src/components/cafe/menuCategory';
+import { hydrateCafeLogImageRatios, parseAspectRatios } from '@/src/services/imageAspectRatios';
 
 function MenuActionDropdown({ onEdit, onDelete }: { onEdit?: () => void; onDelete: () => void }) {
   const anchorRef = useRef<View>(null);
@@ -103,7 +104,6 @@ export default function CafeDetailScreen() {
   const [espressoNotesMap, setEspressoNotesMap] = useState<Record<number, EspressoNote>>({});
   const [activeCafePhoto, setActiveCafePhoto] = useState(0);
   const [noteCardOpen, setNoteCardOpen] = useState(false);
-  const [cafePhotoAspectRatio, setCafePhotoAspectRatio] = useState(1);
 
   useFocusEffect(
     useCallback(() => {
@@ -114,25 +114,7 @@ export default function CafeDetailScreen() {
   async function loadAll() {
     const logId = Number(id);
     const [l, items] = await Promise.all([getCafeLog(logId), getMenuItems(logId)]);
-
-    if (l?.photos) {
-      try {
-        const photos = JSON.parse(l.photos) as string[];
-        if (photos[0]) {
-          const image = await Image.loadAsync(photos[0]);
-          if (image.width > 0 && image.height > 0) {
-            setCafePhotoAspectRatio(image.width / image.height);
-          }
-        }
-      } catch {
-        setCafePhotoAspectRatio(1);
-      }
-    } else {
-      setCafePhotoAspectRatio(1);
-    }
-
-    setLog(l);
-    setMenuItems(items);
+    const hydratedLog = l ? await hydrateCafeLogImageRatios(l) : null;
 
     const handripMap: Record<number, HanddripNote> = {};
     const espressoMap: Record<number, EspressoNote> = {};
@@ -156,6 +138,8 @@ export default function CafeDetailScreen() {
 
     setHandripNotesMap(handripMap);
     setEspressoNotesMap(espressoMap);
+    setMenuItems(items);
+    setLog(hydratedLog);
   }
 
   async function handleToggleFavorite() {
@@ -231,6 +215,8 @@ export default function CafeDetailScreen() {
       return [];
     }
   })();
+  const cafePhotoAspectRatio = parseAspectRatios(log.photo_aspect_ratios)[0] || 1;
+  const notePhotoAspectRatio = parseAspectRatios(log.note_photo_aspect_ratios)[0] || 1 / 1.4;
   const photoW = screenWidth - 40;
   const headerOnPhoto = cafePhotoUris.length > 0;
   const headerColor = '#1D1D1B';
@@ -298,6 +284,7 @@ export default function CafeDetailScreen() {
               frontUri={notePhotoUris[0]}
               backUri={notePhotoUris[1] ?? null}
               width={photoW * 0.72}
+              aspectRatio={notePhotoAspectRatio}
             />
           </View>
         )}
@@ -690,6 +677,7 @@ export default function CafeDetailScreen() {
               frontUri={notePhotoUris[0]}
               backUri={notePhotoUris[1] ?? null}
               width={screenWidth - 40}
+              aspectRatio={notePhotoAspectRatio}
             />
           )}
           {notePhotoUris.length > 1 && (

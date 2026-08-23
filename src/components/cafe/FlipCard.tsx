@@ -7,13 +7,15 @@ export function FlipCard({
   frontUri,
   backUri,
   width,
+  aspectRatio,
 }: {
   frontUri: string;
   backUri: string | null;
   width: number;
+  aspectRatio: number;
 }) {
   const [flipped, setFlipped] = useState(false);
-  const [frontH, setFrontH] = useState(width * 1.4);
+  const frontH = width / aspectRatio;
   const anim = useRef(new Animated.Value(0)).current;
 
   function flip() {
@@ -45,10 +47,6 @@ export function FlipCard({
           source={{ uri: frontUri }}
           style={{ width, height: frontH, borderRadius: 14 }}
           contentFit="cover"
-          onLoad={(e) => {
-            const { width: w, height: h } = e.source;
-            if (w && h) setFrontH(width * (h / w));
-          }}
         />
       </Animated.View>
 
