@@ -19,53 +19,30 @@ const OPTIONS = [
 export function CafeLogTypePicker({ onSelect }: { onSelect: (type: 'handdip' | 'menu') => void }) {
   return (
     <ScrollView
-      style={{ flex: 1 }}
+      className="flex-1"
       contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 34, paddingBottom: 40 }}
     >
-      <Text style={{ fontSize: 26, fontWeight: '800', color: '#101114', letterSpacing: -0.5 }}>
+      <Text className="text-[26px] font-extrabold tracking-[-0.5px] text-coffee">
         무엇을 기록할까요?
       </Text>
-      <Text
-        style={{ marginTop: 8, marginBottom: 28, fontSize: 15, lineHeight: 22, color: '#70757E' }}
-      >
+      <Text className="mb-7 mt-2 text-[15px] leading-[22px] text-coffee-soft">
         기록할 종류를 먼저 선택하면 필요한 항목만 보여드릴게요.
       </Text>
 
-      <View style={{ gap: 14 }}>
+      <View className="gap-3.5">
         {OPTIONS.map((option) => (
           <TouchableOpacity
             key={option.type}
             onPress={() => onSelect(option.type)}
             activeOpacity={0.75}
-            style={{
-              minHeight: 142,
-              padding: 20,
-              borderRadius: 20,
-              borderWidth: 1,
-              borderColor: '#D8DADE',
-              backgroundColor: '#F8F9FA',
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 16,
-            }}
+            className="min-h-[142px] flex-row items-center gap-4 rounded-[20px] border border-coffee-border bg-[#F8F9FA] p-5"
           >
-            <View
-              style={{
-                width: 52,
-                height: 52,
-                borderRadius: 17,
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: '#ECEDEF',
-              }}
-            >
+            <View className="h-[52px] w-[52px] items-center justify-center rounded-[17px] bg-coffee-separator">
               <Ionicons name={option.icon} size={25} color="#3F4248" />
             </View>
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 19, fontWeight: '800', color: '#101114' }}>
-                {option.title}
-              </Text>
-              <Text style={{ marginTop: 7, fontSize: 14, lineHeight: 21, color: '#5F636B' }}>
+            <View className="flex-1">
+              <Text className="text-[19px] font-extrabold text-coffee">{option.title}</Text>
+              <Text className="mt-[7px] text-sm leading-[21px] text-coffee-tan">
                 {option.description}
               </Text>
             </View>

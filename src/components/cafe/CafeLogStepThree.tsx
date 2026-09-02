@@ -68,27 +68,16 @@ export function Step3({
   const onOfficialNotes = (value: string[]) => setField('officialNotes', value);
   const onBeans = (value: typeof beans) => setField('beans', value);
   return (
-    <View style={{ gap: 20 }}>
+    <View className="gap-5">
       {/* 분석 상태 배너 */}
       {analyzed && !analyzing && onReanalyze && (
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: 12,
-            backgroundColor: '#F1F2F4',
-            borderRadius: 12,
-          }}
-        >
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+        <View className="flex-row items-center justify-between rounded-xl bg-[#F1F2F4] p-3">
+          <View className="flex-row items-center gap-1.5">
             <Ionicons name="sparkles-outline" size={15} color="#5F636B" />
-            <Text style={{ fontSize: 13, color: '#5F636B', fontWeight: '500' }}>
-              자동 분석 완료
-            </Text>
+            <Text className="text-[13px] font-medium text-coffee-tan">자동 분석 완료</Text>
           </View>
           <TouchableOpacity onPress={onReanalyze}>
-            <Text style={{ fontSize: 12, color: '#5F636B', fontWeight: '600' }}>재분석</Text>
+            <Text className="text-xs font-semibold text-coffee-tan">재분석</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -109,50 +98,28 @@ export function Step3({
       {photoMode === 'handdip' && (
         <>
           <View>
-            <Text style={{ fontSize: 13, color: '#5F636B', marginBottom: 8 }}>원두 종류</Text>
-            <View
-              style={{
-                flexDirection: 'row',
-                borderRadius: 10,
-                borderWidth: 1,
-                borderColor: '#D8DADE',
-                overflow: 'hidden',
-              }}
-            >
+            <Text className="mb-2 text-[13px] text-coffee-tan">원두 종류</Text>
+            <View className="flex-row overflow-hidden rounded-[10px] border border-coffee-border">
               <TouchableOpacity
-                style={{
-                  flex: 1,
-                  paddingVertical: 10,
-                  alignItems: 'center',
-                  backgroundColor: isBlend === 0 ? '#123C96' : '#FFFFFF',
-                }}
+                className="flex-1 items-center py-2.5"
+                style={{ backgroundColor: isBlend === 0 ? '#123C96' : '#FFFFFF' }}
                 onPress={() => onIsBlend(0)}
               >
                 <Text
-                  style={{
-                    fontSize: 13,
-                    fontWeight: '600',
-                    color: isBlend === 0 ? '#fff' : '#8D929B',
-                  }}
+                  className="text-[13px] font-semibold"
+                  style={{ color: isBlend === 0 ? '#fff' : '#8D929B' }}
                 >
                   싱글 오리진
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={{
-                  flex: 1,
-                  paddingVertical: 10,
-                  alignItems: 'center',
-                  backgroundColor: isBlend === 1 ? '#123C96' : '#FFFFFF',
-                }}
+                className="flex-1 items-center py-2.5"
+                style={{ backgroundColor: isBlend === 1 ? '#123C96' : '#FFFFFF' }}
                 onPress={() => onIsBlend(1)}
               >
                 <Text
-                  style={{
-                    fontSize: 13,
-                    fontWeight: '600',
-                    color: isBlend === 1 ? '#fff' : '#8D929B',
-                  }}
+                  className="text-[13px] font-semibold"
+                  style={{ color: isBlend === 1 ? '#fff' : '#8D929B' }}
                 >
                   블랜드
                 </Text>
@@ -161,7 +128,7 @@ export function Step3({
           </View>
 
           {isBlend === 1 ? (
-            <View style={{ gap: 12 }}>
+            <View className="gap-3">
               {beans.map((bean, idx) => (
                 <BeanEditor
                   key={idx}
@@ -172,21 +139,14 @@ export function Step3({
                 />
               ))}
               <TouchableOpacity
-                style={{
-                  borderWidth: 1,
-                  borderStyle: 'dashed',
-                  borderColor: '#C0C0C0',
-                  borderRadius: 10,
-                  paddingVertical: 12,
-                  alignItems: 'center',
-                }}
+                className="items-center rounded-[10px] border border-dashed border-[#C0C0C0] py-3"
                 onPress={() => onBeans([...beans, {}])}
               >
-                <Text style={{ fontSize: 13, color: '#8D929B' }}>+ 원두 추가</Text>
+                <Text className="text-[13px] text-coffee-warm">+ 원두 추가</Text>
               </TouchableOpacity>
             </View>
           ) : (
-            <View style={{ gap: 14 }}>
+            <View className="gap-3.5">
               <NoteInput label="원산지" value={origin} onChange={onOrigin} />
               <NoteInput label="농장" value={farm} onChange={onFarm} />
               <NoteInput label="품종" value={variety} onChange={onVariety} />
@@ -261,40 +221,18 @@ function MenuPicker({
   const typeOptionWidth = Math.max(0, (typeSelectorWidth - 6) / 3);
 
   return (
-    <View
-      style={{
-        gap: 16,
-        padding: 16,
-        borderRadius: 16,
-        borderWidth: 1,
-        borderColor: '#E5E7EB',
-        backgroundColor: '#F8F9FA',
-      }}
-    >
+    <View className="gap-4 rounded-2xl border border-gray-200 bg-[#F8F9FA] p-4">
       <View>
-        <Text style={{ fontSize: 15, fontWeight: '700', color: '#101114', marginBottom: 10 }}>
-          메뉴 종류
-        </Text>
+        <Text className="mb-2.5 text-[15px] font-bold text-coffee">메뉴 종류</Text>
         <View
+          className="relative flex-row rounded-[11px] bg-coffee-separator p-[3px]"
           onLayout={(event) => setTypeSelectorWidth(event.nativeEvent.layout.width)}
-          style={{
-            position: 'relative',
-            flexDirection: 'row',
-            padding: 3,
-            borderRadius: 11,
-            backgroundColor: '#ECEDEF',
-          }}
         >
           {typeOptionWidth > 0 && (
             <Animated.View
+              className="absolute bottom-[3px] left-[3px] top-[3px] rounded-[9px] bg-white"
               style={{
-                position: 'absolute',
-                top: 3,
-                bottom: 3,
-                left: 3,
                 width: typeOptionWidth,
-                borderRadius: 9,
-                backgroundColor: '#FFFFFF',
                 shadowColor: '#000',
                 shadowOffset: { width: 0, height: 1 },
                 shadowOpacity: 0.08,
@@ -321,20 +259,11 @@ function MenuPicker({
                 key={option.label}
                 onPress={() => changeMenuType(option.value)}
                 activeOpacity={0.7}
-                style={{
-                  flex: 1,
-                  alignItems: 'center',
-                  paddingVertical: 9,
-                  borderRadius: 9,
-                  zIndex: 1,
-                }}
+                className="z-[1] flex-1 items-center rounded-[9px] py-[9px]"
               >
                 <Text
-                  style={{
-                    fontSize: 13,
-                    fontWeight: '700',
-                    color: selected ? '#101114' : '#8D929B',
-                  }}
+                  className="text-[13px] font-bold"
+                  style={{ color: selected ? '#101114' : '#8D929B' }}
                 >
                   {option.label}
                 </Text>
@@ -344,30 +273,24 @@ function MenuPicker({
         </View>
       </View>
 
-      <Animated.View style={{ gap: 9, opacity: presetOpacity }}>
-        <Text style={{ fontSize: 13, fontWeight: '600', color: '#5F636B' }}>빠른 선택</Text>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+      <Animated.View className="gap-[9px]" style={{ opacity: presetOpacity }}>
+        <Text className="text-[13px] font-semibold text-coffee-tan">빠른 선택</Text>
+        <View className="flex-row flex-wrap gap-2">
           {presets.map((preset) => {
             const selected = menuName.trim() === preset;
             return (
               <TouchableOpacity
                 key={preset}
                 onPress={() => onMenuName(preset)}
+                className="rounded-full border px-3 py-2"
                 style={{
-                  paddingHorizontal: 12,
-                  paddingVertical: 8,
-                  borderRadius: 999,
-                  borderWidth: 1,
                   borderColor: selected ? '#101114' : '#D8DADE',
                   backgroundColor: selected ? '#123C96' : '#FFFFFF',
                 }}
               >
                 <Text
-                  style={{
-                    fontSize: 13,
-                    fontWeight: '600',
-                    color: selected ? '#fff' : '#5F636B',
-                  }}
+                  className="text-[13px] font-semibold"
+                  style={{ color: selected ? '#fff' : '#5F636B' }}
                 >
                   {preset}
                 </Text>
@@ -396,13 +319,11 @@ function BeanEditor({
   onRemove: () => void;
 }) {
   return (
-    <View
-      style={{ borderWidth: 1, borderColor: '#D8DADE', borderRadius: 12, padding: 14, gap: 12 }}
-    >
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Text style={{ fontSize: 13, fontWeight: '600', color: '#5F636B' }}>원두 {index + 1}</Text>
+    <View className="gap-3 rounded-xl border border-coffee-border p-3.5">
+      <View className="flex-row items-center justify-between">
+        <Text className="text-[13px] font-semibold text-coffee-tan">원두 {index + 1}</Text>
         <TouchableOpacity onPress={onRemove}>
-          <Text style={{ fontSize: 13, color: '#E07070' }}>삭제</Text>
+          <Text className="text-[13px] text-[#E07070]">삭제</Text>
         </TouchableOpacity>
       </View>
       <NoteInput
@@ -422,17 +343,9 @@ function BeanEditor({
         onChange={(v) => onChange({ ...bean, process: v })}
       />
       <View>
-        <Text style={{ fontSize: 13, color: '#5F636B', marginBottom: 6 }}>비율 (%)</Text>
+        <Text className="mb-1.5 text-[13px] text-coffee-tan">비율 (%)</Text>
         <TextInput
-          style={{
-            borderWidth: 1,
-            borderColor: '#D8DADE',
-            borderRadius: 10,
-            padding: 10,
-            fontSize: 14,
-            color: '#101114',
-            backgroundColor: '#FFFFFF',
-          }}
+          className="rounded-[10px] border border-coffee-border bg-white p-2.5 text-sm text-coffee"
           keyboardType="numeric"
           value={bean.ratio != null ? String(bean.ratio) : ''}
           onChangeText={(v) => onChange({ ...bean, ratio: v ? Number(v) : undefined })}

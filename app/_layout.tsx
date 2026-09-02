@@ -28,7 +28,7 @@ export default function RootLayout() {
         headerTitleStyle: { fontWeight: '700' as const },
         headerLeft: ({ canGoBack }) =>
           canGoBack ? (
-            <TouchableOpacity onPress={navigation.goBack} style={{ padding: 4, marginLeft: -4 }}>
+            <TouchableOpacity onPress={navigation.goBack} className="-ml-1 p-1">
               <Ionicons name="chevron-back" size={26} color="#101114" />
             </TouchableOpacity>
           ) : null,

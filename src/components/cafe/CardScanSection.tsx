@@ -1,11 +1,5 @@
 import { useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  Alert,
-  ActivityIndicator,
-} from 'react-native';
+import { View, Text, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
@@ -98,22 +92,11 @@ export function CardScanSection({ onAnalyzed }: Props) {
 
       <View className="flex-row gap-2">
         {cards.map((uri, i) => (
-          <View key={i} style={{ position: 'relative' }}>
-            <Image
-              source={{ uri }}
-              style={{ width: 80, height: 106, borderRadius: 8 }}
-              contentFit="cover"
-            />
+          <View key={i} className="relative">
+            <Image source={{ uri }} className="h-[106px] w-20 rounded-lg" contentFit="cover" />
             {!isBusy && (
               <TouchableOpacity
-                style={{
-                  position: 'absolute',
-                  top: 4,
-                  right: 4,
-                  backgroundColor: 'rgba(0,0,0,0.5)',
-                  borderRadius: 10,
-                  padding: 1,
-                }}
+                className="absolute right-1 top-1 rounded-[10px] bg-black/50 p-px"
                 onPress={() => removeCard(i)}
               >
                 <Ionicons name="close" size={14} color="#fff" />
@@ -123,19 +106,9 @@ export function CardScanSection({ onAnalyzed }: Props) {
         ))}
 
         {scanning && (
-          <View
-            style={{
-              width: 80,
-              height: 106,
-              borderRadius: 8,
-              backgroundColor: '#EFEFEF',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 4,
-            }}
-          >
+          <View className="h-[106px] w-20 items-center justify-center gap-1 rounded-lg bg-[#EFEFEF]">
             <ActivityIndicator size="small" color="#123C96" />
-            <Text style={{ fontSize: 10, color: '#70757E' }}>크롭 중</Text>
+            <Text className="text-[10px] text-coffee-soft">크롭 중</Text>
           </View>
         )}
 
@@ -143,22 +116,11 @@ export function CardScanSection({ onAnalyzed }: Props) {
           <TouchableOpacity
             onPress={pickImage}
             disabled={isBusy}
-            style={{
-              width: 80,
-              height: 106,
-              borderRadius: 8,
-              backgroundColor: '#F4F5F7',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 4,
-              borderWidth: 1.5,
-              borderColor: '#D8DADE',
-              borderStyle: 'dashed',
-              opacity: isBusy ? 0.4 : 1,
-            }}
+            className="h-[106px] w-20 items-center justify-center gap-1 rounded-lg border-[1.5px] border-dashed border-coffee-border bg-[#F4F5F7]"
+            style={{ opacity: isBusy ? 0.4 : 1 }}
           >
             <Ionicons name="add" size={22} color="#123C96" />
-            <Text style={{ fontSize: 11, color: '#123C96', fontWeight: '600' }}>
+            <Text className="text-[11px] font-semibold text-accent">
               {cards.length === 0 ? '앞면' : '뒷면'}
             </Text>
           </TouchableOpacity>

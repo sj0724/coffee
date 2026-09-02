@@ -24,16 +24,16 @@ export function EspressoNoteForm({
             <TouchableOpacity
               key={tag}
               onPress={() => toggle(tag)}
+              className="rounded-full border-[1.5px] px-[18px] py-[9px]"
               style={{
-                paddingHorizontal: 18,
-                paddingVertical: 9,
-                borderRadius: 999,
-                borderWidth: 1.5,
                 borderColor: active ? '#101114' : '#DDD',
                 backgroundColor: active ? '#123C96' : '#FFFFFF',
               }}
             >
-              <Text style={{ fontSize: 14, fontWeight: '600', color: active ? '#fff' : '#70757E' }}>
+              <Text
+                className="text-sm font-semibold"
+                style={{ color: active ? '#fff' : '#70757E' }}
+              >
                 {tag}
               </Text>
             </TouchableOpacity>

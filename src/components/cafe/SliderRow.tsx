@@ -14,16 +14,17 @@ export function SliderRow({
 }) {
   const current = value ?? 0;
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-      <Text style={{ fontSize: 12, color: '#9CA3AF', width: 52 }}>{label}</Text>
-      <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
+    <View className="flex-row items-center gap-2.5">
+      <Text className="w-[52px] text-xs text-gray-400">{label}</Text>
+      <View className="flex-1 flex-row items-center">
         {[1, 2, 3, 4, 5].flatMap((n) => {
           const items = [];
           if (n > 1) {
             items.push(
               <View
                 key={`line-${n}`}
-                style={{ flex: 1, height: 2, backgroundColor: n <= current ? COFFEE : EMPTY }}
+                className="h-0.5 flex-1"
+                style={{ backgroundColor: n <= current ? COFFEE : EMPTY }}
               />,
             );
           }
@@ -31,21 +32,12 @@ export function SliderRow({
             <TouchableOpacity
               key={`dot-${n}`}
               onPress={() => onChange(n)}
-              style={{
-                width: 22,
-                height: 22,
-                borderRadius: 11,
-                backgroundColor: n <= current ? COFFEE : EMPTY,
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
+              className="h-[22px] w-[22px] items-center justify-center rounded-full"
+              style={{ backgroundColor: n <= current ? COFFEE : EMPTY }}
             >
               <Text
-                style={{
-                  fontSize: 11,
-                  color: n <= current ? '#fff' : '#9CA3AF',
-                  fontWeight: '600',
-                }}
+                className="text-[11px] font-semibold"
+                style={{ color: n <= current ? '#fff' : '#9CA3AF' }}
               >
                 {n}
               </Text>

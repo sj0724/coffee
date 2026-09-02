@@ -88,46 +88,24 @@ export function AddressSearchModal({ visible, onSelect, onClose }: Props) {
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={handleClose}>
       <KeyboardAvoidingView
-        style={{ flex: 1 }}
+        className="flex-1"
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <View style={{ flex: 1, paddingTop: insets.top, backgroundColor: '#FFFFFF' }}>
+        <View className="flex-1 bg-white" style={{ paddingTop: insets.top }}>
           {/* 헤더 */}
-          <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              paddingHorizontal: 16,
-              paddingVertical: 12,
-              borderBottomWidth: 1,
-              borderBottomColor: '#eee',
-            }}
-          >
-            <Text style={{ flex: 1, fontSize: 17, fontWeight: '600', color: '#101114' }}>
-              카페 검색
-            </Text>
+          <View className="flex-row items-center border-b border-[#eee] px-4 py-3">
+            <Text className="flex-1 text-[17px] font-semibold text-coffee">카페 검색</Text>
             <TouchableOpacity onPress={handleClose}>
               <Ionicons name="close" size={24} color="#5F636B" />
             </TouchableOpacity>
           </View>
 
           {/* 검색창 */}
-          <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              margin: 16,
-              paddingHorizontal: 14,
-              paddingVertical: 10,
-              backgroundColor: '#F1F2F4',
-              borderRadius: 12,
-              gap: 8,
-            }}
-          >
+          <View className="m-4 flex-row items-center gap-2 rounded-xl bg-[#F1F2F4] px-3.5 py-2.5">
             <Ionicons name="search" size={18} color="#101114" />
             <TextInput
               ref={inputRef}
-              style={{ flex: 1, fontSize: 15, color: '#101114' }}
+              className="flex-1 text-[15px] text-coffee"
               placeholder="카페 이름으로 검색..."
               placeholderTextColor="#8D929B"
               value={query}
@@ -151,22 +129,14 @@ export function AddressSearchModal({ visible, onSelect, onClose }: Props) {
 
           {/* 에러 */}
           {errorMsg ? (
-            <View
-              style={{
-                marginHorizontal: 16,
-                marginBottom: 8,
-                padding: 10,
-                backgroundColor: '#FFF0F0',
-                borderRadius: 8,
-              }}
-            >
-              <Text style={{ color: '#c00', fontSize: 13 }}>{errorMsg}</Text>
+            <View className="mx-4 mb-2 rounded-lg bg-[#FFF0F0] p-2.5">
+              <Text className="text-[13px] text-[#c00]">{errorMsg}</Text>
             </View>
           ) : null}
 
           {/* 결과 */}
           {loading ? (
-            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+            <View className="flex-1 items-center justify-center">
               <ActivityIndicator size="large" color="#101114" />
             </View>
           ) : (
@@ -177,38 +147,29 @@ export function AddressSearchModal({ visible, onSelect, onClose }: Props) {
               contentContainerStyle={{ paddingBottom: insets.bottom + 16 }}
               ListEmptyComponent={
                 searched ? (
-                  <View style={{ alignItems: 'center', paddingTop: 60 }}>
-                    <Text style={{ color: '#8D929B', fontSize: 15 }}>검색 결과가 없어요.</Text>
+                  <View className="items-center pt-[60px]">
+                    <Text className="text-[15px] text-coffee-warm">검색 결과가 없어요.</Text>
                   </View>
                 ) : (
-                  <View style={{ alignItems: 'center', paddingTop: 60 }}>
+                  <View className="items-center pt-[60px]">
                     <Ionicons name="cafe-outline" size={40} color="#D8DADE" />
-                    <Text style={{ color: '#8D929B', fontSize: 14, marginTop: 12 }}>
-                      카페 이름을 검색해보세요
-                    </Text>
+                    <Text className="mt-3 text-sm text-coffee-warm">카페 이름을 검색해보세요</Text>
                   </View>
                 )
               }
               renderItem={({ item }) => (
                 <TouchableOpacity
                   onPress={() => handleSelect(item)}
-                  style={{
-                    paddingHorizontal: 16,
-                    paddingVertical: 14,
-                    borderBottomWidth: 1,
-                    borderBottomColor: '#f0f0f0',
-                  }}
+                  className="border-b border-[#f0f0f0] px-4 py-3.5"
                 >
-                  <Text style={{ fontSize: 15, fontWeight: '600', color: '#101114' }}>
-                    {item.place_name}
-                  </Text>
+                  <Text className="text-[15px] font-semibold text-coffee">{item.place_name}</Text>
                   {item.road_address_name ? (
-                    <Text style={{ fontSize: 13, color: '#5F636B', marginTop: 3 }}>
+                    <Text className="mt-[3px] text-[13px] text-coffee-tan">
                       {item.road_address_name}
                     </Text>
                   ) : null}
                   {item.category_name ? (
-                    <Text style={{ fontSize: 12, color: '#8D929B', marginTop: 2 }} numberOfLines={1}>
+                    <Text className="mt-0.5 text-xs text-coffee-warm" numberOfLines={1}>
                       {item.category_name}
                     </Text>
                   ) : null}

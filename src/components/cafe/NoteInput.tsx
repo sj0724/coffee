@@ -28,8 +28,8 @@ export function NoteInput({
 
   return (
     <Animated.View
+      className="h-14"
       style={{
-        height: 56,
         borderBottomWidth: focused ? 1.5 : 1,
         borderBottomColor: focused ? '#123C96' : '#D8DADE',
       }}
@@ -48,14 +48,7 @@ export function NoteInput({
         {required ? ' *' : ''}
       </Animated.Text>
       <TextInput
-        style={{
-          flex: 1,
-          paddingTop: 19,
-          paddingBottom: 3,
-          paddingHorizontal: 0,
-          fontSize: 15,
-          color: '#101114',
-        }}
+        className="flex-1 px-0 pb-[3px] pt-[19px] text-[15px] text-coffee"
         value={value ?? ''}
         onChangeText={onChange}
         onFocus={() => setFocused(true)}

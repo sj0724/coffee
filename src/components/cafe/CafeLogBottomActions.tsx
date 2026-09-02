@@ -61,42 +61,27 @@ export function CafeLogBottomActions({
   const disabled = saving || !selectedPlace;
 
   return (
-    <View
-      style={{
-        paddingHorizontal: 20,
-        paddingBottom: insets.bottom + 16,
-        paddingTop: 12,
-        backgroundColor: '#FFFFFF',
-      }}
-    >
+    <View className="bg-white px-5 pt-3" style={{ paddingBottom: insets.bottom + 16 }}>
       {step < TOTAL_STEPS ? (
         <TouchableOpacity
           onPress={handleNext}
           disabled={nextDisabled}
-          style={{
-            backgroundColor: nextDisabled ? '#C0C0C0' : '#101114',
-            borderRadius: 14,
-            paddingVertical: 15,
-            alignItems: 'center',
-          }}
+          className="items-center rounded-[14px] py-[15px]"
+          style={{ backgroundColor: nextDisabled ? '#C0C0C0' : '#101114' }}
         >
-          <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>다음</Text>
+          <Text className="text-base font-bold text-white">다음</Text>
         </TouchableOpacity>
       ) : (
         <TouchableOpacity
           onPress={handleSave}
           disabled={disabled}
-          style={{
-            backgroundColor: disabled ? '#C0C0C0' : '#101114',
-            borderRadius: 14,
-            paddingVertical: 15,
-            alignItems: 'center',
-          }}
+          className="items-center rounded-[14px] py-[15px]"
+          style={{ backgroundColor: disabled ? '#C0C0C0' : '#101114' }}
         >
           {saving ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>등록 완료</Text>
+            <Text className="text-base font-bold text-white">등록 완료</Text>
           )}
         </TouchableOpacity>
       )}

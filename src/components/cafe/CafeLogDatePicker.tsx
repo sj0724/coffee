@@ -24,42 +24,20 @@ export function CafeLogDatePicker() {
     <>
       <TouchableOpacity
         onPress={() => setVisible(true)}
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: 14,
-          backgroundColor: '#FFFFFF',
-          borderRadius: 12,
-          borderWidth: 1,
-          borderColor: '#D8DADE',
-        }}
+        className="flex-row items-center justify-between rounded-xl border border-coffee-border bg-white p-3.5"
       >
-        <Text style={{ fontSize: 15, color: '#101114' }}>{visitedAt}</Text>
+        <Text className="text-[15px] text-coffee">{visitedAt}</Text>
         <Ionicons name="calendar-outline" size={18} color="#8D929B" />
       </TouchableOpacity>
 
       {Platform.OS === 'ios' && (
         <Modal transparent animationType="fade" visible={visible}>
           <TouchableOpacity
-            style={{
-              flex: 1,
-              backgroundColor: 'rgba(0,0,0,0.4)',
-              justifyContent: 'center',
-              alignItems: 'center',
-            }}
+            className="flex-1 items-center justify-center bg-black/40"
             activeOpacity={1}
             onPress={() => setVisible(false)}
           >
-            <View
-              style={{
-                backgroundColor: '#FFFFFF',
-                borderRadius: 20,
-                padding: 16,
-                width: '90%',
-                alignItems: 'center',
-              }}
-            >
+            <View className="w-[90%] items-center rounded-[20px] bg-white p-4">
               <DateTimePicker
                 value={date}
                 mode="date"
@@ -71,16 +49,10 @@ export function CafeLogDatePicker() {
                 style={{ width: '100%' }}
               />
               <TouchableOpacity
-                style={{
-                  marginTop: 8,
-                  backgroundColor: '#123C96',
-                  borderRadius: 10,
-                  paddingVertical: 10,
-                  paddingHorizontal: 32,
-                }}
+                className="mt-2 rounded-[10px] bg-accent px-8 py-2.5"
                 onPress={() => setVisible(false)}
               >
-                <Text style={{ color: '#fff', fontSize: 15, fontWeight: '600' }}>확인</Text>
+                <Text className="text-[15px] font-semibold text-white">확인</Text>
               </TouchableOpacity>
             </View>
           </TouchableOpacity>

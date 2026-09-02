@@ -39,28 +39,11 @@ export function AnalysisOverlay({ visible, mode }: { visible: boolean; mode: 'ha
   if (!visible) return null;
 
   return (
-    <View
-      style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(255, 255, 255, 0.97)',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 28,
-      }}
-    >
+    <View className="absolute inset-0 items-center justify-center gap-7 bg-white/[0.97]">
       <ActivityIndicator size="large" color="#101114" />
       <Animated.Text
-        style={{
-          opacity: fadeAnim,
-          fontSize: 16,
-          color: '#101114',
-          fontWeight: '600',
-          textAlign: 'center',
-        }}
+        className="text-center text-base font-semibold text-coffee"
+        style={{ opacity: fadeAnim }}
       >
         {messages[msgIdx]}
       </Animated.Text>

@@ -17,85 +17,36 @@ export function AiAnalysisConsentModal({ visible, onAgree, onSkip, onViewPrivacy
       onRequestClose={onSkip}
       statusBarTranslucent
     >
-      <View
-        style={{
-          flex: 1,
-          justifyContent: 'center',
-          paddingHorizontal: 24,
-          backgroundColor: 'rgba(0, 0, 0, 0.45)',
-        }}
-      >
-        <View style={{ borderRadius: 22, backgroundColor: '#FFFFFF', padding: 22 }}>
-          <View
-            style={{
-              width: 44,
-              height: 44,
-              borderRadius: 22,
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: '#FFF9C9',
-              marginBottom: 16,
-            }}
-          >
+      <View className="flex-1 justify-center bg-black/45 px-6">
+        <View className="rounded-[22px] bg-white p-[22px]">
+          <View className="mb-4 h-11 w-11 items-center justify-center rounded-full bg-accent-yellow-soft">
             <Ionicons name="sparkles-outline" size={22} color="#101114" />
           </View>
 
-          <Text style={{ color: '#101114', fontSize: 19, fontWeight: '700' }}>
-            AI로 사진을 분석할까요?
-          </Text>
-          <Text
-            style={{
-              color: '#5F636B',
-              fontSize: 14,
-              lineHeight: 21,
-              marginTop: 10,
-            }}
-          >
+          <Text className="text-[19px] font-bold text-coffee">AI로 사진을 분석할까요?</Text>
+          <Text className="mt-2.5 text-sm leading-[21px] text-coffee-tan">
             선택한 원두 카드 사진이 정보 추출을 위해 Cloudflare를 거쳐 Google Gemini로 전송됩니다.
             사진은 분석 결과를 만드는 용도로만 사용됩니다.
           </Text>
 
-          <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'flex-start',
-              gap: 8,
-              borderRadius: 12,
-              backgroundColor: '#F4F5F7',
-              padding: 12,
-              marginTop: 16,
-            }}
-          >
+          <View className="mt-4 flex-row items-start gap-2 rounded-xl bg-[#F4F5F7] p-3">
             <Ionicons name="shield-checkmark-outline" size={17} color="#123C96" />
-            <Text style={{ flex: 1, color: '#5F636B', fontSize: 12, lineHeight: 18 }}>
+            <Text className="flex-1 text-xs leading-[18px] text-coffee-tan">
               동의하지 않아도 직접 입력하여 기록을 계속할 수 있습니다.
             </Text>
           </View>
 
           <TouchableOpacity
             onPress={onAgree}
-            style={{
-              alignItems: 'center',
-              borderRadius: 14,
-              backgroundColor: '#123C96',
-              paddingVertical: 15,
-              marginTop: 20,
-            }}
+            className="mt-5 items-center rounded-[14px] bg-accent py-[15px]"
           >
-            <Text style={{ color: '#FFFFFF', fontSize: 15, fontWeight: '700' }}>동의하고 분석</Text>
+            <Text className="text-[15px] font-bold text-white">동의하고 분석</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={onSkip} style={{ alignItems: 'center', paddingVertical: 14 }}>
-            <Text style={{ color: '#5F636B', fontSize: 14, fontWeight: '600' }}>
-              분석 없이 계속
-            </Text>
+          <TouchableOpacity onPress={onSkip} className="items-center py-3.5">
+            <Text className="text-sm font-semibold text-coffee-tan">분석 없이 계속</Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            onPress={onViewPrivacy}
-            style={{ alignItems: 'center', paddingVertical: 4 }}
-          >
-            <Text style={{ color: '#8D929B', fontSize: 12, textDecorationLine: 'underline' }}>
-              개인정보처리방침 보기
-            </Text>
+          <TouchableOpacity onPress={onViewPrivacy} className="items-center py-1">
+            <Text className="text-xs text-coffee-warm underline">개인정보처리방침 보기</Text>
           </TouchableOpacity>
         </View>
       </View>

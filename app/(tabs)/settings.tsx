@@ -25,19 +25,12 @@ function SettingRow({
     <TouchableOpacity
       onPress={onPress}
       activeOpacity={onPress ? 0.6 : 1}
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 16,
-        paddingHorizontal: 20,
-        backgroundColor: '#FFFFFF',
-        gap: 14,
-      }}
+      className="flex-row items-center gap-3.5 bg-white px-5 py-4"
     >
       <Ionicons name={icon} size={20} color="#5F636B" />
-      <Text style={{ flex: 1, fontSize: 15, color: '#101114' }}>{label}</Text>
+      <Text className="flex-1 text-[15px] text-coffee">{label}</Text>
       {value ? (
-        <Text style={{ fontSize: 14, color: '#8D929B' }}>{value}</Text>
+        <Text className="text-sm text-coffee-warm">{value}</Text>
       ) : onPress ? (
         <Ionicons name="chevron-forward" size={16} color="#D8DADE" />
       ) : null}
@@ -47,17 +40,7 @@ function SettingRow({
 
 function SectionHeader({ title }: { title: string }) {
   return (
-    <Text
-      style={{
-        fontSize: 12,
-        fontWeight: '600',
-        color: '#8D929B',
-        letterSpacing: 0.5,
-        paddingHorizontal: 20,
-        paddingTop: 28,
-        paddingBottom: 8,
-      }}
-    >
+    <Text className="px-5 pb-2 pt-7 text-xs font-semibold tracking-[0.5px] text-coffee-warm">
       {title}
     </Text>
   );
@@ -101,19 +84,19 @@ export default function SettingsScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
+    <SafeAreaView className="flex-1 bg-white">
       {/* 헤더 */}
-      <View style={{ paddingHorizontal: 20, paddingVertical: 16 }}>
-        <Text style={{ fontSize: 24, fontWeight: '700', color: '#101114' }}>설정</Text>
+      <View className="px-5 py-4">
+        <Text className="text-2xl font-bold text-coffee">설정</Text>
       </View>
 
       <SectionHeader title="앱 정보" />
-      <View style={{ marginHorizontal: 16, borderRadius: 12, overflow: 'hidden' }}>
+      <View className="mx-4 overflow-hidden rounded-xl">
         <SettingRow icon="information-circle-outline" label="버전" value={APP_VERSION} />
       </View>
 
       <SectionHeader title="지원" />
-      <View style={{ marginHorizontal: 16, borderRadius: 12, overflow: 'hidden' }}>
+      <View className="mx-4 overflow-hidden rounded-xl">
         <SettingRow
           icon="help-circle-outline"
           label="고객 지원"
@@ -123,7 +106,7 @@ export default function SettingsScreen() {
       </View>
 
       <SectionHeader title="약관 및 개인정보" />
-      <View style={{ marginHorizontal: 16, borderRadius: 12, overflow: 'hidden' }}>
+      <View className="mx-4 overflow-hidden rounded-xl">
         <SettingRow
           icon="shield-checkmark-outline"
           label="개인정보처리방침"
@@ -142,7 +125,7 @@ export default function SettingsScreen() {
         />
       </View>
 
-      <View style={{ height: 100 }} />
+      <View className="h-[100px]" />
     </SafeAreaView>
   );
 }

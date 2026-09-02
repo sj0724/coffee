@@ -22,13 +22,13 @@ export function Step4() {
   const showSliders = photoMode === 'handdip' || menuType === 'coffee';
 
   return (
-    <View style={{ gap: 20 }}>
+    <View className="gap-5">
       {photoMode === 'handdip' && (
         <MyNotesInput value={myNotes} onChange={(value) => setField('myNotes', value)} />
       )}
 
       {showSliders && (
-        <View style={{ gap: 4 }}>
+        <View className="gap-1">
           <SliderRow
             label="산미"
             value={acidity}
@@ -52,20 +52,11 @@ export function Step4() {
         </View>
       )}
 
-      <View style={{ gap: 8 }}>
-        <Text style={{ fontSize: 13, color: '#5F636B' }}>한 줄 감상</Text>
+      <View className="gap-2">
+        <Text className="text-[13px] text-coffee-tan">한 줄 감상</Text>
         <TextInput
-          style={{
-            backgroundColor: '#FFFFFF',
-            borderRadius: 12,
-            borderWidth: 1,
-            borderColor: '#D8DADE',
-            padding: 14,
-            fontSize: 15,
-            color: '#101114',
-            minHeight: 120,
-            textAlignVertical: 'top',
-          }}
+          className="min-h-[120px] rounded-xl border border-coffee-border bg-white p-3.5 text-[15px] text-coffee"
+          style={{ textAlignVertical: 'top' }}
           value={memo}
           onChangeText={(value) => setField('memo', value)}
           placeholder={

@@ -181,39 +181,20 @@ const NewCafeLogScreen = () => {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#FFFFFF', paddingTop: insets.top }}>
+    <View className="flex-1 bg-white" style={{ paddingTop: insets.top }}>
       {/* 헤더 */}
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          paddingHorizontal: 16,
-          paddingBottom: 12,
-        }}
-      >
-        <TouchableOpacity onPress={goBack} style={{ padding: 4, marginRight: 8 }}>
+      <View className="flex-row items-center px-4 pb-3">
+        <TouchableOpacity onPress={goBack} className="mr-2 p-1">
           <Ionicons name="chevron-back" size={24} color="#101114" />
         </TouchableOpacity>
-        <Text style={{ flex: 1, fontSize: 17, fontWeight: '700', color: '#101114' }}>
-          새 카페 기록
-        </Text>
+        <Text className="flex-1 text-[17px] font-bold text-coffee">새 카페 기록</Text>
       </View>
 
       {recordTypeSelected && (
-        <View
-          style={{
-            height: 3,
-            backgroundColor: '#E5E5E5',
-            marginHorizontal: 16,
-            borderRadius: 2,
-            marginVertical: 16,
-          }}
-        >
+        <View className="mx-4 my-4 h-[3px] rounded-sm bg-[#E5E5E5]">
           <Animated.View
+            className="h-[3px] rounded-sm bg-accent"
             style={{
-              height: 3,
-              backgroundColor: '#123C96',
-              borderRadius: 2,
               width: progressAnim.interpolate({
                 inputRange: [0, 1],
                 outputRange: ['0%', '100%'],
@@ -235,14 +216,14 @@ const NewCafeLogScreen = () => {
         ) : (
           <>
             <KeyboardAvoidingView
-              style={{ flex: 1 }}
+              className="flex-1"
               behavior={Platform.OS === 'ios' ? 'padding' : undefined}
               keyboardVerticalOffset={0}
             >
               {/* 스텝 컨텐츠 */}
               <ScrollView
                 key={step}
-                style={{ flex: 1 }}
+                className="flex-1"
                 contentContainerStyle={{ padding: 20, paddingBottom: 24, gap: 24 }}
                 keyboardShouldPersistTaps="handled"
               >

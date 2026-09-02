@@ -167,20 +167,14 @@ export default function CafeScreen() {
   return (
     <SafeAreaView className="flex-1 bg-coffee-light" edges={['top']}>
       {/* 헤더 */}
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          paddingHorizontal: 20,
-          paddingVertical: 12,
-        }}
-      >
-        <Text style={{ flex: 1, fontSize: 24, fontWeight: '800', color: '#101114' }}>카페</Text>
+      <View className="flex-row items-center px-5 py-3">
+        <Text className="flex-1 text-2xl font-extrabold text-coffee">카페</Text>
         <TouchableOpacity
           onPress={toggleViewMode}
           disabled={viewTransitioning}
           activeOpacity={0.6}
-          style={{ padding: 6, marginRight: 4, opacity: viewTransitioning ? 0.55 : 1 }}
+          className="mr-1 p-1.5"
+          style={{ opacity: viewTransitioning ? 0.55 : 1 }}
         >
           <Ionicons
             name={viewMode === 'coverflow' ? 'grid-outline' : 'albums-outline'}
@@ -188,7 +182,7 @@ export default function CafeScreen() {
             color="#101114"
           />
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => router.push('/cafe/new')} style={{ padding: 6 }}>
+        <TouchableOpacity onPress={() => router.push('/cafe/new')} className="p-1.5">
           <Ionicons name="add" size={26} color="#101114" />
         </TouchableOpacity>
       </View>
@@ -203,15 +197,9 @@ export default function CafeScreen() {
         >
           <TouchableOpacity
             onPress={() => setFavOnly((v) => !v)}
+            className="flex-row items-center gap-[5px] rounded-[20px] border px-3.5 py-[7px]"
             style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 5,
-              paddingHorizontal: 14,
-              paddingVertical: 7,
-              borderRadius: 20,
               backgroundColor: favOnly ? '#F2DF36' : '#FFFFFF',
-              borderWidth: 1,
               borderColor: favOnly ? '#F2DF36' : '#D8DADE',
             }}
           >
@@ -222,7 +210,8 @@ export default function CafeScreen() {
             />
 
             <Text
-              style={{ fontSize: 13, fontWeight: '700', color: favOnly ? '#101114' : '#5F636B' }}
+              className="text-[13px] font-bold"
+              style={{ color: favOnly ? '#101114' : '#5F636B' }}
             >
               즐겨찾기
             </Text>
@@ -235,17 +224,15 @@ export default function CafeScreen() {
               <TouchableOpacity
                 key={tag}
                 onPress={() => toggleTag(tag)}
+                className="rounded-[20px] border px-3.5 py-[7px]"
                 style={{
-                  paddingHorizontal: 14,
-                  paddingVertical: 7,
-                  borderRadius: 20,
                   backgroundColor: isActive ? color : '#FFFFFF',
-                  borderWidth: 1,
                   borderColor: isActive ? color : '#D8DADE',
                 }}
               >
                 <Text
-                  style={{ fontSize: 13, fontWeight: '600', color: isActive ? '#fff' : '#5F636B' }}
+                  className="text-[13px] font-semibold"
+                  style={{ color: isActive ? '#fff' : '#5F636B' }}
                 >
                   {tag}
                 </Text>
@@ -259,12 +246,12 @@ export default function CafeScreen() {
       <Animated.View style={[{ flex: 1 }, viewTransitionStyle]}>
         {viewMode === 'grid' ? (
           filteredLogs.length === 0 ? (
-            <View style={{ alignItems: 'center', paddingTop: 80 }}>
-              <Text style={{ color: '#8D929B', fontSize: 15 }}>기록이 없어요.</Text>
+            <View className="items-center pt-20">
+              <Text className="text-[15px] text-coffee-warm">기록이 없어요.</Text>
             </View>
           ) : (
             <SectionList
-              style={{ flex: 1 }}
+              className="flex-1"
               contentContainerStyle={{ paddingBottom: 100 }}
               sections={[{ ...gridColumns, data: [gridColumns] }]}
               keyExtractor={(group) => group.key}
@@ -272,13 +259,13 @@ export default function CafeScreen() {
               showsVerticalScrollIndicator={false}
               renderItem={({ item: group }) => (
                 <View style={{ paddingHorizontal: GRID_PADDING }}>
-                  <View style={{ flexDirection: 'row', gap: GRID_GAP }}>
-                    <View style={{ flex: 1, gap: GRID_GAP }}>
+                  <View className="flex-row" style={{ gap: GRID_GAP }}>
+                    <View className="flex-1" style={{ gap: GRID_GAP }}>
                       {group.left.map((item) => (
                         <CafeGridCard key={item.id} item={item} />
                       ))}
                     </View>
-                    <View style={{ flex: 1, gap: GRID_GAP }}>
+                    <View className="flex-1" style={{ gap: GRID_GAP }}>
                       {group.right.map((item) => (
                         <CafeGridCard key={item.id} item={item} />
                       ))}
@@ -289,7 +276,7 @@ export default function CafeScreen() {
             />
           )
         ) : (
-          <View style={{ flex: 1 }}>
+          <View className="flex-1">
             <AnimatedFlatList
               ref={listRef}
               data={filteredLogs}
@@ -301,7 +288,7 @@ export default function CafeScreen() {
                 paddingHorizontal: CAROUSEL_INSET,
                 gap: CAROUSEL_GAP,
               }}
-              style={{ flex: 1, marginBottom: 90 }}
+              className="mb-[90px] flex-1"
               snapToInterval={itemStep}
               decelerationRate="fast"
               scrollEventThrottle={16}
@@ -327,14 +314,12 @@ export default function CafeScreen() {
               })}
               ListEmptyComponent={
                 <View
+                  className="flex-1 items-center justify-center"
                   style={{
                     width: screenWidth - CAROUSEL_INSET * 2,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    flex: 1,
                   }}
                 >
-                  <Text style={{ color: '#8D929B', fontSize: 15 }}>
+                  <Text className="text-[15px] text-coffee-warm">
                     + 버튼으로 첫 카페를 기록해보세요.
                   </Text>
                 </View>

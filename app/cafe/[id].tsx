@@ -49,20 +49,15 @@ function MenuActionDropdown({ onEdit, onDelete }: { onEdit?: () => void; onDelet
 
   return (
     <View ref={anchorRef} collapsable={false}>
-      <TouchableOpacity onPress={show} style={{ padding: 6, margin: -6 }}>
+      <TouchableOpacity onPress={show} className="-m-1.5 p-1.5">
         <Ionicons name="ellipsis-horizontal" size={20} color="#5F636B" />
       </TouchableOpacity>
       <Modal transparent visible={open} animationType="fade" onRequestClose={() => setOpen(false)}>
-        <Pressable style={{ flex: 1 }} onPress={() => setOpen(false)}>
+        <Pressable className="flex-1" onPress={() => setOpen(false)}>
           <View
+            className="absolute right-5 min-w-[132px] rounded-xl bg-white py-1.5"
             style={{
-              position: 'absolute',
               top: Math.max(12, Math.min(anchorBottom + 4, screenHeight - (onEdit ? 126 : 78))),
-              right: 20,
-              minWidth: 132,
-              paddingVertical: 6,
-              borderRadius: 12,
-              backgroundColor: '#FFFFFF',
               shadowColor: '#000',
               shadowOffset: { width: 0, height: 4 },
               shadowOpacity: 0.14,
@@ -73,18 +68,18 @@ function MenuActionDropdown({ onEdit, onDelete }: { onEdit?: () => void; onDelet
             {onEdit && (
               <TouchableOpacity
                 onPress={() => run(onEdit)}
-                style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12 }}
+                className="flex-row items-center gap-2.5 p-3"
               >
                 <Ionicons name="pencil-outline" size={18} color="#3F4248" />
-                <Text style={{ fontSize: 14, color: '#3F4248', fontWeight: '600' }}>수정</Text>
+                <Text className="text-sm font-semibold text-coffee-muted">수정</Text>
               </TouchableOpacity>
             )}
             <TouchableOpacity
               onPress={() => run(onDelete)}
-              style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12 }}
+              className="flex-row items-center gap-2.5 p-3"
             >
               <Ionicons name="trash-outline" size={18} color="#D9534F" />
-              <Text style={{ fontSize: 14, color: '#D9534F', fontWeight: '600' }}>삭제</Text>
+              <Text className="text-sm font-semibold text-[#D9534F]">삭제</Text>
             </TouchableOpacity>
           </View>
         </Pressable>
@@ -279,7 +274,7 @@ export default function CafeDetailScreen() {
         contentContainerStyle={{ gap: 16, paddingBottom: 40 }}
       >
         {notePhotoUris.length > 0 && cafePhotoUris.length === 0 && (
-          <View style={{ marginTop: 20, gap: 8, alignItems: 'center' }}>
+          <View className="mt-5 items-center gap-2">
             <FlipCard
               frontUri={notePhotoUris[0]}
               backUri={notePhotoUris[1] ?? null}
@@ -317,20 +312,7 @@ export default function CafeDetailScreen() {
             </ScrollView>
 
             {cafePhotoUris.length > 1 && (
-              <View
-                style={{
-                  position: 'absolute',
-                  bottom: 18,
-                  alignSelf: 'center',
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: 5,
-                  paddingHorizontal: 8,
-                  paddingVertical: 7,
-                  borderRadius: 999,
-                  backgroundColor: 'rgba(0,0,0,0.2)',
-                }}
-              >
+              <View className="absolute bottom-[18px] self-center flex-row items-center gap-[5px] rounded-full bg-black/20 px-2 py-[7px]">
                 {cafePhotoUris.map((_, index) => {
                   const active = index === activeCafePhoto;
                   return (
@@ -350,19 +332,12 @@ export default function CafeDetailScreen() {
 
             {notePhotoUris.length > 0 && (
               <TouchableOpacity
+                className="absolute bottom-4 right-4 h-[92px] w-[78px] rounded-xl bg-white p-[3px]"
                 onPress={() => setNoteCardOpen(true)}
                 activeOpacity={0.9}
                 accessibilityRole="button"
                 accessibilityLabel="노트 카드 크게 보기"
                 style={{
-                  position: 'absolute',
-                  right: 16,
-                  bottom: 16,
-                  width: 78,
-                  height: 92,
-                  padding: 3,
-                  borderRadius: 12,
-                  backgroundColor: '#FFFFFF',
                   shadowColor: '#000',
                   shadowOffset: { width: 0, height: 4 },
                   shadowOpacity: 0.25,
@@ -376,19 +351,7 @@ export default function CafeDetailScreen() {
                   contentFit="cover"
                 />
                 {notePhotoUris.length > 1 && (
-                  <View
-                    style={{
-                      position: 'absolute',
-                      right: 7,
-                      bottom: 7,
-                      width: 22,
-                      height: 22,
-                      borderRadius: 11,
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      backgroundColor: 'rgba(0,0,0,0.62)',
-                    }}
-                  >
+                  <View className="absolute bottom-[7px] right-[7px] h-[22px] w-[22px] items-center justify-center rounded-full bg-black/[0.62]">
                     <Ionicons name="copy-outline" size={12} color="#fff" />
                   </View>
                 )}
@@ -397,40 +360,17 @@ export default function CafeDetailScreen() {
           </View>
         )}
 
-        <View
-          style={{
-            marginHorizontal: 20,
-            marginTop: 4,
-            padding: 20,
-            borderRadius: 20,
-            backgroundColor: '#FFFFFF',
-            borderWidth: 1,
-            borderColor: '#ECEDEF',
-          }}
-        >
-          <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
-            <Text
-              style={{
-                flex: 1,
-                fontSize: 24,
-                fontWeight: '800',
-                color: '#1D1D1B',
-                letterSpacing: -0.5,
-              }}
-            >
+        <View className="mx-5 mt-1 rounded-[20px] border border-coffee-separator bg-white p-5">
+          <View className="flex-row items-start gap-3">
+            <Text className="flex-1 text-2xl font-extrabold tracking-[-0.5px] text-[#1D1D1B]">
               {log.cafe_name}
             </Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <View className="flex-row items-center gap-1.5">
               <TouchableOpacity
                 onPress={handleToggleFavorite}
                 accessibilityRole="button"
                 accessibilityLabel={isFav ? '즐겨찾기 해제' : '즐겨찾기'}
-                style={{
-                  width: 36,
-                  height: 36,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
+                className="h-9 w-9 items-center justify-center"
               >
                 <Ionicons
                   name={isFav ? 'heart' : 'heart-outline'}
@@ -442,54 +382,31 @@ export default function CafeDetailScreen() {
                 onPress={showMoreOptions}
                 accessibilityRole="button"
                 accessibilityLabel="더보기"
-                style={{
-                  width: 36,
-                  height: 36,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
+                className="h-9 w-9 items-center justify-center"
               >
                 <Ionicons name="ellipsis-horizontal" size={20} color="#70757E" />
               </TouchableOpacity>
             </View>
           </View>
-          <View style={{ gap: 10, marginTop: 16 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <View
-                style={{
-                  width: 30,
-                  height: 30,
-                  borderRadius: 15,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  backgroundColor: '#F1F2F4',
-                }}
-              >
+          <View className="mt-4 gap-2.5">
+            <View className="flex-row items-center gap-2">
+              <View className="h-[30px] w-[30px] items-center justify-center rounded-full bg-[#F1F2F4]">
                 <Ionicons name="calendar-outline" size={15} color="#5F636B" />
               </View>
-              <Text style={{ fontSize: 14, color: '#5F636B' }}>{log.visited_at}</Text>
+              <Text className="text-sm text-coffee-tan">{log.visited_at}</Text>
             </View>
             {log.address ? (
               <TouchableOpacity
-                style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}
+                className="flex-row items-center gap-2"
                 onPress={() => {
                   const query = encodeURIComponent(`${log.cafe_name} ${log.address}`);
                   Linking.openURL(`https://map.naver.com/v5/search/${query}`);
                 }}
               >
-                <View
-                  style={{
-                    width: 30,
-                    height: 30,
-                    borderRadius: 15,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    backgroundColor: '#F1F2F4',
-                  }}
-                >
+                <View className="h-[30px] w-[30px] items-center justify-center rounded-full bg-[#F1F2F4]">
                   <Ionicons name="location-outline" size={16} color="#5F636B" />
                 </View>
-                <Text style={{ flex: 1, fontSize: 14, color: '#3F4248' }} numberOfLines={2}>
+                <Text className="flex-1 text-sm text-coffee-muted" numberOfLines={2}>
                   {log.address}
                 </Text>
                 <Ionicons name="chevron-forward" size={16} color="#B8BCC4" />
@@ -498,34 +415,16 @@ export default function CafeDetailScreen() {
           </View>
 
           {log.memo ? (
-            <View
-              style={{
-                marginTop: 18,
-                paddingTop: 16,
-                borderTopWidth: 1,
-                borderTopColor: '#ECEDEF',
-                flexDirection: 'row',
-                gap: 10,
-              }}
-            >
+            <View className="mt-[18px] flex-row gap-2.5 border-t border-coffee-separator pt-4">
               <Ionicons name="chatbubble-ellipses-outline" size={17} color="#8D929B" />
-              <Text style={{ flex: 1, fontSize: 14, lineHeight: 21, color: '#3F4248' }}>
-                {log.memo}
-              </Text>
+              <Text className="flex-1 text-sm leading-[21px] text-coffee-muted">{log.memo}</Text>
             </View>
           ) : null}
         </View>
 
-        <View style={{ marginTop: 8 }}>
-          <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              paddingHorizontal: 20,
-              marginBottom: 12,
-            }}
-          >
-            <Text style={{ fontSize: 20, fontWeight: '800', color: '#101114' }}>메뉴</Text>
+        <View className="mt-2">
+          <View className="mb-3 flex-row items-center px-5">
+            <Text className="text-xl font-extrabold text-coffee">메뉴</Text>
           </View>
 
           {menuItems.length === 0 && (
@@ -535,7 +434,7 @@ export default function CafeDetailScreen() {
           )}
 
           {menuItems.length > 0 && (
-            <View style={{ gap: 12, paddingHorizontal: 20 }}>
+            <View className="gap-3 px-5">
               {menuItems.map((item) => {
                 const category = handripNotesMap[item.id!]
                   ? 'handdip'
@@ -544,28 +443,11 @@ export default function CafeDetailScreen() {
                 return (
                   <View
                     key={item.id}
-                    style={{
-                      padding: 18,
-                      borderRadius: 18,
-                      backgroundColor: '#FFFFFF',
-                      borderWidth: 1,
-                      borderColor: '#D8DADE',
-                    }}
+                    className="rounded-[18px] border border-coffee-border bg-white p-[18px]"
                   >
                     <View className="flex-row items-center justify-between">
-                      <View
-                        style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 11 }}
-                      >
-                        <View
-                          style={{
-                            width: 36,
-                            height: 36,
-                            borderRadius: 11,
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            backgroundColor: '#F1F2F4',
-                          }}
-                        >
+                      <View className="flex-1 flex-row items-center gap-[11px]">
+                        <View className="h-9 w-9 items-center justify-center rounded-[11px] bg-[#F1F2F4]">
                           <Ionicons
                             name={
                               category === 'handdip'
@@ -578,11 +460,11 @@ export default function CafeDetailScreen() {
                             color="#3F4248"
                           />
                         </View>
-                        <View style={{ flex: 1 }}>
+                        <View className="flex-1">
                           <Text className="text-[17px] font-bold text-[#101114]">
                             {item.menu_name}
                           </Text>
-                          <Text style={{ marginTop: 2, fontSize: 12, color: '#70757E' }}>
+                          <Text className="mt-0.5 text-xs text-coffee-soft">
                             {category === 'handdip'
                               ? '핸드드립 노트'
                               : category === 'espresso'
@@ -604,14 +486,7 @@ export default function CafeDetailScreen() {
                     </View>
 
                     {(category === 'handdip' || category === 'espresso') && (
-                      <View
-                        style={{
-                          height: 1,
-                          marginTop: 14,
-                          marginBottom: 16,
-                          backgroundColor: '#ECEDEF',
-                        }}
-                      />
+                      <View className="mb-4 mt-3.5 h-px bg-coffee-separator" />
                     )}
 
                     {category === 'handdip' &&
@@ -643,30 +518,14 @@ export default function CafeDetailScreen() {
         statusBarTranslucent
         onRequestClose={() => setNoteCardOpen(false)}
       >
-        <View
-          style={{
-            flex: 1,
-            alignItems: 'center',
-            justifyContent: 'center',
-            paddingHorizontal: 20,
-            backgroundColor: 'rgba(0,0,0,0.72)',
-          }}
-        >
+        <View className="flex-1 items-center justify-center bg-black/[0.72] px-5">
           <TouchableOpacity
+            className="absolute right-4 z-[1] h-10 w-10 items-center justify-center rounded-full bg-white/[0.14]"
             onPress={() => setNoteCardOpen(false)}
             accessibilityRole="button"
             accessibilityLabel="닫기"
             style={{
-              position: 'absolute',
               top: insets.top + 12,
-              right: 16,
-              width: 40,
-              height: 40,
-              borderRadius: 20,
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: 'rgba(255,255,255,0.14)',
-              zIndex: 1,
             }}
           >
             <Ionicons name="close" size={24} color="#fff" />

@@ -215,11 +215,10 @@ export function CafeCard({
 
   return (
     <View
+      className="items-center justify-center"
       style={{
         width: cardWidth,
         height: screenHeight,
-        justifyContent: 'center',
-        alignItems: 'center',
       }}
     >
       <CoverflowWrapper
@@ -254,31 +253,14 @@ export function CafeCard({
                   paddingBottom: 20,
                 }}
               >
-                <Text
-                  style={{
-                    color: 'rgba(255,255,255,0.72)',
-                    fontSize: 14,
-                    textAlign: 'center',
-                    marginBottom: 2,
-                  }}
-                >
+                <Text className="mb-0.5 text-center text-sm text-white/70">
                   {item.visited_at.replace(/-/g, '.')}
                 </Text>
-                <Text
-                  style={{ color: '#fff', fontSize: 20, fontWeight: 'bold', textAlign: 'center' }}
-                  numberOfLines={1}
-                >
+                <Text className="text-center text-xl font-bold text-white" numberOfLines={1}>
                   {item.cafe_name}
                 </Text>
                 {(item.menu_count ?? 0) > 0 && (
-                  <View
-                    style={{
-                      flexDirection: 'row',
-                      justifyContent: 'center',
-                      gap: 4,
-                      marginTop: 6,
-                    }}
-                  ></View>
+                  <View className="mt-1.5 flex-row justify-center gap-1" />
                 )}
                 {noteGradient && (
                   <LinearGradient
@@ -352,10 +334,8 @@ export function CafeGridCard({ item }: { item: CafeLog }) {
 
   return (
     <View
+      className="w-full rounded-2xl bg-white"
       style={{
-        width: '100%',
-        borderRadius: 16,
-        backgroundColor: '#FFFFFF',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 3 },
         shadowOpacity: 0.12,
@@ -366,7 +346,7 @@ export function CafeGridCard({ item }: { item: CafeLog }) {
       <TouchableOpacity
         onPress={() => router.push(`/cafe/${item.id}`)}
         activeOpacity={0.9}
-        style={{ borderRadius: 10, overflow: 'hidden' }}
+        className="overflow-hidden rounded-[10px]"
       >
         {firstPhotoUri ? (
           <View style={{ aspectRatio: imgRatio }}>
@@ -387,10 +367,10 @@ export function CafeGridCard({ item }: { item: CafeLog }) {
                 paddingTop: 50,
               }}
             >
-              <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 10, marginBottom: 2 }}>
+              <Text className="mb-0.5 text-[10px] text-white/70">
                 {item.visited_at.replace(/-/g, '.')}
               </Text>
-              <Text style={{ color: '#fff', fontSize: 13, fontWeight: '700' }} numberOfLines={1}>
+              <Text className="text-[13px] font-bold text-white" numberOfLines={1}>
                 {item.cafe_name}
               </Text>
               {noteGradient && (
@@ -405,7 +385,7 @@ export function CafeGridCard({ item }: { item: CafeLog }) {
           </View>
         ) : (
           <>
-            <View style={{ aspectRatio: 4 / 3 }}>
+            <View className="aspect-[4/3]">
               <Image
                 source={DEFAULT_CARD}
                 style={{ width: '100%', height: '100%' }}
@@ -416,14 +396,11 @@ export function CafeGridCard({ item }: { item: CafeLog }) {
                 style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 32 }}
               />
             </View>
-            <View style={{ padding: 12, backgroundColor: '#FFFFFF' }}>
-              <Text style={{ color: '#8D929B', fontSize: 11, marginBottom: 3 }}>
+            <View className="bg-white p-3">
+              <Text className="mb-[3px] text-[11px] text-coffee-warm">
                 {item.visited_at.replace(/-/g, '.')}
               </Text>
-              <Text
-                style={{ color: '#101114', fontSize: 13, fontWeight: '700', lineHeight: 19 }}
-                numberOfLines={2}
-              >
+              <Text className="text-[13px] font-bold leading-[19px] text-coffee" numberOfLines={2}>
                 {item.cafe_name}
               </Text>
               {noteGradient && (

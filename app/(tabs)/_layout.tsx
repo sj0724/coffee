@@ -28,19 +28,11 @@ function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
 
   return (
     <View
+      className="absolute left-[110px] right-[110px] h-[60px] flex-row rounded-full border border-coffee-border bg-white shadow-lg"
       pointerEvents="box-none"
       onLayout={(e) => setTabBarWidth(e.nativeEvent.layout.width)}
       style={{
-        position: 'absolute',
         bottom,
-        left: 110,
-        right: 110,
-        height: 60,
-        borderRadius: 100,
-        backgroundColor: '#FFFFFF',
-        borderWidth: 1,
-        borderColor: '#D8DADE',
-        flexDirection: 'row',
         shadowColor: '#101114',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.1,
@@ -51,14 +43,9 @@ function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
       {/* 슬라이딩 pill */}
       {tabBarWidth > 0 && (
         <Animated.View
+          className="absolute bottom-1 left-1 top-1 rounded-full bg-accent"
           style={{
-            position: 'absolute',
-            top: 4,
-            bottom: 4,
             width: tabWidth - 10,
-            left: 4,
-            borderRadius: 100,
-            backgroundColor: '#123C96',
             transform: [
               {
                 translateX: slideAnim.interpolate({
@@ -89,7 +76,7 @@ function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
                 navigation.navigate(route.name);
               }
             }}
-            style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
+            className="flex-1 items-center justify-center"
           >
             {options.tabBarIcon?.({
               focused: isFocused,

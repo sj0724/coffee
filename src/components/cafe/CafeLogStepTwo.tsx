@@ -63,31 +63,18 @@ export function Step2({ onOpenSearch }: { onOpenSearch: () => void }) {
   }
 
   return (
-    <View style={{ gap: 24 }}>
+    <View className="gap-6">
       <Section label="카페 *">
         {selectedPlace ? (
           /* 선택된 카페 카드 */
-          <View
-            style={{
-              backgroundColor: '#FFFFFF',
-              borderRadius: 12,
-              borderWidth: 1.5,
-              borderColor: '#101114',
-              padding: 14,
-              gap: 4,
-            }}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 16, fontWeight: '700', color: '#101114' }}>
-                  {selectedPlace.name}
-                </Text>
+          <View className="gap-1 rounded-xl border-[1.5px] border-coffee bg-white p-3.5">
+            <View className="flex-row items-start">
+              <View className="flex-1">
+                <Text className="text-base font-bold text-coffee">{selectedPlace.name}</Text>
                 {selectedPlace.address ? (
-                  <View
-                    style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}
-                  >
+                  <View className="mt-1 flex-row items-center gap-1">
                     <Ionicons name="location-outline" size={13} color="#8D929B" />
-                    <Text style={{ fontSize: 13, color: '#70757E' }} numberOfLines={2}>
+                    <Text className="text-[13px] text-coffee-soft" numberOfLines={2}>
                       {selectedPlace.address}
                     </Text>
                   </View>
@@ -95,67 +82,49 @@ export function Step2({ onOpenSearch }: { onOpenSearch: () => void }) {
               </View>
               <TouchableOpacity
                 onPress={() => setField('selectedPlace', null)}
-                style={{ padding: 2, marginLeft: 8 }}
+                className="ml-2 p-0.5"
               >
                 <Ionicons name="close-circle" size={20} color="#8D929B" />
               </TouchableOpacity>
             </View>
-            <TouchableOpacity
-              onPress={onOpenSearch}
-              style={{ marginTop: 6, alignSelf: 'flex-start' }}
-            >
-              <Text style={{ fontSize: 12, color: '#101114', fontWeight: '600' }}>직접 검색</Text>
+            <TouchableOpacity onPress={onOpenSearch} className="mt-1.5 self-start">
+              <Text className="text-xs font-semibold text-coffee">직접 검색</Text>
             </TouchableOpacity>
           </View>
         ) : hasCoords ? (
           /* 근처 카페 목록 */
-          <View style={{ gap: 8 }}>
+          <View className="gap-2">
             {nearbyLoading ? (
-              <View
-                style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 16 }}
-              >
+              <View className="flex-row items-center gap-2 py-4">
                 <ActivityIndicator size="small" color="#101114" />
-                <Text style={{ fontSize: 13, color: '#8D929B' }}>
+                <Text className="text-[13px] text-coffee-warm">
                   사진 위치로 근처 카페 검색 중...
                 </Text>
               </View>
             ) : nearbyPlaces.length > 0 ? (
               <>
-                <View
-                  style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 2 }}
-                >
+                <View className="mb-0.5 flex-row items-center gap-[5px]">
                   <Ionicons name="location" size={13} color="#101114" />
-                  <Text style={{ fontSize: 12, color: '#101114', fontWeight: '600' }}>
-                    반경 500m 근처 카페
-                  </Text>
+                  <Text className="text-xs font-semibold text-coffee">반경 500m 근처 카페</Text>
                 </View>
                 {nearbyPlaces.map((p) => (
                   <TouchableOpacity
                     key={p.id}
                     onPress={() => selectNearby(p)}
-                    style={{
-                      backgroundColor: '#FFFFFF',
-                      borderRadius: 12,
-                      borderWidth: 1,
-                      borderColor: '#D8DADE',
-                      padding: 14,
-                    }}
+                    className="rounded-xl border border-coffee-border bg-white p-3.5"
                   >
-                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                      <Text style={{ flex: 1, fontSize: 15, fontWeight: '600', color: '#101114' }}>
+                    <View className="flex-row items-center">
+                      <Text className="flex-1 text-[15px] font-semibold text-coffee">
                         {p.place_name}
                       </Text>
                       {p.distance ? (
-                        <Text style={{ fontSize: 12, color: '#101114', fontWeight: '500' }}>
+                        <Text className="text-xs font-medium text-coffee">
                           {formatDistance(p.distance)}
                         </Text>
                       ) : null}
                     </View>
                     {p.road_address_name || p.address_name ? (
-                      <Text
-                        style={{ fontSize: 12, color: '#8D929B', marginTop: 3 }}
-                        numberOfLines={1}
-                      >
+                      <Text className="mt-[3px] text-xs text-coffee-warm" numberOfLines={1}>
                         {p.road_address_name || p.address_name}
                       </Text>
                     ) : null}
@@ -163,50 +132,26 @@ export function Step2({ onOpenSearch }: { onOpenSearch: () => void }) {
                 ))}
               </>
             ) : (
-              <Text
-                style={{ fontSize: 13, color: '#8D929B', textAlign: 'center', paddingVertical: 12 }}
-              >
+              <Text className="py-3 text-center text-[13px] text-coffee-warm">
                 근처 카페를 찾지 못했어요.
               </Text>
             )}
             <TouchableOpacity
               onPress={onOpenSearch}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 6,
-                paddingVertical: 12,
-                borderRadius: 10,
-                borderWidth: 1,
-                borderColor: '#D8DADE',
-                borderStyle: 'dashed',
-                marginTop: 4,
-              }}
+              className="mt-1 flex-row items-center justify-center gap-1.5 rounded-[10px] border border-dashed border-coffee-border py-3"
             >
               <Ionicons name="search" size={15} color="#5F636B" />
-              <Text style={{ fontSize: 13, color: '#5F636B', fontWeight: '600' }}>직접 검색</Text>
+              <Text className="text-[13px] font-semibold text-coffee-tan">직접 검색</Text>
             </TouchableOpacity>
           </View>
         ) : (
           /* GPS 없음 - 직접 검색 버튼 */
           <TouchableOpacity
             onPress={onOpenSearch}
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
-              padding: 18,
-              backgroundColor: '#FFFFFF',
-              borderRadius: 12,
-              borderWidth: 1.5,
-              borderColor: '#D8DADE',
-              borderStyle: 'dashed',
-            }}
+            className="flex-row items-center justify-center gap-2 rounded-xl border-[1.5px] border-dashed border-coffee-border bg-white p-[18px]"
           >
             <Ionicons name="search" size={18} color="#101114" />
-            <Text style={{ fontSize: 15, color: '#101114', fontWeight: '600' }}>카페 검색</Text>
+            <Text className="text-[15px] font-semibold text-coffee">카페 검색</Text>
           </TouchableOpacity>
         )}
       </Section>

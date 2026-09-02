@@ -39,46 +39,29 @@ export function Step1({
   };
 
   return (
-    <View style={{ gap: 24 }}>
+    <View className="gap-6">
       {/* 노트 사진 (핸드드립 모드) */}
       {photoMode === 'handdip' && (
         <Section label="노트 사진" hint="원두 카드 앞면/뒷면 · 최대 2장 · 선택">
-          <View style={{ flexDirection: 'row', gap: 12 }}>
+          <View className="flex-row gap-3">
             {noteSlots.map((i) => {
               const uri = notePhotos[i];
               if (uri) {
                 return (
-                  <View key={i} style={{ position: 'relative' }}>
+                  <View key={i} className="relative">
                     <Image
                       source={{ uri }}
-                      style={{ width: 120, height: 160, borderRadius: 12 }}
+                      className="h-40 w-[120px] rounded-xl"
                       contentFit="cover"
                     />
                     <TouchableOpacity
-                      style={{
-                        position: 'absolute',
-                        top: 6,
-                        right: 6,
-                        backgroundColor: 'rgba(0,0,0,0.52)',
-                        borderRadius: 12,
-                        padding: 2,
-                      }}
+                      className="absolute right-1.5 top-1.5 rounded-xl bg-black/[0.52] p-0.5"
                       onPress={() => removeNotePhoto(i)}
                     >
                       <Ionicons name="close" size={15} color="#fff" />
                     </TouchableOpacity>
-                    <View
-                      style={{
-                        position: 'absolute',
-                        bottom: 6,
-                        left: 6,
-                        backgroundColor: 'rgba(0,0,0,0.45)',
-                        borderRadius: 6,
-                        paddingHorizontal: 6,
-                        paddingVertical: 2,
-                      }}
-                    >
-                      <Text style={{ color: '#fff', fontSize: 10, fontWeight: '600' }}>
+                    <View className="absolute bottom-1.5 left-1.5 rounded-md bg-black/[0.45] px-1.5 py-0.5">
+                      <Text className="text-[10px] font-semibold text-white">
                         {i === 0 ? '앞면' : '뒷면'}
                       </Text>
                     </View>
@@ -91,26 +74,15 @@ export function Step1({
                     key={i}
                     onPress={onAddNotePhoto}
                     disabled={scanningNote}
-                    style={{
-                      width: 120,
-                      height: 160,
-                      borderRadius: 12,
-                      backgroundColor: '#F1F2F4',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 6,
-                      borderWidth: 1.5,
-                      borderColor: '#D8DADE',
-                      borderStyle: 'dashed',
-                      opacity: scanningNote ? 0.5 : 1,
-                    }}
+                    className="h-40 w-[120px] items-center justify-center gap-1.5 rounded-xl border-[1.5px] border-dashed border-coffee-border bg-[#F1F2F4]"
+                    style={{ opacity: scanningNote ? 0.5 : 1 }}
                   >
                     {scanningNote && i === notePhotos.length ? (
                       <ActivityIndicator color="#5F636B" />
                     ) : (
                       <>
                         <Ionicons name="add" size={26} color="#5F636B" />
-                        <Text style={{ fontSize: 12, color: '#5F636B', fontWeight: '600' }}>
+                        <Text className="text-xs font-semibold text-coffee-tan">
                           {i === 0 ? '앞면' : '뒷면'}
                         </Text>
                       </>
@@ -132,21 +104,14 @@ export function Step1({
           contentContainerStyle={{ gap: 10 }}
         >
           {cafePhotos.map((uri, i) => (
-            <View key={i} style={{ position: 'relative' }}>
+            <View key={i} className="relative">
               <Image
                 source={{ uri }}
-                style={{ width: 100, height: 133, borderRadius: 10, backgroundColor: '#F1F2F4' }}
+                className="h-[133px] w-[100px] rounded-[10px] bg-[#F1F2F4]"
                 contentFit="contain"
               />
               <TouchableOpacity
-                style={{
-                  position: 'absolute',
-                  top: 5,
-                  right: 5,
-                  backgroundColor: 'rgba(0,0,0,0.52)',
-                  borderRadius: 12,
-                  padding: 2,
-                }}
+                className="absolute right-[5px] top-[5px] rounded-xl bg-black/[0.52] p-0.5"
                 onPress={() => removeCafePhoto(i)}
               >
                 <Ionicons name="close" size={14} color="#fff" />
@@ -156,21 +121,10 @@ export function Step1({
           {cafePhotos.length < 10 && (
             <TouchableOpacity
               onPress={onAddCafePhoto}
-              style={{
-                width: 100,
-                height: 133,
-                borderRadius: 10,
-                backgroundColor: '#F1F2F4',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 6,
-                borderWidth: 1.5,
-                borderColor: '#D8DADE',
-                borderStyle: 'dashed',
-              }}
+              className="h-[133px] w-[100px] items-center justify-center gap-1.5 rounded-[10px] border-[1.5px] border-dashed border-coffee-border bg-[#F1F2F4]"
             >
               <Ionicons name="add" size={24} color="#101114" />
-              <Text style={{ fontSize: 11, color: '#101114', fontWeight: '600' }}>사진 추가</Text>
+              <Text className="text-[11px] font-semibold text-coffee">사진 추가</Text>
             </TouchableOpacity>
           )}
         </ScrollView>

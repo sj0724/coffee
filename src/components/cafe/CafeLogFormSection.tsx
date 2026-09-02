@@ -11,10 +11,10 @@ export function Section({
   children: ReactNode;
 }) {
   return (
-    <View style={{ gap: 10 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6 }}>
-        <Text style={{ fontSize: 15, fontWeight: '700', color: '#3F4248' }}>{label}</Text>
-        {hint && <Text style={{ fontSize: 12, color: '#AAA' }}>{hint}</Text>}
+    <View className="gap-2.5">
+      <View className="flex-row items-baseline gap-1.5">
+        <Text className="text-[15px] font-bold text-coffee-muted">{label}</Text>
+        {hint && <Text className="text-xs text-[#AAA]">{hint}</Text>}
       </View>
       {children}
     </View>
