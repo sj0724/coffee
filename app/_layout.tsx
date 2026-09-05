@@ -1,18 +1,25 @@
 import '../global.css';
 import { useEffect, useState } from 'react';
 import { Stack } from 'expo-router';
+import { useFonts } from 'expo-font';
 import { ActivityIndicator, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { getDB } from '@/src/db';
 
 export default function RootLayout() {
   const [dbReady, setDbReady] = useState(false);
+  const [fontsLoaded, fontError] = useFonts({
+    Pretendard: require('../assets/fonts/Pretendard-Regular.otf'),
+    Handwriting: require('../assets/fonts/Griun_Fromsol-Rg.ttf'),
+    PuzzleSans: require('../assets/fonts/PuzzleSans.ttf'),
+    Myeongjo: require('../assets/fonts/NanumMyeongjo.otf'),
+  });
 
   useEffect(() => {
     getDB().then(() => setDbReady(true));
   }, []);
 
-  if (!dbReady) {
+  if (!dbReady || (!fontsLoaded && !fontError)) {
     return (
       <View className="items-center justify-center flex-1">
         <ActivityIndicator size="large" />
