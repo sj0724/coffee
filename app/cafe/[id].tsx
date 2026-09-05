@@ -16,7 +16,7 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getCafeLog, deleteCafeLog, setFavorite } from '@/src/db/queries/cafeLogs';
 import { getMenuItems, deleteMenuItem } from '@/src/db/queries/cafeMenuItems';
@@ -28,6 +28,21 @@ import { EspressoNoteView } from '@/src/components/cafe/EspressoNoteView';
 import { FlipCard } from '@/src/components/cafe/FlipCard';
 import { getMenuCategory } from '@/src/components/cafe/menuCategory';
 import { hydrateCafeLogImageRatios, parseAspectRatios } from '@/src/services/imageAspectRatios';
+import { CafeLogShareCard, ShareCardDecoration, ShareCardInfoPosition, ShareCardVisibility } from '@/src/components/cafe/CafeLogShareCard';
+
+function DecorationChoice({ label, selected, onPress }: { label: string; selected: boolean; onPress: () => void }) {
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      accessibilityRole="radio"
+      accessibilityState={{ selected }}
+      className="h-9 flex-1 items-center justify-center rounded-full border"
+      style={{ backgroundColor: selected ? '#F2DF36' : '#FFFFFF', borderColor: selected ? '#F2DF36' : '#D8DADE' }}
+    >
+      <Text className="text-[12px] font-bold" style={{ color: selected ? '#101114' : '#3F4248' }}>{label}</Text>
+    </TouchableOpacity>
+  );
+}
 
 function MenuActionDropdown({ onEdit, onDelete }: { onEdit?: () => void; onDelete: () => void }) {
   const anchorRef = useRef<View>(null);
@@ -92,13 +107,35 @@ export default function CafeDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { width: screenWidth } = useWindowDimensions();
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const [log, setLog] = useState<CafeLog | null>(null);
   const [menuItems, setMenuItems] = useState<CafeMenuItem[]>([]);
   const [handripNotesMap, setHandripNotesMap] = useState<Record<number, HanddripNote>>({});
   const [espressoNotesMap, setEspressoNotesMap] = useState<Record<number, EspressoNote>>({});
   const [activeCafePhoto, setActiveCafePhoto] = useState(0);
   const [noteCardOpen, setNoteCardOpen] = useState(false);
+  const [sharePreviewOpen, setSharePreviewOpen] = useState(false);
+  const [shareVisibility, setShareVisibility] = useState<ShareCardVisibility>({
+    date: true,
+    address: true,
+    menu: true,
+    memo: true,
+    branding: true,
+  });
+  const [shareDecoration, setShareDecoration] = useState<ShareCardDecoration>({
+    textColor: 'white',
+    textAlign: 'left',
+    fontStyle: 'default',
+    fontSize: 'medium',
+    gradient: true,
+  });
+  const [shareInfoPosition, setShareInfoPosition] = useState<ShareCardInfoPosition>({
+    x: 0.5,
+    y: 0.76,
+  });
+  const [selectedShareImageKey, setSelectedShareImageKey] = useState('cafe-0');
+  const [isSharing, setIsSharing] = useState(false);
+  const shareCardRef = useRef<View>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -185,6 +222,56 @@ export default function CafeDetailScreen() {
     ]);
   }
 
+  function handleShare() {
+    setSharePreviewOpen(true);
+  }
+
+  async function handleExportShareImage(mode: 'save' | 'share') {
+    if (!shareCardRef.current || isSharing) return;
+
+    try {
+      setIsSharing(true);
+      // 네이티브 모듈을 포함하지 않은 기존 개발 빌드에서도 화면 진입이
+      // 크래시하지 않도록 공유 버튼을 누를 때 모듈을 불러온다.
+      const { captureRef } = await import('react-native-view-shot');
+
+      const uri = await captureRef(shareCardRef, {
+        format: 'jpg',
+        quality: 0.88,
+        width: 1080,
+        height: 1620,
+        result: 'tmpfile',
+      });
+
+      if (mode === 'save') {
+        const MediaLibrary = await import('expo-media-library');
+        const permission = await MediaLibrary.requestPermissionsAsync(true);
+        if (!permission.granted) {
+          Alert.alert('사진 접근 권한이 필요해요', '설정에서 사진 추가 권한을 허용해주세요.');
+          return;
+        }
+        await MediaLibrary.saveToLibraryAsync(uri);
+        Alert.alert('저장했어요', '선택한 이미지가 사진 보관함에 저장됐어요.');
+      } else {
+        const Sharing = await import('expo-sharing');
+        if (!(await Sharing.isAvailableAsync())) {
+          Alert.alert('공유할 수 없어요', '이 기기에서는 이미지 공유를 지원하지 않아요.');
+          return;
+        }
+        await Sharing.shareAsync(uri, {
+          mimeType: 'image/jpeg',
+          dialogTitle: `${log?.cafe_name ?? '카페 기록'} 공유`,
+          UTI: 'public.jpeg',
+        });
+      }
+    } catch (error) {
+      console.error('Failed to create share image', error);
+      Alert.alert('이미지를 만들지 못했어요', '잠시 후 다시 시도해주세요.');
+    } finally {
+      setIsSharing(false);
+    }
+  }
+
   if (!log) {
     return (
       <View className="flex-1 bg-coffee-light">
@@ -211,16 +298,56 @@ export default function CafeDetailScreen() {
     }
   })();
   const cafePhotoAspectRatio = parseAspectRatios(log.photo_aspect_ratios)[0] || 1;
-  const notePhotoAspectRatio = parseAspectRatios(log.note_photo_aspect_ratios)[0] || 1 / 1.4;
+  const notePhotoAspectRatios = parseAspectRatios(log.note_photo_aspect_ratios);
+  const notePhotoAspectRatio = notePhotoAspectRatios[0] || 1 / 1.4;
   const photoW = screenWidth - 40;
   const headerOnPhoto = cafePhotoUris.length > 0;
   const headerColor = '#1D1D1B';
   const headerGradientColors = headerOnPhoto
     ? (['rgba(255,255,255,0.78)', 'rgba(255,255,255,0.38)', 'rgba(255,255,255,0)'] as const)
     : (['#fff', '#fff', '#fff'] as const);
+  const shareImageOptions = [
+    ...cafePhotoUris.map((uri, index) => ({
+      key: `cafe-${index}`,
+      label: `카페 ${index + 1}`,
+      uri,
+      fit: 'cover' as const,
+      aspectRatio: undefined,
+    })),
+    ...notePhotoUris.map((uri, index) => ({
+      key: `card-${index}`,
+      label: index === 0 ? '카드 앞면' : index === 1 ? '카드 뒷면' : `카드 ${index + 1}`,
+      uri,
+      fit: 'contain' as const,
+      aspectRatio: notePhotoAspectRatios[index] || notePhotoAspectRatio,
+    })),
+  ];
+  const selectedShareImage =
+    shareImageOptions.find((item) => item.key === selectedShareImageKey) ?? shareImageOptions[0];
+  const sharePreviewScale = Math.max(
+    0.42,
+    Math.min(0.68, (screenWidth - 64) / 360, (screenHeight - 460) / 540),
+  );
+  const shareOptions: {
+    key: keyof ShareCardVisibility;
+    label: string;
+    available: boolean;
+  }[] = [
+    { key: 'address', label: '주소', available: !!log.address },
+    { key: 'menu', label: '메뉴', available: menuItems.length > 0 },
+    { key: 'memo', label: '메모', available: !!log.memo },
+  ];
+
+  function toggleShareOption(key: keyof ShareCardVisibility) {
+    setShareVisibility((current) => ({ ...current, [key]: !current[key] }));
+  }
+
+  function updateShareDecoration<K extends keyof ShareCardDecoration>(key: K, value: ShareCardDecoration[K]) {
+    setShareDecoration((current) => ({ ...current, [key]: value }));
+  }
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
+    <View className="flex-1 bg-white">
       <Stack.Screen options={{ headerShown: false }} />
       <StatusBar style={noteCardOpen ? 'light' : 'dark'} />
       <LinearGradient
@@ -237,33 +364,35 @@ export default function CafeDetailScreen() {
           paddingHorizontal: 16,
         }}
       >
-        <View style={{ height: 48, flexDirection: 'row', alignItems: 'center' }}>
+        <View className="flex-row items-center h-12">
           <TouchableOpacity
             onPress={() => router.back()}
             accessibilityRole="button"
             accessibilityLabel="뒤로 가기"
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: 20,
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
+            className="items-center justify-center w-10 h-10 rounded-full"
           >
             <Ionicons name="chevron-back" size={24} color={headerColor} />
           </TouchableOpacity>
 
+          <TouchableOpacity
+            onPress={handleShare}
+            disabled={isSharing}
+            accessibilityRole="button"
+            accessibilityLabel={isSharing ? '공유 이미지 만드는 중' : '카페 기록 공유'}
+            className="absolute right-0 items-center justify-center w-10 h-10 rounded-full"
+            style={{ opacity: isSharing ? 0.45 : 1 }}
+          >
+            <Ionicons
+              name={isSharing ? 'hourglass-outline' : 'share-outline'}
+              size={22}
+              color={headerColor}
+            />
+          </TouchableOpacity>
+
           <Text
             numberOfLines={1}
-            style={{
-              position: 'absolute',
-              left: 72,
-              right: 72,
-              textAlign: 'center',
-              fontSize: 16,
-              fontWeight: '700',
-              color: headerColor,
-            }}
+            className="absolute left-[72px] right-[72px] text-center text-base font-bold"
+            style={{ color: headerColor }}
           >
             {log.cafe_name}
           </Text>
@@ -274,7 +403,7 @@ export default function CafeDetailScreen() {
         contentContainerStyle={{ gap: 16, paddingBottom: 40 }}
       >
         {notePhotoUris.length > 0 && cafePhotoUris.length === 0 && (
-          <View className="mt-5 items-center gap-2">
+          <View className="items-center gap-2 mt-5">
             <FlipCard
               frontUri={notePhotoUris[0]}
               backUri={notePhotoUris[1] ?? null}
@@ -332,12 +461,13 @@ export default function CafeDetailScreen() {
 
             {notePhotoUris.length > 0 && (
               <TouchableOpacity
-                className="absolute bottom-4 right-4 h-[92px] w-[78px] rounded-xl bg-white p-[3px]"
+                className="absolute bottom-4 right-4 w-[78px] rounded-xl bg-white p-[3px]"
                 onPress={() => setNoteCardOpen(true)}
                 activeOpacity={0.9}
                 accessibilityRole="button"
                 accessibilityLabel="노트 카드 크게 보기"
                 style={{
+                  height: 72 / notePhotoAspectRatio + 6,
                   shadowColor: '#000',
                   shadowOffset: { width: 0, height: 4 },
                   shadowOpacity: 0.25,
@@ -347,7 +477,7 @@ export default function CafeDetailScreen() {
               >
                 <Image
                   source={{ uri: notePhotoUris[0] }}
-                  style={{ width: '100%', height: '100%', borderRadius: 9 }}
+                  style={{ width: 72, height: 72 / notePhotoAspectRatio, borderRadius: 9 }}
                   contentFit="cover"
                 />
                 {notePhotoUris.length > 1 && (
@@ -370,7 +500,7 @@ export default function CafeDetailScreen() {
                 onPress={handleToggleFavorite}
                 accessibilityRole="button"
                 accessibilityLabel={isFav ? '즐겨찾기 해제' : '즐겨찾기'}
-                className="h-9 w-9 items-center justify-center"
+                className="items-center justify-center h-9 w-9"
               >
                 <Ionicons
                   name={isFav ? 'heart' : 'heart-outline'}
@@ -382,7 +512,7 @@ export default function CafeDetailScreen() {
                 onPress={showMoreOptions}
                 accessibilityRole="button"
                 accessibilityLabel="더보기"
-                className="h-9 w-9 items-center justify-center"
+                className="items-center justify-center h-9 w-9"
               >
                 <Ionicons name="ellipsis-horizontal" size={20} color="#70757E" />
               </TouchableOpacity>
@@ -423,7 +553,7 @@ export default function CafeDetailScreen() {
         </View>
 
         <View className="mt-2">
-          <View className="mb-3 flex-row items-center px-5">
+          <View className="flex-row items-center px-5 mb-3">
             <Text className="text-xl font-extrabold text-coffee">메뉴</Text>
           </View>
 
@@ -511,6 +641,267 @@ export default function CafeDetailScreen() {
       </ScrollView>
 
       <Modal
+        visible={sharePreviewOpen}
+        animationType="slide"
+        presentationStyle="fullScreen"
+        onRequestClose={() => setSharePreviewOpen(false)}
+      >
+        <View
+          className="flex-1 bg-white"
+          style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}
+        >
+          <View className="flex-row items-center justify-between px-4 h-14">
+            <TouchableOpacity
+              onPress={() => setSharePreviewOpen(false)}
+              accessibilityRole="button"
+              accessibilityLabel="공유 이미지 미리보기 닫기"
+              className="items-center justify-center w-10 h-10"
+            >
+              <Ionicons name="close" size={25} color="#101114" />
+            </TouchableOpacity>
+            <Text className="text-[17px] font-bold text-coffee">공유 이미지 미리보기</Text>
+            <View className="w-10" />
+          </View>
+
+          <View
+            className="items-center justify-center bg-[#F5F5F3] py-4"
+            style={{ height: 540 * sharePreviewScale + 32 }}
+          >
+            <View
+              style={{
+                width: 360 * sharePreviewScale,
+                height: 540 * sharePreviewScale,
+                overflow: 'visible',
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 12 },
+                shadowOpacity: 0.2,
+                shadowRadius: 18,
+                elevation: 10,
+              }}
+            >
+              <View
+                style={{
+                  width: 360,
+                  height: 540,
+                  transform: [{ scale: sharePreviewScale }],
+                  transformOrigin: 'top left',
+                }}
+              >
+                <CafeLogShareCard
+                  visibility={shareVisibility}
+                  decoration={shareDecoration}
+                  infoPosition={shareInfoPosition}
+                  draggable
+                  interactionScale={sharePreviewScale}
+                  onInfoPositionChange={setShareInfoPosition}
+                  log={log}
+                  menuItems={menuItems}
+                  handdripNotes={handripNotesMap}
+                  espressoNotes={espressoNotesMap}
+                  photoUri={selectedShareImage?.uri}
+                  photoFit={selectedShareImage?.fit}
+                  photoAspectRatio={selectedShareImage?.aspectRatio}
+                />
+              </View>
+            </View>
+          </View>
+
+          <ScrollView
+            className="flex-1"
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 14, paddingBottom: 24 }}
+          >
+            {shareImageOptions.length > 0 ? (
+              <>
+                <Text className="mb-2 text-xs font-semibold text-coffee-muted">배경 이미지</Text>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={{ gap: 10 }}
+                  className="mb-3 flex-grow-0"
+                >
+                  {shareImageOptions.map((item) => {
+                    const selected = selectedShareImage?.key === item.key;
+                    return (
+                      <TouchableOpacity
+                        key={item.key}
+                        onPress={() => setSelectedShareImageKey(item.key)}
+                        accessibilityRole="radio"
+                        accessibilityState={{ selected }}
+                        accessibilityLabel={`${item.label}을 공유 이미지로 선택`}
+                        className="items-center"
+                      >
+                        <View
+                          className="h-14 w-14 overflow-hidden rounded-xl border-2 bg-coffee-light"
+                          style={{ borderColor: selected ? '#F2DF36' : '#D8DADE' }}
+                        >
+                          <Image
+                            source={{ uri: item.uri }}
+                            style={{ width: '100%', height: '100%' }}
+                            contentFit={item.fit}
+                          />
+                          {selected ? (
+                            <View className="absolute bottom-1 right-1 h-4 w-4 items-center justify-center rounded-full bg-accent">
+                              <Ionicons name="checkmark" size={12} color="#FFFFFF" />
+                            </View>
+                          ) : null}
+                        </View>
+                        <Text className="mt-1 text-[10px] text-coffee-muted">{item.label}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+              </>
+            ) : null}
+            <Text className="mb-2 text-xs font-semibold text-coffee-muted">표시할 정보</Text>
+            <View className="flex-row flex-wrap gap-2">
+              {shareOptions.map((item) => {
+                const selected = shareVisibility[item.key] && item.available;
+                return (
+                  <TouchableOpacity
+                    key={item.key}
+                    disabled={!item.available}
+                    onPress={() => toggleShareOption(item.key)}
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: selected, disabled: !item.available }}
+                    className="items-center justify-center px-4 border rounded-full h-9"
+                    style={{
+                      backgroundColor: selected ? '#F2DF36' : '#FFFFFF',
+                      borderColor: selected ? '#F2DF36' : '#D8DADE',
+                      opacity: item.available ? 1 : 0.35,
+                    }}
+                  >
+                    <Text
+                      className="text-[13px] font-bold"
+                      style={{ color: selected ? '#101114' : '#3F4248' }}
+                    >
+                      {item.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+            <Text className="mb-2 mt-3 text-xs font-semibold text-coffee-muted">데코 설정</Text>
+            <View className="gap-2">
+              <View className="flex-row gap-2">
+                <DecorationChoice label="화이트" selected={shareDecoration.textColor === 'white'} onPress={() => updateShareDecoration('textColor', 'white')} />
+                <DecorationChoice label="블랙" selected={shareDecoration.textColor === 'black'} onPress={() => updateShareDecoration('textColor', 'black')} />
+                <DecorationChoice label="그라데이션" selected={shareDecoration.gradient} onPress={() => updateShareDecoration('gradient', !shareDecoration.gradient)} />
+              </View>
+              <View className="flex-row gap-2">
+                {([
+                  ['default', '기본', 'Pretendard'],
+                  ['handwriting', '손글씨', 'Handwriting'],
+                  ['retro', '레트로', 'PuzzleSans'],
+                  ['myeongjo', '명조', 'Myeongjo'],
+                ] as const).map(([value, label, fontFamily]) => {
+                  const selected = shareDecoration.fontStyle === value;
+                  return (
+                    <TouchableOpacity
+                      key={value}
+                      onPress={() => updateShareDecoration('fontStyle', value)}
+                      accessibilityRole="radio"
+                      accessibilityLabel={`${label} 글꼴`}
+                      accessibilityState={{ selected }}
+                      className="h-10 flex-1 items-center justify-center rounded-full border"
+                      style={{
+                        backgroundColor: selected ? '#F2DF36' : '#FFFFFF',
+                        borderColor: selected ? '#F2DF36' : '#D8DADE',
+                      }}
+                    >
+                      <Text
+                        className="text-[12px]"
+                        style={{ color: selected ? '#101114' : '#3F4248', fontFamily }}
+                      >
+                        {label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+              <View className="flex-row gap-2">
+                {(['small', 'medium', 'large'] as const).map((size) => (
+                  <DecorationChoice
+                    key={size}
+                    label={size === 'small' ? '작게' : size === 'medium' ? '중간' : '크게'}
+                    selected={shareDecoration.fontSize === size}
+                    onPress={() => updateShareDecoration('fontSize', size)}
+                  />
+                ))}
+              </View>
+              <View className="flex-row gap-2">
+                {(['left', 'center', 'right'] as const).map((alignment) => (
+                  <TouchableOpacity
+                    key={alignment}
+                    onPress={() => updateShareDecoration('textAlign', alignment)}
+                    accessibilityRole="radio"
+                    accessibilityLabel={`${alignment === 'left' ? '왼쪽' : alignment === 'center' ? '가운데' : '오른쪽'} 정렬`}
+                    accessibilityState={{ selected: shareDecoration.textAlign === alignment }}
+                    className="h-9 flex-1 items-center justify-center rounded-full border"
+                    style={{
+                      backgroundColor: shareDecoration.textAlign === alignment ? '#F2DF36' : '#FFFFFF',
+                      borderColor: shareDecoration.textAlign === alignment ? '#F2DF36' : '#D8DADE',
+                    }}
+                  >
+                    <MaterialIcons
+                      name={`format-align-${alignment}`}
+                      size={19}
+                      color={shareDecoration.textAlign === alignment ? '#101114' : '#3F4248'}
+                    />
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          </ScrollView>
+
+          <View className="z-10 bg-white px-5 pt-4">
+            <LinearGradient
+              pointerEvents="none"
+              colors={['rgba(255,255,255,0)', 'rgba(255,255,255,0.92)', '#FFFFFF']}
+              locations={[0, 0.65, 1]}
+              style={{
+                position: 'absolute',
+                top: -56,
+                left: 0,
+                right: 0,
+                height: 72,
+                zIndex: 20,
+              }}
+            />
+            <View className="flex-row gap-2.5">
+              <TouchableOpacity
+                disabled={isSharing}
+                onPress={() => handleExportShareImage('share')}
+                className="h-[52px] w-[52px] items-center justify-center rounded-2xl bg-accent"
+                style={{ opacity: isSharing ? 0.5 : 1 }}
+                accessibilityRole="button"
+                accessibilityLabel="이미지 공유"
+              >
+                <Ionicons name="share-outline" size={21} color="#FFFFFF" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                disabled={isSharing}
+                onPress={() => handleExportShareImage('save')}
+                className="h-[52px] flex-1 flex-row items-center justify-center gap-2 rounded-2xl bg-coffee"
+                style={{ opacity: isSharing ? 0.6 : 1 }}
+                accessibilityRole="button"
+                accessibilityLabel="이미지 저장"
+              >
+                <Ionicons
+                  name={isSharing ? 'hourglass-outline' : 'download-outline'}
+                  size={20}
+                  color="#FFFFFF"
+                />
+                <Text className="text-[15px] font-extrabold text-white">
+                  {isSharing ? '이미지 만드는 중…' : '이미지 저장'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
         transparent
         visible={noteCardOpen}
         animationType="fade"
@@ -519,6 +910,12 @@ export default function CafeDetailScreen() {
         onRequestClose={() => setNoteCardOpen(false)}
       >
         <View className="flex-1 items-center justify-center bg-black/[0.72] px-5">
+          <Pressable
+            className="absolute inset-0"
+            onPress={() => setNoteCardOpen(false)}
+            accessibilityRole="button"
+            accessibilityLabel="카드 상세 닫기"
+          />
           <TouchableOpacity
             className="absolute right-4 z-[1] h-10 w-10 items-center justify-center rounded-full bg-white/[0.14]"
             onPress={() => setNoteCardOpen(false)}
@@ -540,12 +937,26 @@ export default function CafeDetailScreen() {
             />
           )}
           {notePhotoUris.length > 1 && (
-            <Text style={{ marginTop: 20, fontSize: 13, color: 'rgba(255,255,255,0.72)' }}>
-              카드를 눌러 뒷면 보기
-            </Text>
+            <Text className="mt-5 text-[13px] text-white/70">카드를 눌러 뒷면 보기</Text>
           )}
         </View>
       </Modal>
+
+      <View pointerEvents="none" className="absolute top-0" style={{ left: screenWidth + 40 }}>
+        <CafeLogShareCard
+          ref={shareCardRef}
+          visibility={shareVisibility}
+          decoration={shareDecoration}
+          infoPosition={shareInfoPosition}
+          log={log}
+          menuItems={menuItems}
+          handdripNotes={handripNotesMap}
+          espressoNotes={espressoNotesMap}
+          photoUri={selectedShareImage?.uri}
+          photoFit={selectedShareImage?.fit}
+          photoAspectRatio={selectedShareImage?.aspectRatio}
+        />
+      </View>
     </View>
   );
 }

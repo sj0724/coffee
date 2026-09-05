@@ -1,0 +1,356 @@
+import { forwardRef, useRef, useState } from 'react';
+import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import { PanResponder, Text, View } from 'react-native';
+import { CafeLog, CafeMenuItem, EspressoNote, HanddripNote } from '@/src/types';
+
+export type ShareCardVisibility = {
+  date: boolean;
+  address: boolean;
+  menu: boolean;
+  memo: boolean;
+  branding: boolean;
+};
+
+export type ShareCardDecoration = {
+  textColor: 'white' | 'black';
+  textAlign: 'left' | 'center' | 'right';
+  fontStyle: 'default' | 'handwriting' | 'retro' | 'myeongjo';
+  fontSize: 'small' | 'medium' | 'large';
+  gradient: boolean;
+};
+
+export type ShareCardInfoPosition = { x: number; y: number };
+
+type Props = {
+  log: CafeLog;
+  menuItems: CafeMenuItem[];
+  handdripNotes: Record<number, HanddripNote>;
+  espressoNotes: Record<number, EspressoNote>;
+  photoUri?: string;
+  photoFit?: 'cover' | 'contain';
+  photoAspectRatio?: number;
+  visibility: ShareCardVisibility;
+  decoration: ShareCardDecoration;
+  infoPosition: ShareCardInfoPosition;
+  draggable?: boolean;
+  interactionScale?: number;
+  onInfoPositionChange?: (position: ShareCardInfoPosition) => void;
+};
+
+function getMenuDescription(
+  item: CafeMenuItem,
+  handdripNotes: Record<number, HanddripNote>,
+  espressoNotes: Record<number, EspressoNote>,
+) {
+  const handdrip = handdripNotes[item.id!];
+  if (handdrip) {
+    const notes = handdrip.my_notes?.length ? handdrip.my_notes : handdrip.official_notes;
+    return [handdrip.is_blend ? 'Blend' : handdrip.origin, notes?.slice(0, 3).join(' · ')]
+      .filter(Boolean)
+      .join('  /  ');
+  }
+  return espressoNotes[item.id!]?.tags?.slice(0, 3).join(' · ') ?? '';
+}
+
+function MenuList({
+  items,
+  handdripNotes,
+  espressoNotes,
+  textColor = 'white',
+  textAlign = 'left',
+  fontFamily = 'Pretendard',
+  useRegularWeight = false,
+  fontScale = 1,
+}: {
+  items: CafeMenuItem[];
+  handdripNotes: Record<number, HanddripNote>;
+  espressoNotes: Record<number, EspressoNote>;
+  textColor?: 'white' | 'black';
+  textAlign?: 'left' | 'center' | 'right';
+  fontFamily?: string;
+  useRegularWeight?: boolean;
+  fontScale?: number;
+}) {
+  const primaryColor = textColor === 'white' ? '#FFFFFF' : '#101114';
+  const secondaryColor = textColor === 'white' ? '#D8DADE' : '#3F4248';
+  return (
+    <View className="gap-[11px]">
+      {items.slice(0, 3).map((item, index) => {
+        const detail = getMenuDescription(item, handdripNotes, espressoNotes);
+        return (
+          <View key={item.id ?? index} className="flex-row gap-[11px]">
+            <View className="flex-1">
+              <Text
+                numberOfLines={1}
+                className="font-bold"
+                style={{
+                  color: primaryColor,
+                  textAlign,
+                  fontFamily,
+                  fontSize: 14 * fontScale,
+                  ...(useRegularWeight ? { fontWeight: '400' as const } : {}),
+                }}
+              >
+                {item.menu_name}
+              </Text>
+              {detail ? (
+                <Text
+                  numberOfLines={1}
+                  className="mt-[3px]"
+                  style={{ color: secondaryColor, textAlign, fontFamily, fontSize: 10.5 * fontScale }}
+                >
+                  {detail}
+                </Text>
+              ) : null}
+            </View>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+export const CafeLogShareCard = forwardRef<View, Props>(function CafeLogShareCard(
+  {
+    log,
+    menuItems,
+    handdripNotes,
+    espressoNotes,
+    photoUri,
+    photoFit = 'cover',
+    photoAspectRatio = 1 / 1.4,
+    visibility,
+    decoration,
+    infoPosition,
+    draggable = false,
+    interactionScale = 1,
+    onInfoPositionChange,
+  },
+  ref,
+) {
+  const infoWidth = 240;
+  const halfInfoWidth = infoWidth / 2;
+  const horizontalLimit = halfInfoWidth / 360;
+  const [infoHeight, setInfoHeight] = useState(160);
+  const [alignmentGuides, setAlignmentGuides] = useState<{
+    vertical: number | null;
+    horizontal: number | null;
+  }>({ vertical: null, horizontal: null });
+  const positionRef = useRef(infoPosition);
+  const dragStartRef = useRef(infoPosition);
+  const scaleRef = useRef(interactionScale);
+  const infoHeightRef = useRef(infoHeight);
+  const onPositionChangeRef = useRef(onInfoPositionChange);
+  const renderedInfoPosition = {
+    x: Math.max(horizontalLimit, Math.min(1 - horizontalLimit, infoPosition.x)),
+    y: infoPosition.y,
+  };
+  positionRef.current = renderedInfoPosition;
+  scaleRef.current = interactionScale;
+  infoHeightRef.current = infoHeight;
+  onPositionChangeRef.current = onInfoPositionChange;
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (_event, gesture) =>
+        Math.abs(gesture.dx) > 2 || Math.abs(gesture.dy) > 2,
+      onPanResponderGrant: () => {
+        dragStartRef.current = positionRef.current;
+      },
+      onPanResponderMove: (_event, gesture) => {
+        const scale = Math.max(scaleRef.current, 0.01);
+        const halfWidth = halfInfoWidth;
+        const halfHeightRatio = infoHeightRef.current / 2 / 540;
+        const halfHeight = infoHeightRef.current / 2;
+        const snapThreshold = 8;
+        let nextX = dragStartRef.current.x * 360 + gesture.dx / scale;
+        let nextY = dragStartRef.current.y * 540 + gesture.dy / scale;
+        let verticalGuide: number | null = null;
+        let horizontalGuide: number | null = null;
+
+        if (Math.abs(nextX - 180) <= snapThreshold) {
+          nextX = 180;
+          verticalGuide = 180;
+        } else if (Math.abs(nextX - halfWidth - 24) <= snapThreshold) {
+          nextX = halfWidth + 24;
+          verticalGuide = 24;
+        } else if (Math.abs(nextX + halfWidth - 336) <= snapThreshold) {
+          nextX = 336 - halfWidth;
+          verticalGuide = 336;
+        }
+
+        if (Math.abs(nextY - 270) <= snapThreshold) {
+          nextY = 270;
+          horizontalGuide = 270;
+        } else if (Math.abs(nextY - halfHeight - 24) <= snapThreshold) {
+          nextY = halfHeight + 24;
+          horizontalGuide = 24;
+        } else if (Math.abs(nextY + halfHeight - 516) <= snapThreshold) {
+          nextY = 516 - halfHeight;
+          horizontalGuide = 516;
+        }
+
+        setAlignmentGuides({ vertical: verticalGuide, horizontal: horizontalGuide });
+        onPositionChangeRef.current?.({
+          x: Math.max(
+            horizontalLimit,
+            Math.min(1 - horizontalLimit, nextX / 360),
+          ),
+          y: Math.max(
+            halfHeightRatio,
+            Math.min(1 - halfHeightRatio, nextY / 540),
+          ),
+        });
+      },
+      onPanResponderRelease: () => {
+        setAlignmentGuides({ vertical: null, horizontal: null });
+      },
+      onPanResponderTerminate: () => {
+        setAlignmentGuides({ vertical: null, horizontal: null });
+      },
+    }),
+  ).current;
+  const isWhiteText = decoration.textColor === 'white';
+  const primaryColor = isWhiteText ? '#FFFFFF' : '#101114';
+  const secondaryColor = isWhiteText ? '#D8DADE' : '#3F4248';
+  const dividerColor = isWhiteText ? 'rgba(255,255,255,0.3)' : 'rgba(16,17,20,0.3)';
+  const fontFamily = {
+    default: 'Pretendard',
+    handwriting: 'Handwriting',
+    retro: 'PuzzleSans',
+    myeongjo: 'Myeongjo',
+  }[decoration.fontStyle];
+  const fontScale =
+    decoration.fontSize === 'small' ? 0.82 : decoration.fontSize === 'large' ? 1.18 : 1;
+  const useRegularWeight =
+    decoration.fontStyle === 'handwriting' || decoration.fontStyle === 'retro';
+  const titleLineHeight =
+    decoration.fontStyle === 'retro'
+      ? 43
+      : decoration.fontStyle === 'handwriting'
+        ? 41
+        : decoration.fontStyle === 'myeongjo'
+          ? 39
+          : 35;
+  const memoLineHeight = decoration.fontStyle === 'retro' ? 20 : 16;
+  const addressAlignItems =
+    decoration.textAlign === 'left'
+      ? 'flex-start'
+      : decoration.textAlign === 'right'
+        ? 'flex-end'
+        : 'center';
+  const menuProps = { items: menuItems, handdripNotes, espressoNotes, textColor: decoration.textColor, textAlign: decoration.textAlign, fontFamily, useRegularWeight, fontScale };
+
+  return (
+    <View
+      ref={ref}
+      collapsable={false}
+      className="h-[540px] w-[360px] overflow-hidden bg-coffee-dark"
+    >
+      {photoUri && photoFit === 'cover' ? (
+        <Image
+          source={{ uri: photoUri }}
+          style={{ position: 'absolute', inset: 0, backgroundColor: '#101114' }}
+          contentFit="cover"
+        />
+      ) : photoUri && photoFit === 'contain' ? (
+        <Image
+          source={require('../../../assets/default-card.jpg')}
+          style={{ position: 'absolute', inset: 0 }}
+          contentFit="cover"
+        />
+      ) : (
+        <LinearGradient
+          colors={['#2758BE', '#08276F']}
+          style={{ position: 'absolute', inset: 0 }}
+        />
+      )}
+      {photoUri && photoFit === 'contain' ? (
+        <View className="absolute inset-0 items-center justify-center">
+          <View
+            className="w-72 rounded-[14px] bg-white p-1"
+            style={{
+              aspectRatio: photoAspectRatio,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 8 },
+              shadowOpacity: 0.3,
+              shadowRadius: 18,
+              elevation: 12,
+            }}
+          >
+            <Image
+              source={{ uri: photoUri }}
+              style={{ width: '100%', height: '100%', borderRadius: 10 }}
+              contentFit="cover"
+            />
+          </View>
+        </View>
+      ) : null}
+      {decoration.gradient ? (
+        <LinearGradient
+          colors={infoPosition.y < 0.4 ? ['rgba(5,6,8,0.8)', 'rgba(5,6,8,0.04)', 'rgba(5,6,8,0)'] : infoPosition.y > 0.6 ? ['rgba(5,6,8,0)', 'rgba(5,6,8,0.04)', 'rgba(5,6,8,0.8)'] : ['rgba(5,6,8,0.12)', 'rgba(5,6,8,0.5)', 'rgba(5,6,8,0.12)']}
+          locations={infoPosition.y >= 0.4 && infoPosition.y <= 0.6 ? [0, 0.5, 1] : [0, 0.54, 1]}
+          style={{ position: 'absolute', inset: 0 }}
+        />
+      ) : null}
+      {visibility.branding ? (
+        <Text className="absolute left-6 top-6 font-extrabold tracking-[2px]" style={{ color: primaryColor, fontFamily, fontSize: 11 * fontScale, ...(useRegularWeight ? { fontWeight: '400' as const } : {}) }}>SANMI</Text>
+      ) : null}
+      {draggable && alignmentGuides.vertical !== null ? (
+        <View
+          pointerEvents="none"
+          className="absolute bottom-0 top-0 z-50 w-px bg-accent"
+          style={{ left: alignmentGuides.vertical }}
+        />
+      ) : null}
+      {draggable && alignmentGuides.horizontal !== null ? (
+        <View
+          pointerEvents="none"
+          className="absolute left-0 right-0 z-50 h-px bg-accent"
+          style={{ top: alignmentGuides.horizontal }}
+        />
+      ) : null}
+      <View
+        {...(draggable ? panResponder.panHandlers : {})}
+        onLayout={(event) => setInfoHeight(event.nativeEvent.layout.height)}
+        className="absolute"
+        style={{
+          width: infoWidth,
+          left: renderedInfoPosition.x * 360 - halfInfoWidth,
+          top: infoPosition.y * 540 - infoHeight / 2,
+        }}
+      >
+          <Text
+            numberOfLines={2}
+            className="w-full font-extrabold tracking-[-1.3px]"
+            style={{ color: primaryColor, textAlign: decoration.textAlign, fontFamily, fontSize: 32 * fontScale, lineHeight: titleLineHeight * fontScale, ...(useRegularWeight ? { fontWeight: '400' as const } : {}) }}
+          >
+            {log.cafe_name}
+          </Text>
+          {visibility.address && log.address ? (
+            <View className="mt-2 w-full" style={{ alignItems: addressAlignItems }}>
+              <View className="max-w-full flex-row items-center gap-1">
+                <Ionicons name="location-outline" size={14 * fontScale} color={primaryColor} />
+                <Text numberOfLines={1} className="shrink" style={{ color: primaryColor, fontFamily, fontSize: 14 * fontScale }}>
+                  {log.address}
+                </Text>
+              </View>
+            </View>
+          ) : null}
+          {visibility.memo && log.memo ? (
+            <Text numberOfLines={2} className="mt-2 w-full" style={{ color: secondaryColor, textAlign: decoration.textAlign, fontFamily, fontSize: 12 * fontScale, lineHeight: memoLineHeight * fontScale }}>
+              “{log.memo}”
+            </Text>
+          ) : null}
+          {visibility.menu && menuItems.length > 0 && (
+            <View className="mt-[18px] w-full border-t pt-4" style={{ borderTopColor: dividerColor }}>
+              <MenuList {...menuProps} />
+            </View>
+          )}
+      </View>
+    </View>
+  );
+});
