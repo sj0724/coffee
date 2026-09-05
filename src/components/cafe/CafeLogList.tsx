@@ -229,7 +229,7 @@ export function CafeCard({
         cardHeight={actualCardHeight}
       >
         <TouchableOpacity
-          className="flex-1 overflow-hidden rounded-[16px]"
+          className="flex-1 overflow-hidden rounded-[8px]"
           onPress={() => router.push(`/cafe/${item.id}`)}
           activeOpacity={0.92}
         >
@@ -256,7 +256,7 @@ export function CafeCard({
                 <Text className="mb-0.5 text-center text-sm text-white/70">
                   {item.visited_at.replace(/-/g, '.')}
                 </Text>
-                <Text className="text-center text-xl font-bold text-white" numberOfLines={1}>
+                <Text className="text-xl font-bold text-center text-white" numberOfLines={1}>
                   {item.cafe_name}
                 </Text>
                 {(item.menu_count ?? 0) > 0 && (
@@ -334,7 +334,7 @@ export function CafeGridCard({ item }: { item: CafeLog }) {
 
   return (
     <View
-      className="w-full rounded-2xl bg-white"
+      className="w-full bg-white rounded-2xl"
       style={{
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 3 },
@@ -396,7 +396,7 @@ export function CafeGridCard({ item }: { item: CafeLog }) {
                 style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 32 }}
               />
             </View>
-            <View className="bg-white p-3">
+            <View className="p-3 bg-white">
               <Text className="mb-[3px] text-[11px] text-coffee-warm">
                 {item.visited_at.replace(/-/g, '.')}
               </Text>

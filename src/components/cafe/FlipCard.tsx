@@ -45,8 +45,8 @@ export function FlipCard({
       >
         <Image
           source={{ uri: frontUri }}
-          style={{ width, height: frontH, borderRadius: 14 }}
-          contentFit="cover"
+          style={{ width, height: frontH, borderRadius: 14, backgroundColor: '#F1F2F4' }}
+          contentFit="contain"
         />
       </Animated.View>
 
@@ -62,8 +62,8 @@ export function FlipCard({
       >
         <Image
           source={backUri ? { uri: backUri } : DEFAULT_CARD}
-          style={{ width, height: frontH, borderRadius: 14 }}
-          contentFit="cover"
+          style={{ width, height: frontH, borderRadius: 14, backgroundColor: '#F1F2F4' }}
+          contentFit={backUri ? 'contain' : 'cover'}
         />
       </Animated.View>
     </TouchableOpacity>

@@ -1,4 +1,4 @@
-import { Image } from 'expo-image';
+import { Image } from 'react-native';
 import type { CafeLog } from '@/src/types';
 import { updateCafeLogImageRatios } from '@/src/db/queries/cafeLogs';
 
@@ -30,8 +30,10 @@ export async function measureImageAspectRatios(uris: string[]): Promise<number[]
   return Promise.all(
     uris.map(async (uri) => {
       try {
-        const image = await Image.loadAsync(uri);
-        return image.width > 0 && image.height > 0 ? image.width / image.height : 0;
+        const { width, height } = await new Promise<{ width: number; height: number }>(
+          (resolve, reject) => Image.getSize(uri, (width, height) => resolve({ width, height }), reject),
+        );
+        return width > 0 && height > 0 ? width / height : 0;
       } catch {
         return 0;
       }
@@ -45,9 +47,12 @@ export async function hydrateCafeLogImageRatios(log: CafeLog): Promise<CafeLog> 
   let photoRatios = parseAspectRatios(log.photo_aspect_ratios);
   let notePhotoRatios = parseAspectRatios(log.note_photo_aspect_ratios);
 
-  const needsPhotoRatios = photos.length > 0 && photoRatios.length !== photos.length;
+  const needsPhotoRatios =
+    photos.length > 0 &&
+    (photoRatios.length !== photos.length || photoRatios.some((ratio) => ratio <= 0));
   const needsNotePhotoRatios =
-    notePhotos.length > 0 && notePhotoRatios.length !== notePhotos.length;
+    notePhotos.length > 0 &&
+    (notePhotoRatios.length !== notePhotos.length || notePhotoRatios.some((ratio) => ratio <= 0));
   if (!needsPhotoRatios && !needsNotePhotoRatios) return log;
 
   if (needsPhotoRatios) photoRatios = await measureImageAspectRatios(photos);

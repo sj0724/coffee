@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { detectAndCrop } from '@/modules/document-scanner';
 import { useCafeLogDraftStore } from '@/src/store/cafeLogDraftStore';
 
 const requestCameraPermission = async (): Promise<boolean> => {
@@ -25,6 +24,7 @@ export const useCafeLogPhotos = () => {
     setScanningNote(true);
     let uri = rawUri;
     try {
+      const { detectAndCrop } = await import('@/modules/document-scanner');
       uri = await detectAndCrop(rawUri);
     } catch {
       // 문서 인식 실패 시 원본을 사용한다.

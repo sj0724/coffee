@@ -56,7 +56,7 @@ export default function SettingsScreen() {
   );
 
   async function handleContact() {
-    const subject = encodeURIComponent('[Crow] 문의');
+    const subject = encodeURIComponent('[sanmi] 문의');
     const url = `mailto:${CONTACT_EMAIL}?subject=${subject}`;
     try {
       await Linking.openURL(url);

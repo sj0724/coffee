@@ -1,9 +1,7 @@
 import { useState } from 'react';
-import { View, Text, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
-import { Image } from 'expo-image';
+import { View, Text, TouchableOpacity, Alert, ActivityIndicator, Image } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
-import { detectAndCrop } from '@/modules/document-scanner';
 import { analyzeCardImages } from '@/src/services/visionLLM';
 import type { HanddripNote } from '@/src/types';
 
@@ -56,8 +54,11 @@ export function CardScanSection({ onAnalyzed }: Props) {
   async function addCard(rawUri: string) {
     setScanning(true);
     try {
+      const { detectAndCrop } = await import('@/modules/document-scanner');
       const uri = await detectAndCrop(rawUri).catch(() => rawUri);
       setCards((prev) => [...prev, uri]);
+    } catch {
+      setCards((prev) => [...prev, rawUri]);
     } finally {
       setScanning(false);
     }
@@ -93,7 +94,14 @@ export function CardScanSection({ onAnalyzed }: Props) {
       <View className="flex-row gap-2">
         {cards.map((uri, i) => (
           <View key={i} className="relative">
-            <Image source={{ uri }} className="h-[106px] w-20 rounded-lg" contentFit="cover" />
+            <Image
+              source={{ uri }}
+              style={{ width: 80, height: 106, borderRadius: 8, backgroundColor: '#EFEFEF' }}
+              resizeMode="contain"
+              onError={(event) =>
+                console.warn('Failed to load scanned card', uri, event.nativeEvent.error)
+              }
+            />
             {!isBusy && (
               <TouchableOpacity
                 className="absolute right-1 top-1 rounded-[10px] bg-black/50 p-px"

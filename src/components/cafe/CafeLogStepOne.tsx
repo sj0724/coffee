@@ -1,9 +1,39 @@
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
-import { Image } from 'expo-image';
+import { useEffect, useState } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useShallow } from 'zustand/react/shallow';
 import { Section } from './CafeLogFormSection';
 import { useCafeLogDraftStore } from '@/src/store/cafeLogDraftStore';
+
+function NotePhotoPreview({ uri, index, onRemove }: { uri: string; index: number; onRemove: () => void }) {
+  const [aspectRatio, setAspectRatio] = useState(0.75);
+
+  useEffect(() => {
+    let active = true;
+    Image.getSize(
+      uri,
+      (width, height) => {
+        if (active && width > 0 && height > 0) setAspectRatio(width / height);
+      },
+      (error) => console.warn('Failed to read note photo size', uri, error),
+    );
+    return () => {
+      active = false;
+    };
+  }, [uri]);
+
+  return (
+    <View className="relative h-40 overflow-hidden rounded-xl bg-[#F1F2F4]" style={{ aspectRatio }}>
+      <Image source={{ uri }} style={{ position: 'absolute', inset: 0 }} resizeMode="cover" />
+      <TouchableOpacity className="absolute right-1.5 top-1.5 rounded-xl bg-black/[0.52] p-0.5" onPress={onRemove}>
+        <Ionicons name="close" size={15} color="#fff" />
+      </TouchableOpacity>
+      <View className="absolute bottom-1.5 left-1.5 rounded-md bg-black/[0.45] px-1.5 py-0.5">
+        <Text className="text-[10px] font-semibold text-white">{index === 0 ? '앞면' : '뒷면'}</Text>
+      </View>
+    </View>
+  );
+}
 
 export function Step1({
   scanningNote,
@@ -43,29 +73,12 @@ export function Step1({
       {/* 노트 사진 (핸드드립 모드) */}
       {photoMode === 'handdip' && (
         <Section label="노트 사진" hint="원두 카드 앞면/뒷면 · 최대 2장 · 선택">
-          <View className="flex-row gap-3">
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
             {noteSlots.map((i) => {
               const uri = notePhotos[i];
               if (uri) {
                 return (
-                  <View key={i} className="relative">
-                    <Image
-                      source={{ uri }}
-                      className="h-40 w-[120px] rounded-xl"
-                      contentFit="cover"
-                    />
-                    <TouchableOpacity
-                      className="absolute right-1.5 top-1.5 rounded-xl bg-black/[0.52] p-0.5"
-                      onPress={() => removeNotePhoto(i)}
-                    >
-                      <Ionicons name="close" size={15} color="#fff" />
-                    </TouchableOpacity>
-                    <View className="absolute bottom-1.5 left-1.5 rounded-md bg-black/[0.45] px-1.5 py-0.5">
-                      <Text className="text-[10px] font-semibold text-white">
-                        {i === 0 ? '앞면' : '뒷면'}
-                      </Text>
-                    </View>
-                  </View>
+                  <NotePhotoPreview key={i} uri={uri} index={i} onRemove={() => removeNotePhoto(i)} />
                 );
               }
               if (i === 0 || notePhotos.length >= 1) {
@@ -92,7 +105,7 @@ export function Step1({
               }
               return null;
             })}
-          </View>
+          </ScrollView>
         </Section>
       )}
 
@@ -107,8 +120,16 @@ export function Step1({
             <View key={i} className="relative">
               <Image
                 source={{ uri }}
-                className="h-[133px] w-[100px] rounded-[10px] bg-[#F1F2F4]"
-                contentFit="contain"
+                style={{
+                  width: 100,
+                  height: 133,
+                  borderRadius: 10,
+                  backgroundColor: '#F1F2F4',
+                }}
+                resizeMode="cover"
+                onError={(event) =>
+                  console.warn('Failed to load cafe photo', uri, event.nativeEvent.error)
+                }
               />
               <TouchableOpacity
                 className="absolute right-[5px] top-[5px] rounded-xl bg-black/[0.52] p-0.5"
