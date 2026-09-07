@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import {
   Alert,
   Modal,
@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Image } from 'expo-image';
 import * as MediaLibrary from 'expo-media-library';
+import { FontScaleSlider } from './FontScaleSlider';
 import { captureRef } from 'react-native-view-shot';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -32,6 +33,57 @@ type Props = {
   isSharing: boolean;
   onSharingChange: (isSharing: boolean) => void;
 };
+
+const DEFAULT_VISIBILITY: ShareCardVisibility = {
+  date: true,
+  address: true,
+  menu: true,
+  memo: true,
+  branding: true,
+};
+
+const DEFAULT_DECORATION: ShareCardDecoration = {
+  textColor: 'white',
+  textAlign: 'left',
+  fontStyle: 'default',
+  fontScale: 1,
+  gradient: true,
+  cardBackground: 'default',
+};
+
+const DEFAULT_INFO_POSITION: ShareCardInfoPosition = {
+  x: 0.5,
+  y: 0.76,
+};
+
+const editorTabs = [
+  { key: 'background', label: '배경', icon: 'image-outline' },
+  { key: 'info', label: '정보', icon: 'reader-outline' },
+  { key: 'font', label: '글꼴', icon: 'text-outline' },
+  { key: 'size', label: '크기', icon: 'resize-outline' },
+  { key: 'alignment', label: '정렬', icon: 'reorder-three-outline' },
+  { key: 'style', label: '스타일', icon: 'color-palette-outline' },
+] as const;
+
+type EditorTab = (typeof editorTabs)[number]['key'];
+
+function SettingsRow({ children }: { children: ReactNode }) {
+  return (
+    <ScrollView
+      horizontal
+      directionalLockEnabled
+      alwaysBounceVertical={false}
+      alwaysBounceHorizontal={false}
+      bounces={false}
+      showsHorizontalScrollIndicator={false}
+      showsVerticalScrollIndicator={false}
+      style={{ height: 64, flexGrow: 0 }}
+      contentContainerStyle={{ minWidth: '100%', height: 64, alignItems: 'center', gap: 8 }}
+    >
+      {children}
+    </ScrollView>
+  );
+}
 
 function DecorationChoice({
   label,
@@ -72,26 +124,22 @@ export function CafeLogShareModal({
 }: Props) {
   const insets = useSafeAreaInsets();
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
-  const [shareVisibility, setShareVisibility] = useState<ShareCardVisibility>({
-    date: true,
-    address: true,
-    menu: true,
-    memo: true,
-    branding: true,
-  });
-  const [shareDecoration, setShareDecoration] = useState<ShareCardDecoration>({
-    textColor: 'white',
-    textAlign: 'left',
-    fontStyle: 'default',
-    fontSize: 'medium',
-    gradient: true,
-  });
-  const [shareInfoPosition, setShareInfoPosition] = useState<ShareCardInfoPosition>({
-    x: 0.5,
-    y: 0.76,
-  });
+  const [shareVisibility, setShareVisibility] = useState<ShareCardVisibility>(DEFAULT_VISIBILITY);
+  const [shareDecoration, setShareDecoration] = useState<ShareCardDecoration>(DEFAULT_DECORATION);
+  const [shareInfoPosition, setShareInfoPosition] =
+    useState<ShareCardInfoPosition>(DEFAULT_INFO_POSITION);
   const [selectedShareImageKey, setSelectedShareImageKey] = useState('cafe-0');
+  const [activeTab, setActiveTab] = useState<EditorTab>('background');
   const shareCardRef = useRef<View>(null);
+
+  useEffect(() => {
+    if (visible) return;
+    setShareVisibility(DEFAULT_VISIBILITY);
+    setShareDecoration(DEFAULT_DECORATION);
+    setShareInfoPosition(DEFAULT_INFO_POSITION);
+    setSelectedShareImageKey('cafe-0');
+    setActiveTab('background');
+  }, [visible]);
 
   async function handleSaveImage() {
     if (!shareCardRef.current || isSharing) return;
@@ -155,9 +203,13 @@ export function CafeLogShareModal({
   ];
   const selectedShareImage =
     shareImageOptions.find((item) => item.key === selectedShareImageKey) ?? shareImageOptions[0];
+  const settingsHeight = 80;
   const sharePreviewScale = Math.max(
-    0.42,
-    Math.min(0.68, (screenWidth - 64) / 360, (screenHeight - 460) / 540),
+    0.2,
+    Math.min(
+      (screenWidth - 32) / 360,
+      (screenHeight - insets.top - insets.bottom - 56 - 60 - settingsHeight - 24) / 540,
+    ),
   );
   const shareOptions: {
     key: keyof ShareCardVisibility;
@@ -219,10 +271,7 @@ export function CafeLogShareModal({
             </TouchableOpacity>
           </View>
 
-          <View
-            className="items-center justify-center bg-[#F5F5F3] py-4"
-            style={{ height: 540 * sharePreviewScale + 32 }}
-          >
+          <View className="flex-1 items-center justify-center bg-[#F5F5F3] py-3">
             <View
               style={{
                 width: 360 * sharePreviewScale,
@@ -262,168 +311,240 @@ export function CafeLogShareModal({
             </View>
           </View>
 
-          <ScrollView
-            className="flex-1"
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 14, paddingBottom: 24 }}
+          <View
+            key={activeTab}
+            className="justify-center bg-white px-4 py-2"
+            style={{ height: settingsHeight, flexShrink: 0 }}
           >
-            {shareImageOptions.length > 0 ? (
-              <>
-                <Text className="mb-2 text-xs font-semibold text-coffee-muted">배경 이미지</Text>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={{ gap: 10 }}
-                  className="flex-grow-0 mb-3"
-                >
-                  {shareImageOptions.map((item) => {
-                    const selected = selectedShareImage?.key === item.key;
+            {activeTab === 'background' && (
+              <View>
+                {shareImageOptions.length > 0 ? (
+                  <>
+                    <SettingsRow>
+                      {selectedShareImage?.fit === 'contain' && (
+                        <>
+                          {(['default', 'white'] as const).map((background) => (
+                            <TouchableOpacity
+                              key={background}
+                              onPress={() => updateShareDecoration('cardBackground', background)}
+                              accessibilityRole="radio"
+                              accessibilityLabel={`카드 ${background === 'default' ? '기본' : '화이트'} 배경`}
+                              accessibilityState={{
+                                selected: shareDecoration.cardBackground === background,
+                              }}
+                              className="h-9 items-center justify-center rounded-full border px-3"
+                              style={{
+                                backgroundColor:
+                                  shareDecoration.cardBackground === background
+                                    ? '#F2DF36'
+                                    : '#FFFFFF',
+                                borderColor:
+                                  shareDecoration.cardBackground === background
+                                    ? '#F2DF36'
+                                    : '#D8DADE',
+                              }}
+                            >
+                              <Text className="text-xs font-bold text-coffee">
+                                {background === 'default' ? '기본 배경' : '화이트'}
+                              </Text>
+                            </TouchableOpacity>
+                          ))}
+                          <View className="mx-1 h-8 w-px bg-[#D8DADE]" />
+                        </>
+                      )}
+                      {shareImageOptions.map((item) => {
+                        const selected = selectedShareImage?.key === item.key;
+                        return (
+                          <TouchableOpacity
+                            key={item.key}
+                            onPress={() => setSelectedShareImageKey(item.key)}
+                            accessibilityRole="radio"
+                            accessibilityState={{ selected }}
+                            accessibilityLabel={`${item.label}을 공유 이미지로 선택`}
+                            className="items-center"
+                          >
+                            <View
+                              className="overflow-hidden border-2 h-11 w-11 rounded-xl bg-coffee-light"
+                              style={{ borderColor: selected ? '#F2DF36' : '#D8DADE' }}
+                            >
+                              <Image
+                                source={{ uri: item.uri }}
+                                style={{ width: '100%', height: '100%' }}
+                                contentFit={item.fit}
+                              />
+                              {selected ? (
+                                <View className="absolute items-center justify-center w-4 h-4 rounded-full bottom-1 right-1 bg-accent">
+                                  <Ionicons name="checkmark" size={12} color="#FFFFFF" />
+                                </View>
+                              ) : null}
+                            </View>
+                            <Text className="mt-1 text-[10px] text-coffee-muted">{item.label}</Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </SettingsRow>
+                  </>
+                ) : (
+                  <Text className="py-4 text-sm text-coffee-muted">
+                    등록된 사진이 없어 기본 배경을 사용해요.
+                  </Text>
+                )}
+              </View>
+            )}
+            {activeTab === 'info' && (
+              <View>
+                <SettingsRow>
+                  {shareOptions.map((item) => {
+                    const selected = shareVisibility[item.key] && item.available;
                     return (
                       <TouchableOpacity
                         key={item.key}
-                        onPress={() => setSelectedShareImageKey(item.key)}
-                        accessibilityRole="radio"
-                        accessibilityState={{ selected }}
-                        accessibilityLabel={`${item.label}을 공유 이미지로 선택`}
-                        className="items-center"
+                        disabled={!item.available}
+                        onPress={() => toggleShareOption(item.key)}
+                        accessibilityRole="checkbox"
+                        accessibilityState={{ checked: selected, disabled: !item.available }}
+                        className="items-center justify-center px-4 border rounded-full h-9"
+                        style={{
+                          backgroundColor: selected ? '#F2DF36' : '#FFFFFF',
+                          borderColor: selected ? '#F2DF36' : '#D8DADE',
+                          opacity: item.available ? 1 : 0.35,
+                        }}
                       >
-                        <View
-                          className="overflow-hidden border-2 h-14 w-14 rounded-xl bg-coffee-light"
-                          style={{ borderColor: selected ? '#F2DF36' : '#D8DADE' }}
+                        <Text
+                          className="text-[13px] font-bold"
+                          style={{ color: selected ? '#101114' : '#3F4248' }}
                         >
-                          <Image
-                            source={{ uri: item.uri }}
-                            style={{ width: '100%', height: '100%' }}
-                            contentFit={item.fit}
-                          />
-                          {selected ? (
-                            <View className="absolute items-center justify-center w-4 h-4 rounded-full bottom-1 right-1 bg-accent">
-                              <Ionicons name="checkmark" size={12} color="#FFFFFF" />
-                            </View>
-                          ) : null}
-                        </View>
-                        <Text className="mt-1 text-[10px] text-coffee-muted">{item.label}</Text>
+                          {item.label}
+                        </Text>
                       </TouchableOpacity>
                     );
                   })}
-                </ScrollView>
-              </>
-            ) : null}
-            <Text className="mb-2 text-xs font-semibold text-coffee-muted">표시할 정보</Text>
-            <View className="flex-row flex-wrap gap-2">
-              {shareOptions.map((item) => {
-                const selected = shareVisibility[item.key] && item.available;
-                return (
-                  <TouchableOpacity
-                    key={item.key}
-                    disabled={!item.available}
-                    onPress={() => toggleShareOption(item.key)}
-                    accessibilityRole="checkbox"
-                    accessibilityState={{ checked: selected, disabled: !item.available }}
-                    className="items-center justify-center px-4 border rounded-full h-9"
-                    style={{
-                      backgroundColor: selected ? '#F2DF36' : '#FFFFFF',
-                      borderColor: selected ? '#F2DF36' : '#D8DADE',
-                      opacity: item.available ? 1 : 0.35,
-                    }}
-                  >
-                    <Text
-                      className="text-[13px] font-bold"
-                      style={{ color: selected ? '#101114' : '#3F4248' }}
-                    >
-                      {item.label}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-            <Text className="mt-3 mb-2 text-xs font-semibold text-coffee-muted">데코 설정</Text>
-            <View className="gap-2">
-              <View className="flex-row gap-2">
-                <DecorationChoice
-                  label="화이트"
-                  selected={shareDecoration.textColor === 'white'}
-                  onPress={() => updateShareDecoration('textColor', 'white')}
-                />
-                <DecorationChoice
-                  label="블랙"
-                  selected={shareDecoration.textColor === 'black'}
-                  onPress={() => updateShareDecoration('textColor', 'black')}
-                />
-                <DecorationChoice
-                  label="그라데이션"
-                  selected={shareDecoration.gradient}
-                  onPress={() => updateShareDecoration('gradient', !shareDecoration.gradient)}
+                </SettingsRow>
+              </View>
+            )}
+            {activeTab === 'font' && (
+              <View>
+                <SettingsRow>
+                  {(
+                    [
+                      ['default', '기본', 'Pretendard'],
+                      ['handwriting', '손글씨', 'Handwriting'],
+                      ['retro', '레트로', 'PuzzleSans'],
+                      ['myeongjo', '명조', 'Myeongjo'],
+                    ] as const
+                  ).map(([value, label, fontFamily]) => {
+                    const selected = shareDecoration.fontStyle === value;
+                    return (
+                      <TouchableOpacity
+                        key={value}
+                        onPress={() => updateShareDecoration('fontStyle', value)}
+                        accessibilityRole="radio"
+                        accessibilityLabel={`${label} 글꼴`}
+                        accessibilityState={{ selected }}
+                        className="min-w-[80px] flex-1 items-center justify-center h-10 border rounded-full px-4"
+                        style={{
+                          backgroundColor: selected ? '#F2DF36' : '#FFFFFF',
+                          borderColor: selected ? '#F2DF36' : '#D8DADE',
+                        }}
+                      >
+                        <Text
+                          className="text-[12px]"
+                          style={{ color: selected ? '#101114' : '#3F4248', fontFamily }}
+                        >
+                          {label}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </SettingsRow>
+              </View>
+            )}
+            {activeTab === 'size' && (
+              <View>
+                <FontScaleSlider
+                  value={shareDecoration.fontScale}
+                  onChange={(value) => updateShareDecoration('fontScale', value)}
                 />
               </View>
-              <View className="flex-row gap-2">
-                {(
-                  [
-                    ['default', '기본', 'Pretendard'],
-                    ['handwriting', '손글씨', 'Handwriting'],
-                    ['retro', '레트로', 'PuzzleSans'],
-                    ['myeongjo', '명조', 'Myeongjo'],
-                  ] as const
-                ).map(([value, label, fontFamily]) => {
-                  const selected = shareDecoration.fontStyle === value;
-                  return (
+            )}
+            {activeTab === 'alignment' && (
+              <View>
+                <SettingsRow>
+                  {(['left', 'center', 'right'] as const).map((alignment) => (
                     <TouchableOpacity
-                      key={value}
-                      onPress={() => updateShareDecoration('fontStyle', value)}
+                      key={alignment}
+                      onPress={() => updateShareDecoration('textAlign', alignment)}
                       accessibilityRole="radio"
-                      accessibilityLabel={`${label} 글꼴`}
-                      accessibilityState={{ selected }}
-                      className="items-center justify-center flex-1 h-10 border rounded-full"
+                      accessibilityLabel={`${alignment === 'left' ? '왼쪽' : alignment === 'center' ? '가운데' : '오른쪽'} 정렬`}
+                      accessibilityState={{ selected: shareDecoration.textAlign === alignment }}
+                      className="items-center justify-center flex-1 border rounded-full h-9"
                       style={{
-                        backgroundColor: selected ? '#F2DF36' : '#FFFFFF',
-                        borderColor: selected ? '#F2DF36' : '#D8DADE',
+                        backgroundColor:
+                          shareDecoration.textAlign === alignment ? '#F2DF36' : '#FFFFFF',
+                        borderColor:
+                          shareDecoration.textAlign === alignment ? '#F2DF36' : '#D8DADE',
                       }}
                     >
-                      <Text
-                        className="text-[12px]"
-                        style={{ color: selected ? '#101114' : '#3F4248', fontFamily }}
-                      >
-                        {label}
-                      </Text>
+                      <MaterialIcons
+                        name={`format-align-${alignment}`}
+                        size={19}
+                        color={shareDecoration.textAlign === alignment ? '#101114' : '#3F4248'}
+                      />
                     </TouchableOpacity>
-                  );
-                })}
+                  ))}
+                </SettingsRow>
               </View>
-              <View className="flex-row gap-2">
-                {(['small', 'medium', 'large'] as const).map((size) => (
+            )}
+            {activeTab === 'style' && (
+              <View>
+                <SettingsRow>
                   <DecorationChoice
-                    key={size}
-                    label={size === 'small' ? '작게' : size === 'medium' ? '중간' : '크게'}
-                    selected={shareDecoration.fontSize === size}
-                    onPress={() => updateShareDecoration('fontSize', size)}
+                    label="화이트"
+                    selected={shareDecoration.textColor === 'white'}
+                    onPress={() => updateShareDecoration('textColor', 'white')}
                   />
-                ))}
+                  <DecorationChoice
+                    label="블랙"
+                    selected={shareDecoration.textColor === 'black'}
+                    onPress={() => updateShareDecoration('textColor', 'black')}
+                  />
+                  <DecorationChoice
+                    label="그라데이션"
+                    selected={shareDecoration.gradient}
+                    onPress={() => updateShareDecoration('gradient', !shareDecoration.gradient)}
+                  />
+                </SettingsRow>
               </View>
-              <View className="flex-row gap-2">
-                {(['left', 'center', 'right'] as const).map((alignment) => (
-                  <TouchableOpacity
-                    key={alignment}
-                    onPress={() => updateShareDecoration('textAlign', alignment)}
-                    accessibilityRole="radio"
-                    accessibilityLabel={`${alignment === 'left' ? '왼쪽' : alignment === 'center' ? '가운데' : '오른쪽'} 정렬`}
-                    accessibilityState={{ selected: shareDecoration.textAlign === alignment }}
-                    className="items-center justify-center flex-1 border rounded-full h-9"
-                    style={{
-                      backgroundColor:
-                        shareDecoration.textAlign === alignment ? '#F2DF36' : '#FFFFFF',
-                      borderColor: shareDecoration.textAlign === alignment ? '#F2DF36' : '#D8DADE',
-                    }}
+            )}
+          </View>
+          <View className="h-[60px] flex-row items-center justify-center border-t border-[#ECEDEA] bg-white px-2">
+            {editorTabs.map((tab) => {
+              const selected = activeTab === tab.key;
+              return (
+                <TouchableOpacity
+                  key={tab.key}
+                  onPress={() => setActiveTab(tab.key)}
+                  accessibilityRole="tab"
+                  accessibilityLabel={`${tab.label} 설정`}
+                  accessibilityState={{ selected }}
+                  className="flex-1 max-w-16 items-center justify-center gap-0.5 py-1"
+                >
+                  <View
+                    className="h-7 w-10 items-center justify-center rounded-full"
+                    style={{ backgroundColor: selected ? '#F2DF36' : 'transparent' }}
                   >
-                    <MaterialIcons
-                      name={`format-align-${alignment}`}
-                      size={19}
-                      color={shareDecoration.textAlign === alignment ? '#101114' : '#3F4248'}
-                    />
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-          </ScrollView>
+                    <Ionicons name={tab.icon} size={21} color={selected ? '#101114' : '#777B82'} />
+                  </View>
+                  <Text
+                    className="text-[11px] font-semibold"
+                    style={{ color: selected ? '#101114' : '#777B82' }}
+                  >
+                    {tab.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
         </View>
       </Modal>
 

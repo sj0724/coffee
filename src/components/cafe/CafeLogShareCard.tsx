@@ -17,8 +17,9 @@ export type ShareCardDecoration = {
   textColor: 'white' | 'black';
   textAlign: 'left' | 'center' | 'right';
   fontStyle: 'default' | 'handwriting' | 'retro' | 'myeongjo';
-  fontSize: 'small' | 'medium' | 'large';
+  fontScale: number;
   gradient: boolean;
+  cardBackground: 'default' | 'white';
 };
 
 export type ShareCardInfoPosition = { x: number; y: number };
@@ -76,14 +77,13 @@ function MenuList({
   const primaryColor = textColor === 'white' ? '#FFFFFF' : '#101114';
   const secondaryColor = textColor === 'white' ? '#D8DADE' : '#3F4248';
   return (
-    <View className="gap-[11px]">
+    <View style={{ gap: 11 * fontScale }}>
       {items.slice(0, 3).map((item, index) => {
         const detail = getMenuDescription(item, handdripNotes, espressoNotes);
         return (
-          <View key={item.id ?? index} className="flex-row gap-[11px]">
+          <View key={item.id ?? index} className="flex-row">
             <View className="flex-1">
               <Text
-                numberOfLines={1}
                 className="font-bold"
                 style={{
                   color: primaryColor,
@@ -97,9 +97,13 @@ function MenuList({
               </Text>
               {detail ? (
                 <Text
-                  numberOfLines={1}
-                  className="mt-[3px]"
-                  style={{ color: secondaryColor, textAlign, fontFamily, fontSize: 10.5 * fontScale }}
+                  style={{
+                    marginTop: 3 * fontScale,
+                    color: secondaryColor,
+                    textAlign,
+                    fontFamily,
+                    fontSize: 10.5 * fontScale,
+                  }}
                 >
                   {detail}
                 </Text>
@@ -130,7 +134,7 @@ export const CafeLogShareCard = forwardRef<View, Props>(function CafeLogShareCar
   },
   ref,
 ) {
-  const infoWidth = 240;
+  const infoWidth = Math.min(312, 240 * decoration.fontScale);
   const halfInfoWidth = infoWidth / 2;
   const horizontalLimit = halfInfoWidth / 360;
   const [infoHeight, setInfoHeight] = useState(160);
@@ -142,14 +146,17 @@ export const CafeLogShareCard = forwardRef<View, Props>(function CafeLogShareCar
   const dragStartRef = useRef(infoPosition);
   const scaleRef = useRef(interactionScale);
   const infoHeightRef = useRef(infoHeight);
+  const infoWidthRef = useRef(infoWidth);
   const onPositionChangeRef = useRef(onInfoPositionChange);
+  const verticalLimit = Math.min(infoHeight, 540) / 2 / 540;
   const renderedInfoPosition = {
     x: Math.max(horizontalLimit, Math.min(1 - horizontalLimit, infoPosition.x)),
-    y: infoPosition.y,
+    y: Math.max(verticalLimit, Math.min(1 - verticalLimit, infoPosition.y)),
   };
   positionRef.current = renderedInfoPosition;
   scaleRef.current = interactionScale;
   infoHeightRef.current = infoHeight;
+  infoWidthRef.current = infoWidth;
   onPositionChangeRef.current = onInfoPositionChange;
 
   const panResponder = useRef(
@@ -162,8 +169,9 @@ export const CafeLogShareCard = forwardRef<View, Props>(function CafeLogShareCar
       },
       onPanResponderMove: (_event, gesture) => {
         const scale = Math.max(scaleRef.current, 0.01);
-        const halfWidth = halfInfoWidth;
-        const halfHeightRatio = infoHeightRef.current / 2 / 540;
+        const halfWidth = infoWidthRef.current / 2;
+        const horizontalLimit = halfWidth / 360;
+        const halfHeightRatio = Math.min(infoHeightRef.current, 540) / 2 / 540;
         const halfHeight = infoHeightRef.current / 2;
         const snapThreshold = 8;
         let nextX = dragStartRef.current.x * 360 + gesture.dx / scale;
@@ -195,14 +203,8 @@ export const CafeLogShareCard = forwardRef<View, Props>(function CafeLogShareCar
 
         setAlignmentGuides({ vertical: verticalGuide, horizontal: horizontalGuide });
         onPositionChangeRef.current?.({
-          x: Math.max(
-            horizontalLimit,
-            Math.min(1 - horizontalLimit, nextX / 360),
-          ),
-          y: Math.max(
-            halfHeightRatio,
-            Math.min(1 - halfHeightRatio, nextY / 540),
-          ),
+          x: Math.max(horizontalLimit, Math.min(1 - horizontalLimit, nextX / 360)),
+          y: Math.max(halfHeightRatio, Math.min(1 - halfHeightRatio, nextY / 540)),
         });
       },
       onPanResponderRelease: () => {
@@ -223,8 +225,7 @@ export const CafeLogShareCard = forwardRef<View, Props>(function CafeLogShareCar
     retro: 'PuzzleSans',
     myeongjo: 'Myeongjo',
   }[decoration.fontStyle];
-  const fontScale =
-    decoration.fontSize === 'small' ? 0.82 : decoration.fontSize === 'large' ? 1.18 : 1;
+  const fontScale = decoration.fontScale;
   const useRegularWeight =
     decoration.fontStyle === 'handwriting' || decoration.fontStyle === 'retro';
   const titleLineHeight =
@@ -242,7 +243,16 @@ export const CafeLogShareCard = forwardRef<View, Props>(function CafeLogShareCar
       : decoration.textAlign === 'right'
         ? 'flex-end'
         : 'center';
-  const menuProps = { items: menuItems, handdripNotes, espressoNotes, textColor: decoration.textColor, textAlign: decoration.textAlign, fontFamily, useRegularWeight, fontScale };
+  const menuProps = {
+    items: menuItems,
+    handdripNotes,
+    espressoNotes,
+    textColor: decoration.textColor,
+    textAlign: decoration.textAlign,
+    fontFamily,
+    useRegularWeight,
+    fontScale,
+  };
 
   return (
     <View
@@ -257,11 +267,15 @@ export const CafeLogShareCard = forwardRef<View, Props>(function CafeLogShareCar
           contentFit="cover"
         />
       ) : photoUri && photoFit === 'contain' ? (
-        <Image
-          source={require('../../../assets/default-card.jpg')}
-          style={{ position: 'absolute', inset: 0 }}
-          contentFit="cover"
-        />
+        decoration.cardBackground === 'white' ? (
+          <View className="absolute inset-0 bg-white" />
+        ) : (
+          <Image
+            source={require('../../../assets/default-card.jpg')}
+            style={{ position: 'absolute', inset: 0 }}
+            contentFit="cover"
+          />
+        )
       ) : (
         <LinearGradient
           colors={['#2758BE', '#08276F']}
@@ -291,18 +305,34 @@ export const CafeLogShareCard = forwardRef<View, Props>(function CafeLogShareCar
       ) : null}
       {decoration.gradient ? (
         <LinearGradient
-          colors={infoPosition.y < 0.4 ? ['rgba(5,6,8,0.8)', 'rgba(5,6,8,0.04)', 'rgba(5,6,8,0)'] : infoPosition.y > 0.6 ? ['rgba(5,6,8,0)', 'rgba(5,6,8,0.04)', 'rgba(5,6,8,0.8)'] : ['rgba(5,6,8,0.12)', 'rgba(5,6,8,0.5)', 'rgba(5,6,8,0.12)']}
+          colors={
+            infoPosition.y < 0.4
+              ? ['rgba(5,6,8,0.8)', 'rgba(5,6,8,0.04)', 'rgba(5,6,8,0)']
+              : infoPosition.y > 0.6
+                ? ['rgba(5,6,8,0)', 'rgba(5,6,8,0.04)', 'rgba(5,6,8,0.8)']
+                : ['rgba(5,6,8,0.12)', 'rgba(5,6,8,0.5)', 'rgba(5,6,8,0.12)']
+          }
           locations={infoPosition.y >= 0.4 && infoPosition.y <= 0.6 ? [0, 0.5, 1] : [0, 0.54, 1]}
           style={{ position: 'absolute', inset: 0 }}
         />
       ) : null}
       {visibility.branding ? (
-        <Text className="absolute left-6 top-6 font-extrabold tracking-[2px]" style={{ color: primaryColor, fontFamily, fontSize: 11 * fontScale, ...(useRegularWeight ? { fontWeight: '400' as const } : {}) }}>SANMI</Text>
+        <Text
+          className="absolute left-6 top-6 font-extrabold tracking-[2px]"
+          style={{
+            color: primaryColor,
+            fontFamily,
+            fontSize: 11 * fontScale,
+            ...(useRegularWeight ? { fontWeight: '400' as const } : {}),
+          }}
+        >
+          SANMI
+        </Text>
       ) : null}
       {draggable && alignmentGuides.vertical !== null ? (
         <View
           pointerEvents="none"
-          className="absolute bottom-0 top-0 z-50 w-px bg-accent"
+          className="absolute top-0 bottom-0 z-50 w-px bg-accent"
           style={{ left: alignmentGuides.vertical }}
         />
       ) : null}
@@ -320,36 +350,71 @@ export const CafeLogShareCard = forwardRef<View, Props>(function CafeLogShareCar
         style={{
           width: infoWidth,
           left: renderedInfoPosition.x * 360 - halfInfoWidth,
-          top: infoPosition.y * 540 - infoHeight / 2,
+          top: Math.max(0, renderedInfoPosition.y * 540 - infoHeight / 2),
         }}
       >
-          <Text
-            numberOfLines={2}
-            className="w-full font-extrabold tracking-[-1.3px]"
-            style={{ color: primaryColor, textAlign: decoration.textAlign, fontFamily, fontSize: 32 * fontScale, lineHeight: titleLineHeight * fontScale, ...(useRegularWeight ? { fontWeight: '400' as const } : {}) }}
+        <Text
+          className="w-full font-extrabold"
+          style={{
+            letterSpacing: -1.3 * fontScale,
+            color: primaryColor,
+            textAlign: decoration.textAlign,
+            fontFamily,
+            fontSize: 32 * fontScale,
+            lineHeight: titleLineHeight * fontScale,
+            ...(useRegularWeight ? { fontWeight: '400' as const } : {}),
+          }}
+        >
+          {log.cafe_name}
+        </Text>
+        {visibility.address && log.address ? (
+          <View
+            className="w-full"
+            style={{ alignItems: addressAlignItems, marginTop: 8 * fontScale }}
           >
-            {log.cafe_name}
+            <View className="flex-row items-center max-w-full" style={{ gap: 4 * fontScale }}>
+              <Ionicons name="location-outline" size={14 * fontScale} color={primaryColor} />
+              <Text
+                className="shrink"
+                style={{
+                  color: primaryColor,
+                  fontFamily,
+                  fontSize: 14 * fontScale,
+                  textAlign: decoration.textAlign,
+                }}
+              >
+                {log.address}
+              </Text>
+            </View>
+          </View>
+        ) : null}
+        {visibility.memo && log.memo ? (
+          <Text
+            className="w-full"
+            style={{
+              marginTop: 8 * fontScale,
+              color: secondaryColor,
+              textAlign: decoration.textAlign,
+              fontFamily,
+              fontSize: 12 * fontScale,
+              lineHeight: memoLineHeight * fontScale,
+            }}
+          >
+            “{log.memo}”
           </Text>
-          {visibility.address && log.address ? (
-            <View className="mt-2 w-full" style={{ alignItems: addressAlignItems }}>
-              <View className="max-w-full flex-row items-center gap-1">
-                <Ionicons name="location-outline" size={14 * fontScale} color={primaryColor} />
-                <Text numberOfLines={1} className="shrink" style={{ color: primaryColor, fontFamily, fontSize: 14 * fontScale }}>
-                  {log.address}
-                </Text>
-              </View>
-            </View>
-          ) : null}
-          {visibility.memo && log.memo ? (
-            <Text numberOfLines={2} className="mt-2 w-full" style={{ color: secondaryColor, textAlign: decoration.textAlign, fontFamily, fontSize: 12 * fontScale, lineHeight: memoLineHeight * fontScale }}>
-              “{log.memo}”
-            </Text>
-          ) : null}
-          {visibility.menu && menuItems.length > 0 && (
-            <View className="mt-[18px] w-full border-t pt-4" style={{ borderTopColor: dividerColor }}>
-              <MenuList {...menuProps} />
-            </View>
-          )}
+        ) : null}
+        {visibility.menu && menuItems.length > 0 && (
+          <View
+            className="w-full border-t"
+            style={{
+              borderTopColor: dividerColor,
+              marginTop: 18 * fontScale,
+              paddingTop: 16 * fontScale,
+            }}
+          >
+            <MenuList {...menuProps} />
+          </View>
+        )}
       </View>
     </View>
   );
