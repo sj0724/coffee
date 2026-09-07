@@ -20,6 +20,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { getCafeLogs } from '@/src/db/queries/cafeLogs';
 import { CafeLog } from '@/src/types';
+import { CafeCupShelf } from '@/src/components/cafe/CafeCupShelf';
 import { hydrateCafeLogsImageRatios } from '@/src/services/imageAspectRatios';
 import {
   AnimatedFlatList,
@@ -33,11 +34,19 @@ import {
   splitIntoMasonryColumns,
 } from '@/src/components/cafe/CafeLogList';
 
+const viewModes = [
+  { key: 'coverflow', label: '카드 보기', icon: 'albums-outline' },
+  { key: 'grid', label: '그리드 보기', icon: 'grid-outline' },
+  { key: 'shelf', label: '찬장 보기', icon: 'cafe-outline' },
+] as const;
+
+type ViewMode = (typeof viewModes)[number]['key'];
+
 export default function CafeScreen() {
   const [logs, setLogs] = useState<CafeLog[]>([]);
   const [activeTags, setActiveTags] = useState<string[]>([]);
   const [favOnly, setFavOnly] = useState(false);
-  const [viewMode, setViewMode] = useState<'coverflow' | 'grid'>('coverflow');
+  const [viewMode, setViewMode] = useState<ViewMode>('coverflow');
   const [viewTransitioning, setViewTransitioning] = useState(false);
   const [listHeight, setListHeight] = useState(0);
   const [activeCoverIndex, setActiveCoverIndex] = useState(0);
@@ -96,7 +105,7 @@ export default function CafeScreen() {
     setActiveTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]));
   }
 
-  function showNextView(nextMode: 'coverflow' | 'grid') {
+  function showNextView(nextMode: ViewMode) {
     if (nextMode === 'coverflow') {
       scrollX.value = 0;
       activeCoverIndexValue.value = 0;
@@ -115,9 +124,8 @@ export default function CafeScreen() {
     });
   }
 
-  function toggleViewMode() {
-    if (viewTransitioning) return;
-    const nextMode = viewMode === 'coverflow' ? 'grid' : 'coverflow';
+  function changeViewMode(nextMode: ViewMode) {
+    if (viewTransitioning || nextMode === viewMode) return;
     setViewTransitioning(true);
     viewProgress.value = withTiming(
       0,
@@ -169,19 +177,29 @@ export default function CafeScreen() {
       {/* 헤더 */}
       <View className="flex-row items-center px-5 py-3">
         <Text className="flex-1 text-2xl font-extrabold text-coffee">카페</Text>
-        <TouchableOpacity
-          onPress={toggleViewMode}
-          disabled={viewTransitioning}
-          activeOpacity={0.6}
-          className="mr-1 p-1.5"
-          style={{ opacity: viewTransitioning ? 0.55 : 1 }}
-        >
-          <Ionicons
-            name={viewMode === 'coverflow' ? 'grid-outline' : 'albums-outline'}
-            size={22}
-            color="#101114"
-          />
-        </TouchableOpacity>
+        <View className="mr-2 flex-row gap-1">
+          {viewModes.map((mode) => (
+            <TouchableOpacity
+              key={mode.key}
+              onPress={() => changeViewMode(mode.key)}
+              disabled={viewTransitioning}
+              accessibilityRole="button"
+              accessibilityLabel={mode.label}
+              accessibilityState={{ selected: viewMode === mode.key, disabled: viewTransitioning }}
+              className="h-10 w-10 items-center justify-center rounded-full"
+              style={{
+                backgroundColor: viewMode === mode.key ? '#F2DF36' : 'transparent',
+                opacity: viewTransitioning ? 0.55 : 1,
+              }}
+            >
+              <Ionicons
+                name={mode.icon}
+                size={20}
+                color={viewMode === mode.key ? '#101114' : '#70757E'}
+              />
+            </TouchableOpacity>
+          ))}
+        </View>
         <TouchableOpacity onPress={() => router.push('/cafe/new')} className="p-1.5">
           <Ionicons name="add" size={26} color="#101114" />
         </TouchableOpacity>
@@ -244,7 +262,9 @@ export default function CafeScreen() {
 
       {/* 콘텐츠 */}
       <Animated.View style={[{ flex: 1 }, viewTransitionStyle]}>
-        {viewMode === 'grid' ? (
+        {viewMode === 'shelf' ? (
+          <CafeCupShelf logs={filteredLogs} />
+        ) : viewMode === 'grid' ? (
           filteredLogs.length === 0 ? (
             <View className="items-center pt-20">
               <Text className="text-[15px] text-coffee-warm">기록이 없어요.</Text>

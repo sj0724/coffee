@@ -5,6 +5,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { PanResponder, Text, View } from 'react-native';
 import { CafeLog, CafeMenuItem, EspressoNote, HanddripNote } from '@/src/types';
 
+// Canvas dimensions are exported at 3× resolution.
+export const SHARE_CARD_WIDTH = 360;
+export const SHARE_CARD_HEIGHTS = { feed: 450, story: 640 } as const;
+export type ShareCardFormat = keyof typeof SHARE_CARD_HEIGHTS;
+
 export type ShareCardVisibility = {
   date: boolean;
   address: boolean;
@@ -25,6 +30,7 @@ export type ShareCardDecoration = {
 export type ShareCardInfoPosition = { x: number; y: number };
 
 type Props = {
+  height?: number;
   log: CafeLog;
   menuItems: CafeMenuItem[];
   handdripNotes: Record<number, HanddripNote>;
@@ -118,6 +124,7 @@ function MenuList({
 
 export const CafeLogShareCard = forwardRef<View, Props>(function CafeLogShareCard(
   {
+    height = SHARE_CARD_HEIGHTS.story,
     log,
     menuItems,
     handdripNotes,
@@ -136,7 +143,7 @@ export const CafeLogShareCard = forwardRef<View, Props>(function CafeLogShareCar
 ) {
   const infoWidth = Math.min(312, 240 * decoration.fontScale);
   const halfInfoWidth = infoWidth / 2;
-  const horizontalLimit = halfInfoWidth / 360;
+  const horizontalLimit = halfInfoWidth / SHARE_CARD_WIDTH;
   const [infoHeight, setInfoHeight] = useState(160);
   const [alignmentGuides, setAlignmentGuides] = useState<{
     vertical: number | null;
@@ -145,16 +152,18 @@ export const CafeLogShareCard = forwardRef<View, Props>(function CafeLogShareCar
   const positionRef = useRef(infoPosition);
   const dragStartRef = useRef(infoPosition);
   const scaleRef = useRef(interactionScale);
+  const cardHeightRef = useRef(height);
   const infoHeightRef = useRef(infoHeight);
   const infoWidthRef = useRef(infoWidth);
   const onPositionChangeRef = useRef(onInfoPositionChange);
-  const verticalLimit = Math.min(infoHeight, 540) / 2 / 540;
+  const verticalLimit = Math.min(infoHeight, height) / 2 / height;
   const renderedInfoPosition = {
     x: Math.max(horizontalLimit, Math.min(1 - horizontalLimit, infoPosition.x)),
     y: Math.max(verticalLimit, Math.min(1 - verticalLimit, infoPosition.y)),
   };
   positionRef.current = renderedInfoPosition;
   scaleRef.current = interactionScale;
+  cardHeightRef.current = height;
   infoHeightRef.current = infoHeight;
   infoWidthRef.current = infoWidth;
   onPositionChangeRef.current = onInfoPositionChange;
@@ -169,42 +178,43 @@ export const CafeLogShareCard = forwardRef<View, Props>(function CafeLogShareCar
       },
       onPanResponderMove: (_event, gesture) => {
         const scale = Math.max(scaleRef.current, 0.01);
+        const height = cardHeightRef.current;
         const halfWidth = infoWidthRef.current / 2;
-        const horizontalLimit = halfWidth / 360;
-        const halfHeightRatio = Math.min(infoHeightRef.current, 540) / 2 / 540;
+        const horizontalLimit = halfWidth / SHARE_CARD_WIDTH;
+        const halfHeightRatio = Math.min(infoHeightRef.current, height) / 2 / height;
         const halfHeight = infoHeightRef.current / 2;
         const snapThreshold = 8;
-        let nextX = dragStartRef.current.x * 360 + gesture.dx / scale;
-        let nextY = dragStartRef.current.y * 540 + gesture.dy / scale;
+        let nextX = dragStartRef.current.x * SHARE_CARD_WIDTH + gesture.dx / scale;
+        let nextY = dragStartRef.current.y * height + gesture.dy / scale;
         let verticalGuide: number | null = null;
         let horizontalGuide: number | null = null;
 
-        if (Math.abs(nextX - 180) <= snapThreshold) {
-          nextX = 180;
-          verticalGuide = 180;
+        if (Math.abs(nextX - SHARE_CARD_WIDTH / 2) <= snapThreshold) {
+          nextX = SHARE_CARD_WIDTH / 2;
+          verticalGuide = SHARE_CARD_WIDTH / 2;
         } else if (Math.abs(nextX - halfWidth - 24) <= snapThreshold) {
           nextX = halfWidth + 24;
           verticalGuide = 24;
-        } else if (Math.abs(nextX + halfWidth - 336) <= snapThreshold) {
-          nextX = 336 - halfWidth;
-          verticalGuide = 336;
+        } else if (Math.abs(nextX + halfWidth - (SHARE_CARD_WIDTH - 24)) <= snapThreshold) {
+          nextX = SHARE_CARD_WIDTH - 24 - halfWidth;
+          verticalGuide = SHARE_CARD_WIDTH - 24;
         }
 
-        if (Math.abs(nextY - 270) <= snapThreshold) {
-          nextY = 270;
-          horizontalGuide = 270;
+        if (Math.abs(nextY - height / 2) <= snapThreshold) {
+          nextY = height / 2;
+          horizontalGuide = height / 2;
         } else if (Math.abs(nextY - halfHeight - 24) <= snapThreshold) {
           nextY = halfHeight + 24;
           horizontalGuide = 24;
-        } else if (Math.abs(nextY + halfHeight - 516) <= snapThreshold) {
-          nextY = 516 - halfHeight;
-          horizontalGuide = 516;
+        } else if (Math.abs(nextY + halfHeight - (height - 24)) <= snapThreshold) {
+          nextY = height - 24 - halfHeight;
+          horizontalGuide = height - 24;
         }
 
         setAlignmentGuides({ vertical: verticalGuide, horizontal: horizontalGuide });
         onPositionChangeRef.current?.({
-          x: Math.max(horizontalLimit, Math.min(1 - horizontalLimit, nextX / 360)),
-          y: Math.max(halfHeightRatio, Math.min(1 - halfHeightRatio, nextY / 540)),
+          x: Math.max(horizontalLimit, Math.min(1 - horizontalLimit, nextX / SHARE_CARD_WIDTH)),
+          y: Math.max(halfHeightRatio, Math.min(1 - halfHeightRatio, nextY / height)),
         });
       },
       onPanResponderRelease: () => {
@@ -258,7 +268,8 @@ export const CafeLogShareCard = forwardRef<View, Props>(function CafeLogShareCar
     <View
       ref={ref}
       collapsable={false}
-      className="h-[540px] w-[360px] overflow-hidden bg-coffee-dark"
+      className="overflow-hidden bg-coffee-dark"
+      style={{ width: SHARE_CARD_WIDTH, height }}
     >
       {photoUri && photoFit === 'cover' ? (
         <Image
@@ -349,8 +360,8 @@ export const CafeLogShareCard = forwardRef<View, Props>(function CafeLogShareCar
         className="absolute"
         style={{
           width: infoWidth,
-          left: renderedInfoPosition.x * 360 - halfInfoWidth,
-          top: Math.max(0, renderedInfoPosition.y * 540 - infoHeight / 2),
+          left: renderedInfoPosition.x * SHARE_CARD_WIDTH - halfInfoWidth,
+          top: Math.max(0, renderedInfoPosition.y * height - infoHeight / 2),
         }}
       >
         <Text

@@ -18,6 +18,9 @@ import { CafeLog, CafeMenuItem, EspressoNote, HanddripNote } from '@/src/types';
 import { parseAspectRatios } from '@/src/services/imageAspectRatios';
 import {
   CafeLogShareCard,
+  SHARE_CARD_WIDTH,
+  SHARE_CARD_HEIGHTS,
+  ShareCardFormat,
   ShareCardDecoration,
   ShareCardInfoPosition,
   ShareCardVisibility,
@@ -57,6 +60,7 @@ const DEFAULT_INFO_POSITION: ShareCardInfoPosition = {
 };
 
 const editorTabs = [
+  { key: 'ratio', label: '비율', icon: 'crop-outline' },
   { key: 'background', label: '배경', icon: 'image-outline' },
   { key: 'info', label: '정보', icon: 'reader-outline' },
   { key: 'font', label: '글꼴', icon: 'text-outline' },
@@ -130,6 +134,8 @@ export function CafeLogShareModal({
     useState<ShareCardInfoPosition>(DEFAULT_INFO_POSITION);
   const [selectedShareImageKey, setSelectedShareImageKey] = useState('cafe-0');
   const [activeTab, setActiveTab] = useState<EditorTab>('background');
+  const [shareFormat, setShareFormat] = useState<ShareCardFormat>('story');
+  const cardHeight = SHARE_CARD_HEIGHTS[shareFormat];
   const shareCardRef = useRef<View>(null);
 
   useEffect(() => {
@@ -139,6 +145,7 @@ export function CafeLogShareModal({
     setShareInfoPosition(DEFAULT_INFO_POSITION);
     setSelectedShareImageKey('cafe-0');
     setActiveTab('background');
+    setShareFormat('story');
   }, [visible]);
 
   async function handleSaveImage() {
@@ -149,8 +156,8 @@ export function CafeLogShareModal({
       const uri = await captureRef(shareCardRef, {
         format: 'jpg',
         quality: 0.88,
-        width: 1080,
-        height: 1620,
+        width: SHARE_CARD_WIDTH * 3,
+        height: cardHeight * 3,
         result: 'tmpfile',
       });
 
@@ -207,8 +214,8 @@ export function CafeLogShareModal({
   const sharePreviewScale = Math.max(
     0.2,
     Math.min(
-      (screenWidth - 32) / 360,
-      (screenHeight - insets.top - insets.bottom - 56 - 60 - settingsHeight - 24) / 540,
+      (screenWidth - 32) / SHARE_CARD_WIDTH,
+      (screenHeight - insets.top - insets.bottom - 56 - 60 - settingsHeight - 24) / cardHeight,
     ),
   );
   const shareOptions: {
@@ -274,8 +281,8 @@ export function CafeLogShareModal({
           <View className="flex-1 items-center justify-center bg-[#F5F5F3] py-3">
             <View
               style={{
-                width: 360 * sharePreviewScale,
-                height: 540 * sharePreviewScale,
+                width: SHARE_CARD_WIDTH * sharePreviewScale,
+                height: cardHeight * sharePreviewScale,
                 overflow: 'visible',
                 shadowColor: '#000',
                 shadowOffset: { width: 0, height: 12 },
@@ -286,13 +293,14 @@ export function CafeLogShareModal({
             >
               <View
                 style={{
-                  width: 360,
-                  height: 540,
+                  width: SHARE_CARD_WIDTH,
+                  height: cardHeight,
                   transform: [{ scale: sharePreviewScale }],
                   transformOrigin: 'top left',
                 }}
               >
                 <CafeLogShareCard
+                  height={cardHeight}
                   visibility={shareVisibility}
                   decoration={shareDecoration}
                   infoPosition={shareInfoPosition}
@@ -313,9 +321,23 @@ export function CafeLogShareModal({
 
           <View
             key={activeTab}
-            className="justify-center bg-white px-4 py-2"
+            className="justify-center px-4 py-2 bg-white"
             style={{ height: settingsHeight, flexShrink: 0 }}
           >
+            {activeTab === 'ratio' && (
+              <SettingsRow>
+                <DecorationChoice
+                  label="4:5"
+                  selected={shareFormat === 'feed'}
+                  onPress={() => setShareFormat('feed')}
+                />
+                <DecorationChoice
+                  label="9:16"
+                  selected={shareFormat === 'story'}
+                  onPress={() => setShareFormat('story')}
+                />
+              </SettingsRow>
+            )}
             {activeTab === 'background' && (
               <View>
                 {shareImageOptions.length > 0 ? (
@@ -332,7 +354,7 @@ export function CafeLogShareModal({
                               accessibilityState={{
                                 selected: shareDecoration.cardBackground === background,
                               }}
-                              className="h-9 items-center justify-center rounded-full border px-3"
+                              className="items-center justify-center px-3 border rounded-full h-9"
                               style={{
                                 backgroundColor:
                                   shareDecoration.cardBackground === background
@@ -530,7 +552,7 @@ export function CafeLogShareModal({
                   className="flex-1 max-w-16 items-center justify-center gap-0.5 py-1"
                 >
                   <View
-                    className="h-7 w-10 items-center justify-center rounded-full"
+                    className="items-center justify-center w-10 rounded-full h-7"
                     style={{ backgroundColor: selected ? '#F2DF36' : 'transparent' }}
                   >
                     <Ionicons name={tab.icon} size={21} color={selected ? '#101114' : '#777B82'} />
@@ -550,6 +572,7 @@ export function CafeLogShareModal({
 
       <View pointerEvents="none" className="absolute top-0" style={{ left: screenWidth + 40 }}>
         <CafeLogShareCard
+          height={cardHeight}
           ref={shareCardRef}
           visibility={shareVisibility}
           decoration={shareDecoration}
