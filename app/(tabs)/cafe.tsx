@@ -1,12 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  SectionList,
-  useWindowDimensions,
-} from 'react-native';
+import { View, Text, TouchableOpacity, SectionList, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -30,23 +23,28 @@ import {
   CAROUSEL_INSET,
   GRID_GAP,
   GRID_PADDING,
-  parseAllNotes,
   splitIntoMasonryColumns,
 } from '@/src/components/cafe/CafeLogList';
 
-const viewModes = [
-  { key: 'coverflow', label: '카드 보기', icon: 'albums-outline' },
-  { key: 'grid', label: '그리드 보기', icon: 'grid-outline' },
-  { key: 'shelf', label: '찬장 보기', icon: 'cafe-outline' },
+const collectionModes = [
+  { key: 'list', label: '기록 목록', icon: 'list-outline' },
+  { key: 'shelf', label: '컵 찬장', icon: 'cafe-outline' },
 ] as const;
 
-type ViewMode = (typeof viewModes)[number]['key'];
+const listLayouts = [
+  { key: 'coverflow', label: '리스트 보기', icon: 'albums-outline' },
+  { key: 'grid', label: '그리드 보기', icon: 'grid-outline' },
+] as const;
+
+type ListLayout = (typeof listLayouts)[number]['key'];
+type ViewMode = ListLayout | 'shelf';
 
 export default function CafeScreen() {
   const [logs, setLogs] = useState<CafeLog[]>([]);
-  const [activeTags, setActiveTags] = useState<string[]>([]);
   const [favOnly, setFavOnly] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('coverflow');
+  const [listLayout, setListLayout] = useState<ListLayout>('coverflow');
+  const collectionMode = viewMode === 'shelf' ? 'shelf' : 'list';
   const [viewTransitioning, setViewTransitioning] = useState(false);
   const [listHeight, setListHeight] = useState(0);
   const [activeCoverIndex, setActiveCoverIndex] = useState(0);
@@ -77,33 +75,15 @@ export default function CafeScreen() {
   const initialScrollDone = useRef(false);
   const resetCoverflowOnLayout = useRef(true);
 
-  const uniqueTags = useMemo(() => {
-    const seen = new Set<string>();
-    for (const log of logs) {
-      parseAllNotes(log.all_my_notes_concat).forEach((t) => seen.add(t));
-    }
-    return Array.from(seen);
-  }, [logs]);
-
-  const filteredLogs = useMemo(() => {
-    return logs.filter((log) => {
-      if (favOnly && !log.is_favorite) return false;
-      if (activeTags.length > 0) {
-        const tags = parseAllNotes(log.all_my_notes_concat);
-        if (!activeTags.some((t) => tags.includes(t))) return false;
-      }
-      return true;
-    });
-  }, [logs, favOnly, activeTags]);
+  const filteredLogs = useMemo(
+    () => logs.filter((log) => !favOnly || !!log.is_favorite),
+    [logs, favOnly],
+  );
 
   const gridColumns = useMemo(() => {
     const [left, right] = splitIntoMasonryColumns(filteredLogs, gridCardWidth);
     return { key: 'all-cafes', left, right };
   }, [filteredLogs, gridCardWidth]);
-
-  function toggleTag(tag: string) {
-    setActiveTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]));
-  }
 
   function showNextView(nextMode: ViewMode) {
     if (nextMode === 'coverflow') {
@@ -112,6 +92,7 @@ export default function CafeScreen() {
       setActiveCoverIndex(0);
       resetCoverflowOnLayout.current = true;
     }
+    if (nextMode !== 'shelf') setListLayout(nextMode);
     setViewMode(nextMode);
     requestAnimationFrame(() => {
       viewProgress.value = withTiming(
@@ -165,9 +146,8 @@ export default function CafeScreen() {
       listRef.current?.scrollToOffset({ offset: 0, animated: false });
       scrollX.value = 0;
     });
-  }, [activeTags, favOnly, viewMode]);
+  }, [favOnly, viewMode]);
 
-  const showFilterBar = logs.length > 0;
   const cardAreaHeight = listHeight;
   const defaultCardHeight = cardAreaHeight * 0.72;
   const defaultImageHeight = defaultCardHeight * 0.62;
@@ -177,25 +157,41 @@ export default function CafeScreen() {
       {/* 헤더 */}
       <View className="flex-row items-center px-5 py-3">
         <Text className="flex-1 text-2xl font-extrabold text-coffee">카페</Text>
+        <TouchableOpacity
+          onPress={() => setFavOnly((value) => !value)}
+          accessibilityRole="button"
+          accessibilityLabel={favOnly ? '전체 기록 보기' : '즐겨찾기만 보기'}
+          accessibilityState={{ selected: favOnly }}
+          className="mr-1 h-10 w-10 items-center justify-center rounded-full"
+        >
+          <Ionicons
+            name={favOnly ? 'heart' : 'heart-outline'}
+            size={20}
+            color={favOnly ? '#123C96' : '#70757E'}
+          />
+        </TouchableOpacity>
         <View className="mr-2 flex-row gap-1">
-          {viewModes.map((mode) => (
+          {collectionModes.map((mode) => (
             <TouchableOpacity
               key={mode.key}
-              onPress={() => changeViewMode(mode.key)}
+              onPress={() => changeViewMode(mode.key === 'shelf' ? 'shelf' : listLayout)}
               disabled={viewTransitioning}
               accessibilityRole="button"
               accessibilityLabel={mode.label}
-              accessibilityState={{ selected: viewMode === mode.key, disabled: viewTransitioning }}
+              accessibilityState={{
+                selected: collectionMode === mode.key,
+                disabled: viewTransitioning,
+              }}
               className="h-10 w-10 items-center justify-center rounded-full"
               style={{
-                backgroundColor: viewMode === mode.key ? '#F2DF36' : 'transparent',
+                backgroundColor: collectionMode === mode.key ? '#F2DF36' : 'transparent',
                 opacity: viewTransitioning ? 0.55 : 1,
               }}
             >
               <Ionicons
                 name={mode.icon}
                 size={20}
-                color={viewMode === mode.key ? '#101114' : '#70757E'}
+                color={collectionMode === mode.key ? '#101114' : '#70757E'}
               />
             </TouchableOpacity>
           ))}
@@ -205,61 +201,35 @@ export default function CafeScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* 필터 바 */}
-      {showFilterBar && (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 20, gap: 8 }}
-          style={{ flexGrow: 0, paddingBottom: 10 }}
-        >
-          <TouchableOpacity
-            onPress={() => setFavOnly((v) => !v)}
-            className="flex-row items-center gap-[5px] rounded-[20px] border px-3.5 py-[7px]"
-            style={{
-              backgroundColor: favOnly ? '#F2DF36' : '#FFFFFF',
-              borderColor: favOnly ? '#F2DF36' : '#D8DADE',
-            }}
-          >
-            <Ionicons
-              name={favOnly ? 'heart' : 'heart-outline'}
-              size={14}
-              color={favOnly ? '#101114' : '#70757E'}
-            />
-
-            <Text
-              className="text-[13px] font-bold"
-              style={{ color: favOnly ? '#101114' : '#5F636B' }}
-            >
-              즐겨찾기
-            </Text>
-          </TouchableOpacity>
-
-          {uniqueTags.map((tag) => {
-            const isActive = activeTags.includes(tag);
-            const color = '#123C96';
-            return (
+      {viewMode !== 'shelf' && (
+        <View className="flex-row justify-end px-5 pb-2">
+          <View className="flex-row rounded-full bg-coffee-separator/40 p-0.5">
+            {listLayouts.map((layout) => (
               <TouchableOpacity
-                key={tag}
-                onPress={() => toggleTag(tag)}
-                className="rounded-[20px] border px-3.5 py-[7px]"
+                key={layout.key}
+                onPress={() => changeViewMode(layout.key)}
+                disabled={viewTransitioning}
+                accessibilityRole="button"
+                accessibilityLabel={layout.label}
+                accessibilityState={{
+                  selected: listLayout === layout.key,
+                  disabled: viewTransitioning,
+                }}
+                className="h-9 w-10 items-center justify-center rounded-full"
                 style={{
-                  backgroundColor: isActive ? color : '#FFFFFF',
-                  borderColor: isActive ? color : '#D8DADE',
+                  backgroundColor: listLayout === layout.key ? '#FFFFFF' : 'transparent',
                 }}
               >
-                <Text
-                  className="text-[13px] font-semibold"
-                  style={{ color: isActive ? '#fff' : '#5F636B' }}
-                >
-                  {tag}
-                </Text>
+                <Ionicons
+                  name={layout.icon}
+                  size={17}
+                  color={listLayout === layout.key ? '#5F636B' : '#A9ADB4'}
+                />
               </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
+            ))}
+          </View>
+        </View>
       )}
-
       {/* 콘텐츠 */}
       <Animated.View style={[{ flex: 1 }, viewTransitionStyle]}>
         {viewMode === 'shelf' ? (
@@ -340,7 +310,7 @@ export default function CafeScreen() {
                   }}
                 >
                   <Text className="text-[15px] text-coffee-warm">
-                    + 버튼으로 첫 카페를 기록해보세요.
+                    {favOnly ? '즐겨찾기한 기록이 없어요.' : '+ 버튼으로 첫 카페를 기록해보세요.'}
                   </Text>
                 </View>
               }
