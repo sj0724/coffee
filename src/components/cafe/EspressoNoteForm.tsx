@@ -9,7 +9,7 @@ export function EspressoNoteForm({
 }: {
   tags: string[];
   onChange: (tags: string[]) => void;
-  onSave: () => void;
+  onSave?: () => void;
 }) {
   function toggle(tag: string) {
     onChange(tags.includes(tag) ? tags.filter((t) => t !== tag) : [...tags, tag]);
@@ -40,9 +40,11 @@ export function EspressoNoteForm({
           );
         })}
       </View>
-      <TouchableOpacity className="items-center p-3 rounded-lg bg-coffee" onPress={onSave}>
-        <Text className="font-bold text-white">저장</Text>
-      </TouchableOpacity>
+      {onSave && (
+        <TouchableOpacity className="items-center p-3 rounded-lg bg-coffee" onPress={onSave}>
+          <Text className="font-bold text-white">저장</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }

@@ -164,13 +164,18 @@ export default function CafeDetailScreen() {
   function showMoreOptions() {
     if (Platform.OS === 'ios') {
       ActionSheetIOS.showActionSheetWithOptions(
-        { options: ['취소', '삭제'], cancelButtonIndex: 0, destructiveButtonIndex: 1 },
+        { options: ['취소', '메모 수정', '삭제'], cancelButtonIndex: 0, destructiveButtonIndex: 2 },
         (index) => {
-          if (index === 1) handleDeleteLog();
+          if (index === 1) router.push(`/cafe/${id}/memo`);
+          if (index === 2) handleDeleteLog();
         },
       );
     } else {
-      handleDeleteLog();
+      Alert.alert('기록 메뉴', undefined, [
+        { text: '메모 수정', onPress: () => router.push(`/cafe/${id}/memo`) },
+        { text: '삭제', style: 'destructive', onPress: handleDeleteLog },
+        { text: '취소', style: 'cancel' },
+      ]);
     }
   }
 
@@ -425,7 +430,7 @@ export default function CafeDetailScreen() {
           </View>
 
           {log.memo ? (
-            <View className="mt-[18px] flex-row gap-2.5 border-t border-coffee-separator pt-4">
+            <View className="mt-[18px] flex-row gap-2.5 border-t pl-2 border-coffee-separator pt-4">
               <Ionicons name="chatbubble-ellipses-outline" size={17} color="#8D929B" />
               <Text className="flex-1 text-sm leading-[21px] text-coffee-muted">{log.memo}</Text>
             </View>
@@ -571,7 +576,6 @@ export default function CafeDetailScreen() {
           )}
         </View>
       </Modal>
-
     </View>
   );
 }

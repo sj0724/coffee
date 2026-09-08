@@ -366,6 +366,9 @@ export const CafeLogShareCard = forwardRef<View, Props>(function CafeLogShareCar
       >
         <Text
           className="w-full font-extrabold"
+          lineBreakStrategyIOS="hangul-word"
+          textBreakStrategy="highQuality"
+          android_hyphenationFrequency="none"
           style={{
             letterSpacing: -1.3 * fontScale,
             color: primaryColor,

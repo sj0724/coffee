@@ -1,30 +1,52 @@
 import { View, Text, TextInput } from 'react-native';
 import { useShallow } from 'zustand/react/shallow';
+import { EspressoNoteForm } from './EspressoNoteForm';
 import { MyNotesInput } from './MyNotesInput';
 import { SliderRow } from './SliderRow';
 import { useCafeLogDraftStore } from '@/src/store/cafeLogDraftStore';
 
 export function Step4() {
-  const { photoMode, menuType, memo, myNotes, acidity, nuttiness, richness, smoothness, setField } =
-    useCafeLogDraftStore(
-      useShallow((state) => ({
-        photoMode: state.photoMode,
-        menuType: state.menuType,
-        memo: state.memo,
-        myNotes: state.myNotes,
-        acidity: state.acidity,
-        nuttiness: state.nuttiness,
-        richness: state.richness,
-        smoothness: state.smoothness,
-        setField: state.setField,
-      })),
-    );
+  const {
+    photoMode,
+    menuType,
+    memo,
+    myNotes,
+    espressoTags,
+    acidity,
+    nuttiness,
+    richness,
+    smoothness,
+    setField,
+  } = useCafeLogDraftStore(
+    useShallow((state) => ({
+      photoMode: state.photoMode,
+      menuType: state.menuType,
+      memo: state.memo,
+      myNotes: state.myNotes,
+      espressoTags: state.espressoTags,
+      acidity: state.acidity,
+      nuttiness: state.nuttiness,
+      richness: state.richness,
+      smoothness: state.smoothness,
+      setField: state.setField,
+    })),
+  );
   const showSliders = photoMode === 'handdip' || menuType === 'coffee';
 
   return (
     <View className="gap-5">
       {photoMode === 'handdip' && (
         <MyNotesInput value={myNotes} onChange={(value) => setField('myNotes', value)} />
+      )}
+
+      {photoMode === 'menu' && menuType === 'coffee' && (
+        <View className="gap-2">
+          <Text className="text-[13px] text-coffee-tan">커피 특징</Text>
+          <EspressoNoteForm
+            tags={espressoTags}
+            onChange={(tags) => setField('espressoTags', tags)}
+          />
+        </View>
       )}
 
       {showSliders && (

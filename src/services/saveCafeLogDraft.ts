@@ -1,5 +1,6 @@
 import { createCafeLog } from '@/src/db/queries/cafeLogs';
 import { createMenuItem } from '@/src/db/queries/cafeMenuItems';
+import { upsertEspressoNote } from '@/src/db/queries/espressoNotes';
 import { upsertTastingNote } from '@/src/db/queries/tastingNotes';
 import type { CafeLogDraft } from '@/src/store/cafeLogDraftStore';
 import { measureImageAspectRatios } from '@/src/services/imageAspectRatios';
@@ -38,7 +39,9 @@ export const saveCafeLogDraft = async (draft: CafeLogDraft): Promise<number | nu
     (draft.isBlend && draft.beans.length > 0),
   );
 
-  if (!draft.menuName.trim() && !hasCoffeeInfo) return logId;
+  const hasEspressoTags =
+    draft.photoMode === 'menu' && draft.menuType === 'coffee' && draft.espressoTags.length > 0;
+  if (!draft.menuName.trim() && !hasCoffeeInfo && !hasEspressoTags) return logId;
 
   const menuId = await createMenuItem({
     cafe_log_id: logId,
@@ -52,7 +55,11 @@ export const saveCafeLogDraft = async (draft: CafeLogDraft): Promise<number | nu
             : 0
         : null,
   });
-  if (menuId == null || !hasCoffeeInfo) return logId;
+  if (menuId == null) return logId;
+  if (hasEspressoTags) {
+    await upsertEspressoNote({ cafe_menu_item_id: menuId, tags: draft.espressoTags });
+  }
+  if (!hasCoffeeInfo) return logId;
 
   await upsertTastingNote({
     cafe_menu_item_id: menuId,

@@ -102,3 +102,17 @@ export async function deleteCafeLog(id: number): Promise<boolean> {
     return false;
   }
 }
+
+export async function updateCafeLogMemo(id: number, memo: string): Promise<boolean> {
+  try {
+    const db = await getDB();
+    const result = await db.runAsync('UPDATE cafe_logs SET memo = ? WHERE id = ?', [
+      memo.trim() || null,
+      id,
+    ]);
+    return result.changes > 0;
+  } catch (error) {
+    console.error('updateCafeLogMemo error:', error);
+    return false;
+  }
+}

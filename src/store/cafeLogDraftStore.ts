@@ -34,6 +34,7 @@ export interface CafeLogDraft {
   roastery: string;
   officialNotes: string[];
   myNotes: string[];
+  espressoTags: string[];
   acidity?: number;
   nuttiness?: number;
   richness?: number;
@@ -70,6 +71,7 @@ const createInitialDraft = (): CafeLogDraft => ({
   roastery: '',
   officialNotes: [],
   myNotes: [],
+  espressoTags: [],
   acidity: undefined,
   nuttiness: undefined,
   richness: undefined,
@@ -93,6 +95,7 @@ const createCoffeeDraft = (): Pick<
   | 'roastery'
   | 'officialNotes'
   | 'myNotes'
+  | 'espressoTags'
   | 'acidity'
   | 'nuttiness'
   | 'richness'
@@ -112,6 +115,7 @@ const createCoffeeDraft = (): Pick<
   roastery: '',
   officialNotes: [],
   myNotes: [],
+  espressoTags: [],
   acidity: undefined,
   nuttiness: undefined,
   richness: undefined,
