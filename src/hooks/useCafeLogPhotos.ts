@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert } from 'react-native';
+import { Alert, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useCafeLogDraftStore } from '@/src/store/cafeLogDraftStore';
 
@@ -24,8 +24,10 @@ export const useCafeLogPhotos = () => {
     setScanningNote(true);
     let uri = rawUri;
     try {
-      const { detectAndCrop } = await import('@/modules/document-scanner');
-      uri = await detectAndCrop(rawUri);
+      if (Platform.OS === 'ios') {
+        const { detectAndCrop } = await import('@/modules/document-scanner');
+        uri = await detectAndCrop(rawUri);
+      }
     } catch {
       // 문서 인식 실패 시 원본을 사용한다.
     } finally {
@@ -37,7 +39,10 @@ export const useCafeLogPhotos = () => {
 
   const pickNoteFromCamera = async () => {
     if (!(await requestCameraPermission())) return;
-    const result = await ImagePicker.launchCameraAsync({ quality: 1 });
+    const result = await ImagePicker.launchCameraAsync({
+      quality: 1,
+      allowsEditing: Platform.OS === 'android',
+    });
     if (!result.canceled) await addNotePhoto(result.assets[0].uri);
   };
 
@@ -45,6 +50,7 @@ export const useCafeLogPhotos = () => {
     if (!(await requestLibraryPermission())) return;
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
+      allowsEditing: Platform.OS === 'android',
       quality: 1,
     });
     if (!result.canceled) await addNotePhoto(result.assets[0].uri);

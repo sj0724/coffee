@@ -38,5 +38,12 @@ export async function getDB(): Promise<SQLite.SQLiteDatabase> {
     await db.execAsync('ALTER TABLE cafe_logs ADD COLUMN note_photo_aspect_ratios TEXT;');
   }
 
+  const noteColumns = await db.getAllAsync<{ name: string }>(
+    'PRAGMA table_info(cafe_tasting_notes)',
+  );
+  if (!noteColumns.some((column) => column.name === 'roastery')) {
+    await db.execAsync('ALTER TABLE cafe_tasting_notes ADD COLUMN roastery TEXT;');
+  }
+
   return db;
 }

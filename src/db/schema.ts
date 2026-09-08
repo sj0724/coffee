@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS cafe_tasting_notes (
   variety           TEXT,
   process           TEXT,
   roast_level       TEXT,
+  roastery          TEXT,
   official_notes    TEXT,
   my_notes          TEXT,
   temperature       TEXT,

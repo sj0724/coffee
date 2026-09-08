@@ -55,6 +55,7 @@ export function Step1({
   const noteSlots = [0, 1];
 
   const removeNotePhoto = (index: number) => {
+    setField('analyzed', false);
     setField(
       'notePhotos',
       notePhotos.filter((_, photoIndex) => photoIndex !== index),

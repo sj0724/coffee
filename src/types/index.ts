@@ -45,6 +45,7 @@ export interface HanddripNote {
   variety?: string; // 싱글 오리진 전용
   process?: string; // 싱글 오리진 전용
   roast_level?: string;
+  roastery?: string;
   official_notes?: string[];
   my_notes?: string[];
   acidity?: number;

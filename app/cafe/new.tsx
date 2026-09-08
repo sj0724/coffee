@@ -61,7 +61,7 @@ const NewCafeLogScreen = () => {
   );
 
   const { scanningNote, pickNotePhoto, pickCafePhoto } = useCafeLogPhotos();
-  const { analyzing, runCardAnalysis } = useCafeLogAnalysis();
+  const { analyzing, analysisError, runCardAnalysis } = useCafeLogAnalysis();
   const [showAddressSearch, setShowAddressSearch] = useState(false);
   const [showAiConsent, setShowAiConsent] = useState(false);
   const [analysisAfterStepChange, setAnalysisAfterStepChange] = useState(false);
@@ -142,7 +142,7 @@ const NewCafeLogScreen = () => {
 
   const requestReanalysis = async () => {
     if (await hasCurrentAiConsent()) {
-      void runCardAnalysis();
+      void runCardAnalysis({ force: true });
       return;
     }
     setAnalysisAfterStepChange(false);
@@ -156,7 +156,7 @@ const NewCafeLogScreen = () => {
       moveToNextStep();
       setTimeout(() => void runCardAnalysis(), 300);
     } else {
-      void runCardAnalysis();
+      void runCardAnalysis({ force: true });
     }
   };
 
@@ -238,6 +238,7 @@ const NewCafeLogScreen = () => {
                 {step === 3 && (
                   <Step3
                     analyzing={analyzing}
+                    analysisError={analysisError}
                     onReanalyze={
                       photoMode === 'handdip' && notePhotos.length > 0
                         ? requestReanalysis

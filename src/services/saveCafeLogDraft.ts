@@ -31,6 +31,7 @@ export const saveCafeLogDraft = async (draft: CafeLogDraft): Promise<number | nu
     draft.variety ||
     draft.process ||
     draft.roastLevel ||
+    draft.roastery ||
     draft.officialNotes.length > 0 ||
     draft.myNotes.length > 0 ||
     draft.acidity != null ||
@@ -61,6 +62,7 @@ export const saveCafeLogDraft = async (draft: CafeLogDraft): Promise<number | nu
     variety: draft.isBlend ? undefined : draft.variety || undefined,
     process: draft.isBlend ? undefined : draft.process || undefined,
     roast_level: draft.roastLevel || undefined,
+    roastery: draft.roastery.trim() || undefined,
     official_notes: draft.officialNotes,
     my_notes: draft.myNotes,
     acidity: draft.acidity,

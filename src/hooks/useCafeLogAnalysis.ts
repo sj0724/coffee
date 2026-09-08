@@ -1,29 +1,64 @@
-import { useState } from 'react';
-import { analyzeCardImages } from '@/src/services/visionLLM';
+import { useEffect, useRef, useState } from 'react';
+import {
+  analyzeCardImages,
+  CardAnalysisError,
+  type AnalysisOptions,
+} from '@/src/services/visionLLM';
 import { useCafeLogDraftStore } from '@/src/store/cafeLogDraftStore';
 
 export const useCafeLogAnalysis = () => {
   const [analyzing, setAnalyzing] = useState(false);
-  const runCardAnalysis = async () => {
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const busy = useRef(false);
+  const mounted = useRef(true);
+  const notePhotos = useCafeLogDraftStore((state) => state.notePhotos);
+  useEffect(() => {
+    setAnalysisError(null);
+  }, [notePhotos]);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+
+  const runCardAnalysis = async (options: AnalysisOptions = {}) => {
+    if (busy.current) return;
+    busy.current = true;
+    const photos = [...useCafeLogDraftStore.getState().notePhotos];
+    const isCurrent = () =>
+      mounted.current &&
+      JSON.stringify(useCafeLogDraftStore.getState().notePhotos) === JSON.stringify(photos);
     setAnalyzing(true);
+    setAnalysisError(null);
     try {
-      const result = await analyzeCardImages(useCafeLogDraftStore.getState().notePhotos);
-      if (!result) return;
+      const result = await analyzeCardImages(photos, options);
+      if (!isCurrent()) return;
       useCafeLogDraftStore.getState().updateDraft({
-        ...(result.is_blend !== undefined ? { isBlend: result.is_blend } : {}),
-        ...(result.origin ? { origin: result.origin } : {}),
-        ...(result.farm ? { farm: result.farm } : {}),
-        ...(result.variety ? { variety: result.variety } : {}),
-        ...(result.process ? { process: result.process } : {}),
-        ...(result.roast_level ? { roastLevel: result.roast_level } : {}),
-        ...(result.official_notes?.length ? { officialNotes: result.official_notes } : {}),
-        ...(result.beans?.length ? { beans: result.beans } : {}),
+        isBlend: result.is_blend ?? 0,
+        origin: result.origin ?? '',
+        farm: result.farm ?? '',
+        variety: result.variety ?? '',
+        process: result.process ?? '',
+        roastLevel: result.roast_level ?? '',
+        roastery: result.roastery ?? '',
+        officialNotes: result.official_notes ?? [],
+        beans: result.beans ?? [],
+        analyzed: true,
       });
+    } catch (error) {
+      if (!isCurrent()) return;
+      useCafeLogDraftStore.getState().setField('analyzed', false);
+      setAnalysisError(
+        error instanceof CardAnalysisError
+          ? error.message
+          : '분석하지 못했어요. 다시 시도하거나 직접 입력해주세요.',
+      );
     } finally {
-      setAnalyzing(false);
-      useCafeLogDraftStore.getState().setField('analyzed', true);
+      busy.current = false;
+      if (mounted.current) setAnalyzing(false);
     }
   };
 
-  return { analyzing, runCardAnalysis };
+  return { analyzing, analysisError, runCardAnalysis };
 };

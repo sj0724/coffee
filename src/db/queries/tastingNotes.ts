@@ -58,7 +58,7 @@ export async function upsertTastingNote(note: HanddripNote): Promise<boolean> {
         noteId = existing.id;
         await db.runAsync(
           `UPDATE cafe_tasting_notes
-           SET is_blend = ?, origin = ?, farm = ?, variety = ?, process = ?, roast_level = ?,
+           SET is_blend = ?, origin = ?, farm = ?, variety = ?, process = ?, roast_level = ?, roastery = ?,
                official_notes = ?, my_notes = ?,
                acidity = ?, nuttiness = ?, richness = ?, smoothness = ?
            WHERE cafe_menu_item_id = ?`,
@@ -69,6 +69,7 @@ export async function upsertTastingNote(note: HanddripNote): Promise<boolean> {
             isBlend ? null : (note.variety ?? null),
             isBlend ? null : (note.process ?? null),
             note.roast_level ?? null,
+            note.roastery ?? null,
             officialNotes,
             myNotes,
             note.acidity ?? null,
@@ -81,9 +82,9 @@ export async function upsertTastingNote(note: HanddripNote): Promise<boolean> {
       } else {
         const result = await db.runAsync(
           `INSERT INTO cafe_tasting_notes
-           (cafe_menu_item_id, is_blend, origin, farm, variety, process, roast_level,
+           (cafe_menu_item_id, is_blend, origin, farm, variety, process, roast_level, roastery,
             official_notes, my_notes, acidity, nuttiness, richness, smoothness)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             note.cafe_menu_item_id,
             isBlend,
@@ -92,6 +93,7 @@ export async function upsertTastingNote(note: HanddripNote): Promise<boolean> {
             isBlend ? null : (note.variety ?? null),
             isBlend ? null : (note.process ?? null),
             note.roast_level ?? null,
+            note.roastery ?? null,
             officialNotes,
             myNotes,
             note.acidity ?? null,
@@ -109,7 +111,14 @@ export async function upsertTastingNote(note: HanddripNote): Promise<boolean> {
         for (const bean of note.beans) {
           await db.runAsync(
             'INSERT INTO cafe_tasting_note_beans (note_id, origin, farm, variety, process, ratio) VALUES (?, ?, ?, ?, ?, ?)',
-            [noteId, bean.origin ?? null, bean.farm ?? null, bean.variety ?? null, bean.process ?? null, bean.ratio ?? null],
+            [
+              noteId,
+              bean.origin ?? null,
+              bean.farm ?? null,
+              bean.variety ?? null,
+              bean.process ?? null,
+              bean.ratio ?? null,
+            ],
           );
         }
       }

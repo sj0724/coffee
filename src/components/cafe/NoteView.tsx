@@ -21,9 +21,7 @@ function NoteTagRow({
   color: 'blue' | 'coffee';
 }) {
   const badgeStyle =
-    color === 'blue'
-      ? 'bg-blue-50 border border-blue-200'
-      : 'bg-white border border-coffee-border';
+    color === 'blue' ? 'bg-blue-50 border border-blue-200' : 'bg-white border border-coffee-border';
   const textStyle = color === 'blue' ? 'text-blue-700' : 'text-coffee-muted';
   return (
     <View className="gap-2">
@@ -51,6 +49,7 @@ export function NoteView({ note }: { note: HanddripNote }) {
   const isBlend = !!note.is_blend || (note.beans?.length ?? 0) > 0;
   const hasBeanInfo =
     !!note.roast_level ||
+    !!note.roastery ||
     (isBlend
       ? (note.beans?.length ?? 0) > 0
       : !!(note.origin || note.farm || note.variety || note.process));
@@ -64,10 +63,6 @@ export function NoteView({ note }: { note: HanddripNote }) {
         <View className="gap-3 p-4 bg-[#F4F5F7] rounded-xl">
           {isBlend ? (
             <>
-              <View className="flex-row gap-2 mb-0.5">
-                <Text className="text-[13px] font-semibold text-[#5F636B] w-[60px]">원두</Text>
-                <Text className="text-[13px] text-coffee font-semibold">블랜드</Text>
-              </View>
               {(note.beans ?? []).map((bean, idx) => (
                 <BeanRow key={idx} bean={bean} index={idx} />
               ))}
@@ -80,6 +75,7 @@ export function NoteView({ note }: { note: HanddripNote }) {
               {note.process && <InfoRow label="가공법" value={note.process} />}
             </>
           )}
+          {note.roastery && <InfoRow label="로스터리" value={note.roastery} />}
           {note.roast_level && <InfoRow label="로스팅" value={note.roast_level} />}
         </View>
       )}

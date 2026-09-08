@@ -165,7 +165,12 @@ export function NoteForm({
       )}
 
       <NoteInput
-        label="로스팅"
+        label="로스터리"
+        value={form.roastery}
+        onChange={(v) => onChange({ ...form, roastery: v })}
+      />
+      <NoteInput
+        label="로스팅 정도"
         value={form.roast_level}
         onChange={(v) => onChange({ ...form, roast_level: v })}
       />

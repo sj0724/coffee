@@ -9,10 +9,19 @@
   },
   "vars": {
     "GEMINI_MODEL": "gemini-3.5-flash",
+    "ANALYSIS_DAILY_LIMIT": "500",
+    "ANALYSIS_IP_DAILY_LIMIT": "20",
   },
   "secrets": {
     "required": ["GEMINI_API_KEY"],
   },
+  "durable_objects": {
+    "bindings": [
+      { "name": "ANALYSIS_JOBS", "class_name": "CardAnalysisJob" },
+      { "name": "ANALYSIS_BUDGET", "class_name": "AnalysisBudget" },
+    ],
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["CardAnalysisJob", "AnalysisBudget"] }],
   "ratelimits": [
     {
       "name": "ANALYSIS_RATE_LIMITER",

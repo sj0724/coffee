@@ -20,9 +20,11 @@ const DESSERT_MENU_PRESETS = ['케이크', '쿠키', '스콘', '크루아상', '
 
 export function Step3({
   analyzing,
+  analysisError,
   onReanalyze,
 }: {
   analyzing: boolean;
+  analysisError?: string | null;
   onReanalyze?: () => void;
 }) {
   const {
@@ -36,6 +38,7 @@ export function Step3({
     variety,
     process,
     roastLevel,
+    roastery,
     officialNotes,
     beans,
     setField,
@@ -51,6 +54,7 @@ export function Step3({
       variety: state.variety,
       process: state.process,
       roastLevel: state.roastLevel,
+      roastery: state.roastery,
       officialNotes: state.officialNotes,
       beans: state.beans,
       setField: state.setField,
@@ -70,14 +74,19 @@ export function Step3({
   return (
     <View className="gap-5">
       {/* 분석 상태 배너 */}
-      {analyzed && !analyzing && onReanalyze && (
+      {!analyzing && onReanalyze && (
         <View className="flex-row items-center justify-between rounded-xl bg-[#F1F2F4] p-3">
-          <View className="flex-row items-center gap-1.5">
+          <View className="flex-1 flex-row items-center gap-1.5 pr-3">
             <Ionicons name="sparkles-outline" size={15} color="#5F636B" />
-            <Text className="text-[13px] font-medium text-coffee-tan">자동 분석 완료</Text>
+            <Text className="flex-1 text-[13px] font-medium text-coffee-tan">
+              {analysisError ||
+                (analyzed ? '자동 분석 완료' : '사진에서 원두 정보를 분석할 수 있어요.')}
+            </Text>
           </View>
           <TouchableOpacity onPress={onReanalyze}>
-            <Text className="text-xs font-semibold text-coffee-tan">재분석</Text>
+            <Text className="text-xs font-semibold text-coffee-tan">
+              {analysisError ? '다시 시도' : analyzed ? '재분석' : '분석'}
+            </Text>
           </TouchableOpacity>
         </View>
       )}
@@ -154,7 +163,12 @@ export function Step3({
             </View>
           )}
 
-          <NoteInput label="로스팅" value={roastLevel} onChange={onRoastLevel} />
+          <NoteInput
+            label="로스터리"
+            value={roastery}
+            onChange={(value) => setField('roastery', value)}
+          />
+          <NoteInput label="로스팅 정도" value={roastLevel} onChange={onRoastLevel} />
           <TagsInput
             label="공식 노트 (쉼표 구분)"
             value={officialNotes}
