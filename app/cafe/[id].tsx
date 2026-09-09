@@ -50,7 +50,12 @@ function MenuActionDropdown({ onEdit, onDelete }: { onEdit?: () => void; onDelet
 
   return (
     <View ref={anchorRef} collapsable={false}>
-      <TouchableOpacity onPress={show} className="-m-1.5 p-1.5">
+      <TouchableOpacity
+        onPress={show}
+        accessibilityRole="button"
+        accessibilityLabel="메뉴 수정 및 삭제"
+        className="items-center justify-center h-11 w-11"
+      >
         <Ionicons name="ellipsis-horizontal" size={20} color="#5F636B" />
       </TouchableOpacity>
       <Modal transparent visible={open} animationType="fade" onRequestClose={() => setOpen(false)}>
@@ -375,17 +380,20 @@ export default function CafeDetailScreen() {
           </View>
         )}
 
-        <View className="mx-5 mt-1 rounded-[20px] border border-coffee-separator bg-white p-5">
+        <View className="pt-2 pb-6 mx-5">
           <View className="flex-row items-start gap-3">
-            <Text className="flex-1 text-2xl font-extrabold tracking-[-0.5px] text-[#1D1D1B]">
+            <Text
+              lineBreakStrategyIOS="hangul-word"
+              className="flex-1 text-[28px] leading-9 font-bold tracking-[-0.5px] text-coffee"
+            >
               {log.cafe_name}
             </Text>
-            <View className="flex-row items-center gap-1.5">
+            <View className="flex-row items-center">
               <TouchableOpacity
                 onPress={handleToggleFavorite}
                 accessibilityRole="button"
                 accessibilityLabel={isFav ? '즐겨찾기 해제' : '즐겨찾기'}
-                className="items-center justify-center h-9 w-9"
+                className="items-center justify-center h-11 w-11"
               >
                 <Ionicons
                   name={isFav ? 'heart' : 'heart-outline'}
@@ -397,59 +405,59 @@ export default function CafeDetailScreen() {
                 onPress={showMoreOptions}
                 accessibilityRole="button"
                 accessibilityLabel="더보기"
-                className="items-center justify-center h-9 w-9"
+                className="items-center justify-center h-11 w-11"
               >
                 <Ionicons name="ellipsis-horizontal" size={20} color="#70757E" />
               </TouchableOpacity>
             </View>
           </View>
-          <View className="mt-4 gap-2.5">
-            <View className="flex-row items-center gap-2">
-              <View className="h-[30px] w-[30px] items-center justify-center rounded-full bg-[#F1F2F4]">
+          <View className="gap-1 mt-3">
+            <View className="flex-row items-center gap-2 py-1">
+              <View className="items-center w-5">
                 <Ionicons name="calendar-outline" size={15} color="#5F636B" />
               </View>
-              <Text className="text-sm text-coffee-tan">{log.visited_at}</Text>
+              <Text className="text-sm text-coffee-tan">{log.visited_at.replace(/-/g, '.')}</Text>
             </View>
             {log.address ? (
               <TouchableOpacity
-                className="flex-row items-center gap-2"
+                className="flex-row items-center gap-2 py-2 min-h-11"
+                accessibilityRole="link"
+                accessibilityLabel="네이버 지도에서 카페 위치 보기"
                 onPress={() => {
                   const query = encodeURIComponent(`${log.cafe_name} ${log.address}`);
                   Linking.openURL(`https://map.naver.com/v5/search/${query}`);
                 }}
               >
-                <View className="h-[30px] w-[30px] items-center justify-center rounded-full bg-[#F1F2F4]">
+                <View className="items-center w-5">
                   <Ionicons name="location-outline" size={16} color="#5F636B" />
                 </View>
-                <Text className="flex-1 text-sm text-coffee-muted" numberOfLines={2}>
-                  {log.address}
-                </Text>
+                <Text className="flex-1 text-sm leading-5 text-coffee-tan">{log.address}</Text>
                 <Ionicons name="chevron-forward" size={16} color="#B8BCC4" />
               </TouchableOpacity>
             ) : null}
           </View>
 
           {log.memo ? (
-            <View className="mt-[18px] flex-row gap-2.5 border-t pl-2 border-coffee-separator pt-4">
-              <Ionicons name="chatbubble-ellipses-outline" size={17} color="#8D929B" />
-              <Text className="flex-1 text-sm leading-[21px] text-coffee-muted">{log.memo}</Text>
+            <View className="mt-4 gap-2 rounded-2xl bg-[#F6F7F9] p-4">
+              <Text className="text-xs font-semibold text-coffee-tan">나의 한마디</Text>
+              <Text className="text-[15px] leading-6 text-coffee-muted">{log.memo}</Text>
             </View>
           ) : null}
         </View>
 
-        <View className="mt-2">
-          <View className="flex-row items-center px-5 mb-3">
-            <Text className="text-xl font-extrabold text-coffee">메뉴</Text>
+        <View className="pt-6 mx-5 border-t border-coffee-separator">
+          <View className="flex-row items-center gap-2 mb-4">
+            <Text className="text-lg font-bold text-coffee">이날의 메뉴</Text>
           </View>
 
           {menuItems.length === 0 && (
-            <View className="px-5 py-8 mx-5 border bg-coffee-cream border-coffee-border rounded-2xl">
-              <Text className="text-sm text-center text-gray-300">등록된 메뉴가 없어요.</Text>
+            <View className="rounded-2xl bg-[#F6F7F9] px-5 py-7">
+              <Text className="text-sm text-center text-coffee-tan">등록된 메뉴가 없어요.</Text>
             </View>
           )}
 
           {menuItems.length > 0 && (
-            <View className="gap-3 px-5">
+            <View className="gap-4">
               {menuItems.map((item) => {
                 const category = handripNotesMap[item.id!]
                   ? 'handdip'
@@ -458,10 +466,10 @@ export default function CafeDetailScreen() {
                 return (
                   <View
                     key={item.id}
-                    className="rounded-[18px] border border-coffee-border bg-white p-[18px]"
+                    className="p-4 bg-white border rounded-2xl border-coffee-separator"
                   >
                     <View className="flex-row items-center justify-between">
-                      <View className="flex-1 flex-row items-center gap-[11px]">
+                      <View className="flex-row items-center flex-1 gap-3">
                         <View className="h-9 w-9 items-center justify-center rounded-[11px] bg-[#F1F2F4]">
                           <Ionicons
                             name={
@@ -476,7 +484,10 @@ export default function CafeDetailScreen() {
                           />
                         </View>
                         <View className="flex-1">
-                          <Text className="text-[17px] font-bold text-[#101114]">
+                          <Text
+                            lineBreakStrategyIOS="hangul-word"
+                            className="text-[18px] leading-6 font-bold text-coffee"
+                          >
                             {item.menu_name}
                           </Text>
                           <Text className="mt-0.5 text-xs text-coffee-soft">
@@ -501,21 +512,39 @@ export default function CafeDetailScreen() {
                     </View>
 
                     {(category === 'handdip' || category === 'espresso') && (
-                      <View className="mb-4 mt-3.5 h-px bg-coffee-separator" />
+                      <View className="h-px mt-4 mb-4 bg-coffee-separator" />
                     )}
 
                     {category === 'handdip' &&
                       (handripNotesMap[item.id!] ? (
                         <NoteView note={handripNotesMap[item.id!]} />
                       ) : (
-                        <Text className="py-1 text-xs text-gray-300">노트를 추가해보세요.</Text>
+                        <TouchableOpacity
+                          onPress={() => router.push(`/cafe/menu/${item.id}/edit`)}
+                          accessibilityRole="button"
+                          className="flex-row items-center justify-between gap-2 min-h-11"
+                        >
+                          <Text className="flex-1 text-sm text-coffee-tan">
+                            원두와 맛을 기록해보세요
+                          </Text>
+                          <Ionicons name="add" size={18} color="#123C96" />
+                        </TouchableOpacity>
                       ))}
 
                     {category === 'espresso' &&
-                      (espressoNotesMap[item.id!] ? (
+                      ((espressoNotesMap[item.id!]?.tags.length ?? 0) > 0 ? (
                         <EspressoNoteView note={espressoNotesMap[item.id!]} />
                       ) : (
-                        <Text className="py-1 text-xs text-gray-300">특징을 추가해보세요.</Text>
+                        <TouchableOpacity
+                          onPress={() => router.push(`/cafe/menu/${item.id}/edit`)}
+                          accessibilityRole="button"
+                          className="flex-row items-center justify-between gap-2 min-h-11"
+                        >
+                          <Text className="flex-1 text-sm text-coffee-tan">
+                            커피의 특징을 남겨보세요
+                          </Text>
+                          <Ionicons name="add" size={18} color="#123C96" />
+                        </TouchableOpacity>
                       ))}
                   </View>
                 );

@@ -5,8 +5,8 @@ import { ScoreBar } from './ScoreBar';
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
     <View className="flex-row gap-2">
-      <Text className="text-[13px] font-semibold text-[#5F636B] w-[60px]">{label}</Text>
-      <Text className="text-[14px] leading-5 text-[#101114] flex-1">{value}</Text>
+      <Text className="w-[76px] shrink-0 text-[13px] leading-[22px] text-coffee-tan">{label}</Text>
+      <Text className="flex-1 text-[14px] leading-[22px] text-coffee">{value}</Text>
     </View>
   );
 }
@@ -20,15 +20,14 @@ function NoteTagRow({
   tags: string[];
   color: 'blue' | 'coffee';
 }) {
-  const badgeStyle =
-    color === 'blue' ? 'bg-blue-50 border border-blue-200' : 'bg-white border border-coffee-border';
-  const textStyle = color === 'blue' ? 'text-blue-700' : 'text-coffee-muted';
+  const badgeStyle = color === 'blue' ? 'bg-[#EEF2FA]' : 'bg-[#F4F5F7]';
+  const textStyle = color === 'blue' ? 'text-accent' : 'text-coffee-muted';
   return (
     <View className="gap-2">
       <Text className="text-[13px] font-semibold text-[#5F636B]">{label}</Text>
       <View className="flex-row flex-wrap gap-1.5">
         {tags.map((tag, i) => (
-          <View key={i} className={`px-2.5 py-1 rounded-full ${badgeStyle}`}>
+          <View key={i} className={`px-3 py-1.5 rounded-full ${badgeStyle}`}>
             <Text className={`text-[13px] ${textStyle}`}>{tag}</Text>
           </View>
         ))}
@@ -58,9 +57,9 @@ export function NoteView({ note }: { note: HanddripNote }) {
   );
 
   return (
-    <View style={{ gap: 14 }}>
+    <View className="gap-5">
       {hasBeanInfo && (
-        <View className="gap-3 p-4 bg-[#F4F5F7] rounded-xl">
+        <View className="gap-3">
           {isBlend ? (
             <>
               {(note.beans ?? []).map((bean, idx) => (
@@ -76,11 +75,11 @@ export function NoteView({ note }: { note: HanddripNote }) {
             </>
           )}
           {note.roastery && <InfoRow label="로스터리" value={note.roastery} />}
-          {note.roast_level && <InfoRow label="로스팅" value={note.roast_level} />}
+          {note.roast_level && <InfoRow label="로스팅 정도" value={note.roast_level} />}
         </View>
       )}
       {((note.official_notes?.length ?? 0) > 0 || (note.my_notes?.length ?? 0) > 0) && (
-        <View style={{ gap: 12 }}>
+        <View className="gap-4">
           {(note.official_notes?.length ?? 0) > 0 && (
             <NoteTagRow label="공식 노트" tags={note.official_notes!} color="blue" />
           )}
