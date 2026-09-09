@@ -30,13 +30,13 @@ export function MyNotesInput({
     <View className="gap-3 mb-1">
       <View className="flex-row items-center justify-between">
         <Text className="text-[13px] text-[#5F636B]">내 노트</Text>
-        <Text className="text-[12px] text-gray-400">
+        <Text className="text-[13px] text-gray-400">
           {selected.length}/{MAX_MY_NOTES}
         </Text>
       </View>
       {FLAVOR_OPTIONS.map((group) => (
         <View key={group.label}>
-          <Text className="text-[11px] text-gray-400 mb-1.5">{group.label}</Text>
+          <Text className="text-[13px] text-gray-400 mb-1.5">{group.label}</Text>
           <View className="flex-row flex-wrap gap-1.5">
             {group.tags.map((tag) => {
               const isSelected = selected.includes(tag);
@@ -55,7 +55,7 @@ export function MyNotesInput({
                   }`}
                 >
                   <Text
-                    className={`text-[12px] ${
+                    className={`text-[13px] ${
                       isSelected ? 'text-white' : isDisabled ? 'text-gray-300' : 'text-[#5F636B]'
                     }`}
                   >

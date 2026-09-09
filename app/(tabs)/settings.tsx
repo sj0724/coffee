@@ -40,7 +40,7 @@ function SettingRow({
 
 function SectionHeader({ title }: { title: string }) {
   return (
-    <Text className="px-5 pb-2 pt-7 text-xs font-semibold tracking-[0.5px] text-coffee-warm">
+    <Text className="px-5 pb-2 pt-7 text-[13px] font-semibold tracking-[0.5px] text-coffee-warm">
       {title}
     </Text>
   );

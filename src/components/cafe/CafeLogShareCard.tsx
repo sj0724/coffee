@@ -95,7 +95,7 @@ function MenuList({
                   color: primaryColor,
                   textAlign,
                   fontFamily,
-                  fontSize: 14 * fontScale,
+                  fontSize: Math.max(13, 14 * fontScale),
                   ...(useRegularWeight ? { fontWeight: '400' as const } : {}),
                 }}
               >
@@ -108,7 +108,7 @@ function MenuList({
                     color: secondaryColor,
                     textAlign,
                     fontFamily,
-                    fontSize: 10.5 * fontScale,
+                    fontSize: Math.max(13, 13 * fontScale),
                   }}
                 >
                   {detail}
@@ -333,7 +333,7 @@ export const CafeLogShareCard = forwardRef<View, Props>(function CafeLogShareCar
           style={{
             color: primaryColor,
             fontFamily,
-            fontSize: 11 * fontScale,
+            fontSize: Math.max(13, 13 * fontScale),
             ...(useRegularWeight ? { fontWeight: '400' as const } : {}),
           }}
         >
@@ -374,8 +374,8 @@ export const CafeLogShareCard = forwardRef<View, Props>(function CafeLogShareCar
             color: primaryColor,
             textAlign: decoration.textAlign,
             fontFamily,
-            fontSize: 32 * fontScale,
-            lineHeight: titleLineHeight * fontScale,
+            fontSize: Math.max(13, 32 * fontScale),
+            lineHeight: Math.max(18, titleLineHeight * fontScale),
             ...(useRegularWeight ? { fontWeight: '400' as const } : {}),
           }}
         >
@@ -393,7 +393,7 @@ export const CafeLogShareCard = forwardRef<View, Props>(function CafeLogShareCar
                 style={{
                   color: primaryColor,
                   fontFamily,
-                  fontSize: 14 * fontScale,
+                  fontSize: Math.max(13, 14 * fontScale),
                   textAlign: decoration.textAlign,
                 }}
               >
@@ -410,8 +410,8 @@ export const CafeLogShareCard = forwardRef<View, Props>(function CafeLogShareCar
               color: secondaryColor,
               textAlign: decoration.textAlign,
               fontFamily,
-              fontSize: 12 * fontScale,
-              lineHeight: memoLineHeight * fontScale,
+              fontSize: Math.max(13, 13 * fontScale),
+              lineHeight: Math.max(18, memoLineHeight * fontScale),
             }}
           >
             “{log.memo}”

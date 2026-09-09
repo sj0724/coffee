@@ -1,38 +1,15 @@
 import { View, Text } from 'react-native';
 import { HanddripNote, HanddripNoteBean } from '@/src/types';
 import { ScoreBar } from './ScoreBar';
+import { NoteDetailRow, FlavorDetailRow } from './NoteDetailRow';
 
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
-    <View className="flex-row gap-2">
-      <Text className="w-[76px] shrink-0 text-[13px] leading-[22px] text-coffee-tan">{label}</Text>
-      <Text className="flex-1 text-[14px] leading-[22px] text-coffee">{value}</Text>
-    </View>
-  );
-}
-
-function NoteTagRow({
-  label,
-  tags,
-  color,
-}: {
-  label: string;
-  tags: string[];
-  color: 'blue' | 'coffee';
-}) {
-  const badgeStyle = color === 'blue' ? 'bg-[#EEF2FA]' : 'bg-[#F4F5F7]';
-  const textStyle = color === 'blue' ? 'text-accent' : 'text-coffee-muted';
-  return (
-    <View className="gap-2">
-      <Text className="text-[13px] font-semibold text-[#5F636B]">{label}</Text>
-      <View className="flex-row flex-wrap gap-1.5">
-        {tags.map((tag, i) => (
-          <View key={i} className={`px-3 py-1.5 rounded-full ${badgeStyle}`}>
-            <Text className={`text-[13px] ${textStyle}`}>{tag}</Text>
-          </View>
-        ))}
-      </View>
-    </View>
+    <NoteDetailRow label={label}>
+      <Text className="text-[14px] leading-6 text-coffee" lineBreakStrategyIOS="hangul-word">
+        {value}
+      </Text>
+    </NoteDetailRow>
   );
 }
 
@@ -52,6 +29,7 @@ export function NoteView({ note }: { note: HanddripNote }) {
     (isBlend
       ? (note.beans?.length ?? 0) > 0
       : !!(note.origin || note.farm || note.variety || note.process));
+  const hasFlavors = !!(note.official_notes?.length || note.my_notes?.length);
   const hasScores = [note.acidity, note.nuttiness, note.richness, note.smoothness].some(
     (value) => value != null,
   );
@@ -78,18 +56,20 @@ export function NoteView({ note }: { note: HanddripNote }) {
           {note.roast_level && <InfoRow label="로스팅 정도" value={note.roast_level} />}
         </View>
       )}
-      {((note.official_notes?.length ?? 0) > 0 || (note.my_notes?.length ?? 0) > 0) && (
-        <View className="gap-4">
+      {hasFlavors && (
+        <View className={`gap-4 ${hasBeanInfo ? 'border-t border-coffee-separator pt-4' : ''}`}>
           {(note.official_notes?.length ?? 0) > 0 && (
-            <NoteTagRow label="공식 노트" tags={note.official_notes!} color="blue" />
+            <FlavorDetailRow label="공식 노트" notes={note.official_notes!} />
           )}
           {(note.my_notes?.length ?? 0) > 0 && (
-            <NoteTagRow label="내 노트" tags={note.my_notes!} color="coffee" />
+            <FlavorDetailRow label="내 노트" notes={note.my_notes!} />
           )}
         </View>
       )}
       {hasScores && (
-        <View className="gap-3 p-4 bg-[#F4F5F7] rounded-xl">
+        <View
+          className={`gap-3 ${hasBeanInfo || hasFlavors ? 'border-t border-coffee-separator pt-4' : ''}`}
+        >
           {note.acidity != null && <ScoreBar label="산미" value={note.acidity} />}
           {note.nuttiness != null && <ScoreBar label="고소함" value={note.nuttiness} />}
           {note.richness != null && <ScoreBar label="진함" value={note.richness} />}

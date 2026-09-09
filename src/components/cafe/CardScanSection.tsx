@@ -88,7 +88,7 @@ export function CardScanSection({ onAnalyzed }: Props) {
       <View className="flex-row items-center gap-1.5">
         <Ionicons name="scan-outline" size={15} color="#123C96" />
         <Text className="text-[13px] font-semibold text-coffee">원두 카드 스캔</Text>
-        <Text className="text-[11px] text-gray-400">(선택 · 최대 2장)</Text>
+        <Text className="text-[13px] text-gray-400">(선택 · 최대 2장)</Text>
       </View>
 
       <View className="flex-row gap-2">
@@ -116,7 +116,7 @@ export function CardScanSection({ onAnalyzed }: Props) {
         {scanning && (
           <View className="h-[106px] w-20 items-center justify-center gap-1 rounded-lg bg-[#EFEFEF]">
             <ActivityIndicator size="small" color="#123C96" />
-            <Text className="text-[10px] text-coffee-soft">크롭 중</Text>
+            <Text className="text-[13px] text-coffee-soft">크롭 중</Text>
           </View>
         )}
 
@@ -128,7 +128,7 @@ export function CardScanSection({ onAnalyzed }: Props) {
             style={{ opacity: isBusy ? 0.4 : 1 }}
           >
             <Ionicons name="add" size={22} color="#123C96" />
-            <Text className="text-[11px] font-semibold text-accent">
+            <Text className="text-[13px] font-semibold text-accent">
               {cards.length === 0 ? '앞면' : '뒷면'}
             </Text>
           </TouchableOpacity>
@@ -138,7 +138,7 @@ export function CardScanSection({ onAnalyzed }: Props) {
       {analyzing && (
         <View className="flex-row items-center justify-center gap-2 py-1">
           <ActivityIndicator size="small" color="#123C96" />
-          <Text className="text-[12px] text-coffee">Gemini 분석 중...</Text>
+          <Text className="text-[13px] text-coffee">Gemini 분석 중...</Text>
         </View>
       )}
 

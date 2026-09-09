@@ -31,7 +31,7 @@ export function AiAnalysisConsentModal({ visible, onAgree, onSkip, onViewPrivacy
 
           <View className="mt-4 flex-row items-start gap-2 rounded-xl bg-[#F4F5F7] p-3">
             <Ionicons name="shield-checkmark-outline" size={17} color="#123C96" />
-            <Text className="flex-1 text-xs leading-[18px] text-coffee-tan">
+            <Text className="flex-1 text-[13px] leading-[18px] text-coffee-tan">
               동의하지 않아도 직접 입력하여 기록을 계속할 수 있습니다.
             </Text>
           </View>
@@ -46,7 +46,7 @@ export function AiAnalysisConsentModal({ visible, onAgree, onSkip, onViewPrivacy
             <Text className="text-sm font-semibold text-coffee-tan">분석 없이 계속</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={onViewPrivacy} className="items-center py-1">
-            <Text className="text-xs text-coffee-warm underline">개인정보처리방침 보기</Text>
+            <Text className="text-[13px] text-coffee-warm underline">개인정보처리방침 보기</Text>
           </TouchableOpacity>
         </View>
       </View>

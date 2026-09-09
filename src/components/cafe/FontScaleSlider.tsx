@@ -25,7 +25,7 @@ export function FontScaleSlider({
 
   return (
     <View className="flex-row items-center gap-3">
-      <Text className="text-xs text-coffee-muted">크기</Text>
+      <Text className="text-[13px] text-coffee-muted">크기</Text>
       <View
         className="h-11 flex-1 justify-center"
         onLayout={(event) => setWidth(event.nativeEvent.layout.width)}
@@ -77,7 +77,7 @@ export function FontScaleSlider({
         />
       </View>
       <Text
-        className="w-12 text-right text-xs font-semibold text-coffee"
+        className="w-12 text-right text-[13px] font-semibold text-coffee"
         style={{ fontVariant: ['tabular-nums'] }}
       >
         {value.toFixed(2)}×

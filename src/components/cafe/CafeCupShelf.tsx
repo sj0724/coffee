@@ -21,7 +21,7 @@ export function CafeCupShelf({ logs }: { logs: CafeLog[] }) {
       ListHeaderComponent={
         <View className="flex-row items-baseline justify-between px-1 mb-2">
           <Text className="text-sm font-semibold text-coffee">나의 컵 찬장</Text>
-          <Text className="text-xs text-coffee-warm">{logs.length}개의 컵</Text>
+          <Text className="text-[13px] text-coffee-warm">{logs.length}개의 컵</Text>
         </View>
       }
       ListFooterComponent={

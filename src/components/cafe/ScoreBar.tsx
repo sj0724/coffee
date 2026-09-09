@@ -10,9 +10,11 @@ export function ScoreBar({ label, value }: { label: string; value: number }) {
       accessible
       accessibilityLabel={`${label} ${value}점`}
     >
-      <Text className="w-[52px] text-[13px] font-semibold text-coffee-muted">{label}</Text>
+      <Text className="w-[76px] shrink-0 text-[13px] font-semibold leading-6 text-black">
+        {label}
+      </Text>
       <View
-        className="flex-1 flex-row items-center"
+        className="flex-row items-center flex-1"
         importantForAccessibility="no-hide-descendants"
       >
         {[1, 2, 3, 4, 5].flatMap((n) => {

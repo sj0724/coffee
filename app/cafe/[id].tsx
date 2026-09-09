@@ -380,7 +380,7 @@ export default function CafeDetailScreen() {
           </View>
         )}
 
-        <View className="pt-2 pb-6 mx-5">
+        <View className="pt-2 mx-5">
           <View className="flex-row items-start gap-3">
             <Text
               lineBreakStrategyIOS="hangul-word"
@@ -438,8 +438,8 @@ export default function CafeDetailScreen() {
           </View>
 
           {log.memo ? (
-            <View className="mt-4 gap-2 rounded-2xl bg-[#F6F7F9] p-4">
-              <Text className="text-xs font-semibold text-coffee-tan">나의 한마디</Text>
+            <View className="mt-2 gap-2 rounded-2xl bg-[#F6F7F9] p-4">
+              <Text className="text-[13px] font-semibold text-coffee-tan">나의 한마디</Text>
               <Text className="text-[15px] leading-6 text-coffee-muted">{log.memo}</Text>
             </View>
           ) : null}
@@ -470,19 +470,6 @@ export default function CafeDetailScreen() {
                   >
                     <View className="flex-row items-center justify-between">
                       <View className="flex-row items-center flex-1 gap-3">
-                        <View className="h-9 w-9 items-center justify-center rounded-[11px] bg-[#F1F2F4]">
-                          <Ionicons
-                            name={
-                              category === 'handdip'
-                                ? 'water-outline'
-                                : category === 'dessert'
-                                  ? 'restaurant-outline'
-                                  : 'cafe-outline'
-                            }
-                            size={18}
-                            color="#3F4248"
-                          />
-                        </View>
                         <View className="flex-1">
                           <Text
                             lineBreakStrategyIOS="hangul-word"
@@ -490,7 +477,7 @@ export default function CafeDetailScreen() {
                           >
                             {item.menu_name}
                           </Text>
-                          <Text className="mt-0.5 text-xs text-coffee-soft">
+                          <Text className="mt-0.5 text-[13px] text-coffee-soft">
                             {category === 'handdip'
                               ? '핸드드립 노트'
                               : category === 'espresso'

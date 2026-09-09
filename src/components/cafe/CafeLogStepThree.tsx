@@ -84,7 +84,7 @@ export function Step3({
             </Text>
           </View>
           <TouchableOpacity onPress={onReanalyze}>
-            <Text className="text-xs font-semibold text-coffee-tan">
+            <Text className="text-[13px] font-semibold text-coffee-tan">
               {analysisError ? '다시 시도' : analyzed ? '재분석' : '분석'}
             </Text>
           </TouchableOpacity>

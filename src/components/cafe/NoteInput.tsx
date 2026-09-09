@@ -40,7 +40,7 @@ export function NoteInput({
           position: 'absolute',
           left: 0,
           top: labelProgress.interpolate({ inputRange: [0, 1], outputRange: [18, 5] }),
-          fontSize: labelProgress.interpolate({ inputRange: [0, 1], outputRange: [15, 11] }),
+          fontSize: labelProgress.interpolate({ inputRange: [0, 1], outputRange: [15, 13] }),
           color: focused ? '#123C96' : '#70757E',
         }}
       >

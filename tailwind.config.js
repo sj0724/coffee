@@ -4,6 +4,7 @@ module.exports = {
   presets: [require('nativewind/preset')],
   theme: {
     extend: {
+      fontSize: { xs: ['13px', { lineHeight: '18px' }] },
       colors: {
         coffee: {
           DEFAULT: '#101114',

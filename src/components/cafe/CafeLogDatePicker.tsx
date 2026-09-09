@@ -113,7 +113,7 @@ export function CafeLogDatePicker() {
         </View>
         <View className="flex-1 gap-1">
           <Text className="text-[15px] font-semibold text-coffee">{dateLabel(date)}</Text>
-          <Text className="text-xs text-coffee-tan">
+          <Text className="text-[13px] text-coffee-tan">
             {visitedAt === dateKey(new Date()) ? '오늘 방문한 카페예요' : '카페에 방문한 날짜'}
           </Text>
         </View>

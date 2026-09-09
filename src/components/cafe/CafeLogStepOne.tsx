@@ -29,7 +29,7 @@ function NotePhotoPreview({ uri, index, onRemove }: { uri: string; index: number
         <Ionicons name="close" size={15} color="#fff" />
       </TouchableOpacity>
       <View className="absolute bottom-1.5 left-1.5 rounded-md bg-black/[0.45] px-1.5 py-0.5">
-        <Text className="text-[10px] font-semibold text-white">{index === 0 ? '앞면' : '뒷면'}</Text>
+        <Text className="text-[13px] font-semibold text-white">{index === 0 ? '앞면' : '뒷면'}</Text>
       </View>
     </View>
   );
@@ -96,7 +96,7 @@ export function Step1({
                     ) : (
                       <>
                         <Ionicons name="add" size={26} color="#5F636B" />
-                        <Text className="text-xs font-semibold text-coffee-tan">
+                        <Text className="text-[13px] font-semibold text-coffee-tan">
                           {i === 0 ? '앞면' : '뒷면'}
                         </Text>
                       </>
@@ -146,7 +146,7 @@ export function Step1({
               className="h-[133px] w-[100px] items-center justify-center gap-1.5 rounded-[10px] border-[1.5px] border-dashed border-coffee-border bg-[#F1F2F4]"
             >
               <Ionicons name="add" size={24} color="#101114" />
-              <Text className="text-[11px] font-semibold text-coffee">사진 추가</Text>
+              <Text className="text-[13px] font-semibold text-coffee">사진 추가</Text>
             </TouchableOpacity>
           )}
         </ScrollView>

@@ -109,7 +109,7 @@ function DecorationChoice({
         borderColor: selected ? '#F2DF36' : '#D8DADE',
       }}
     >
-      <Text className="text-[12px] font-bold" style={{ color: selected ? '#101114' : '#3F4248' }}>
+      <Text className="text-[13px] font-bold" style={{ color: selected ? '#101114' : '#3F4248' }}>
         {label}
       </Text>
     </TouchableOpacity>
@@ -366,7 +366,7 @@ export function CafeLogShareModal({
                                     : '#D8DADE',
                               }}
                             >
-                              <Text className="text-xs font-bold text-coffee">
+                              <Text className="text-[13px] font-bold text-coffee">
                                 {background === 'default' ? '기본 배경' : '화이트'}
                               </Text>
                             </TouchableOpacity>
@@ -400,7 +400,7 @@ export function CafeLogShareModal({
                                 </View>
                               ) : null}
                             </View>
-                            <Text className="mt-1 text-[10px] text-coffee-muted">{item.label}</Text>
+                            <Text className="mt-1 text-[13px] text-coffee-muted">{item.label}</Text>
                           </TouchableOpacity>
                         );
                       })}
@@ -470,7 +470,7 @@ export function CafeLogShareModal({
                         }}
                       >
                         <Text
-                          className="text-[12px]"
+                          className="text-[13px]"
                           style={{ color: selected ? '#101114' : '#3F4248', fontFamily }}
                         >
                           {label}
@@ -558,7 +558,7 @@ export function CafeLogShareModal({
                     <Ionicons name={tab.icon} size={21} color={selected ? '#101114' : '#777B82'} />
                   </View>
                   <Text
-                    className="text-[11px] font-semibold"
+                    className="text-[13px] font-semibold"
                     style={{ color: selected ? '#101114' : '#777B82' }}
                   >
                     {tab.label}

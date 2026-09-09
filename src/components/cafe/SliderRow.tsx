@@ -15,7 +15,7 @@ export function SliderRow({
   const current = value ?? 0;
   return (
     <View className="flex-row items-center gap-2.5">
-      <Text className="w-[52px] text-xs text-gray-400">{label}</Text>
+      <Text className="w-[52px] text-[13px] text-gray-400">{label}</Text>
       <View className="flex-1 flex-row items-center">
         {[1, 2, 3, 4, 5].flatMap((n) => {
           const items = [];
@@ -36,7 +36,7 @@ export function SliderRow({
               style={{ backgroundColor: n <= current ? COFFEE : EMPTY }}
             >
               <Text
-                className="text-[11px] font-semibold"
+                className="text-[13px] font-semibold"
                 style={{ color: n <= current ? '#fff' : '#9CA3AF' }}
               >
                 {n}

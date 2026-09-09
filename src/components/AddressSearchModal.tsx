@@ -169,7 +169,7 @@ export function AddressSearchModal({ visible, onSelect, onClose }: Props) {
                     </Text>
                   ) : null}
                   {item.category_name ? (
-                    <Text className="mt-0.5 text-xs text-coffee-warm" numberOfLines={1}>
+                    <Text className="mt-0.5 text-[13px] text-coffee-warm" numberOfLines={1}>
                       {item.category_name}
                     </Text>
                   ) : null}

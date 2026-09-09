@@ -367,7 +367,7 @@ export function CafeGridCard({ item }: { item: CafeLog }) {
                 paddingTop: 50,
               }}
             >
-              <Text className="mb-0.5 text-[10px] text-white/70">
+              <Text className="mb-0.5 text-[13px] text-white/70">
                 {item.visited_at.replace(/-/g, '.')}
               </Text>
               <Text className="text-[13px] font-bold text-white" numberOfLines={1}>
@@ -397,7 +397,7 @@ export function CafeGridCard({ item }: { item: CafeLog }) {
               />
             </View>
             <View className="p-3 bg-white">
-              <Text className="mb-[3px] text-[11px] text-coffee-warm">
+              <Text className="mb-[3px] text-[13px] text-coffee-warm">
                 {item.visited_at.replace(/-/g, '.')}
               </Text>
               <Text className="text-[13px] font-bold leading-[19px] text-coffee" numberOfLines={2}>

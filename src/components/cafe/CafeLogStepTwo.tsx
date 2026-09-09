@@ -88,7 +88,7 @@ export function Step2({ onOpenSearch }: { onOpenSearch: () => void }) {
               </TouchableOpacity>
             </View>
             <TouchableOpacity onPress={onOpenSearch} className="mt-1.5 self-start">
-              <Text className="text-xs font-semibold text-coffee">직접 검색</Text>
+              <Text className="text-[13px] font-semibold text-coffee">직접 검색</Text>
             </TouchableOpacity>
           </View>
         ) : hasCoords ? (
@@ -105,7 +105,7 @@ export function Step2({ onOpenSearch }: { onOpenSearch: () => void }) {
               <>
                 <View className="mb-0.5 flex-row items-center gap-[5px]">
                   <Ionicons name="location" size={13} color="#101114" />
-                  <Text className="text-xs font-semibold text-coffee">반경 500m 근처 카페</Text>
+                  <Text className="text-[13px] font-semibold text-coffee">반경 500m 근처 카페</Text>
                 </View>
                 {nearbyPlaces.map((p) => (
                   <TouchableOpacity
@@ -118,13 +118,13 @@ export function Step2({ onOpenSearch }: { onOpenSearch: () => void }) {
                         {p.place_name}
                       </Text>
                       {p.distance ? (
-                        <Text className="text-xs font-medium text-coffee">
+                        <Text className="text-[13px] font-medium text-coffee">
                           {formatDistance(p.distance)}
                         </Text>
                       ) : null}
                     </View>
                     {p.road_address_name || p.address_name ? (
-                      <Text className="mt-[3px] text-xs text-coffee-warm" numberOfLines={1}>
+                      <Text className="mt-[3px] text-[13px] text-coffee-warm" numberOfLines={1}>
                         {p.road_address_name || p.address_name}
                       </Text>
                     ) : null}
