@@ -120,9 +120,14 @@ export default function CafeScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      let active = true;
       getCafeLogs().then(async (data) => {
         const hydratedData = await hydrateCafeLogsImageRatios(data);
-        setLogs(hydratedData);
+        if (!active) return;
+        // Returning from detail without edits should not rerender every photo card.
+        setLogs((previous) =>
+          JSON.stringify(previous) === JSON.stringify(hydratedData) ? previous : hydratedData,
+        );
         if (!initialScrollDone.current && data.length > 0) {
           initialScrollDone.current = true;
           scrollX.value = 0;
@@ -132,6 +137,9 @@ export default function CafeScreen() {
           });
         }
       });
+      return () => {
+        active = false;
+      };
     }, []),
   );
 

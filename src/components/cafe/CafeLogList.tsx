@@ -9,6 +9,7 @@ import Animated, {
   Extrapolation,
   SharedValue,
 } from 'react-native-reanimated';
+import { useCafeThumbnail } from '@/src/hooks/useCafeThumbnail';
 import { CafeLog } from '@/src/types';
 import { parseAspectRatios } from '@/src/services/imageAspectRatios';
 
@@ -190,6 +191,7 @@ export function CafeCard({
   const imgRatio = getFirstPhotoAspectRatio(item);
   const noteColors = parseNoteColors(item.first_my_notes);
   const firstPhotoUri = getFirstPhotoUri(item);
+  const { uri: thumbnailUri, onError: onThumbnailError } = useCafeThumbnail(firstPhotoUri);
   const hasPhoto = !!firstPhotoUri;
 
   let actualCardWidth = cardWidth;
@@ -236,10 +238,13 @@ export function CafeCard({
           {hasPhoto ? (
             <>
               <Image
-                source={{ uri: firstPhotoUri! }}
+                source={thumbnailUri ? { uri: thumbnailUri } : null}
+                onError={onThumbnailError}
                 style={{ width: '100%', flex: 1 }}
                 contentFit="cover"
-                transition={150}
+                transition={0}
+                cachePolicy="memory-disk"
+                allowDownscaling
               />
               <LinearGradient
                 colors={['transparent', 'rgba(0,0,0,0.72)']}
@@ -322,6 +327,7 @@ export function CafeGridCard({ item }: { item: CafeLog }) {
   const imgRatio = getFirstPhotoAspectRatio(item) ?? 3 / 4;
   const noteColors = parseNoteColors(item.first_my_notes);
   const firstPhotoUri = getFirstPhotoUri(item);
+  const { uri: thumbnailUri, onError: onThumbnailError } = useCafeThumbnail(firstPhotoUri);
 
   const noteGradient =
     noteColors.length > 0
@@ -351,10 +357,13 @@ export function CafeGridCard({ item }: { item: CafeLog }) {
         {firstPhotoUri ? (
           <View style={{ aspectRatio: imgRatio }}>
             <Image
-              source={{ uri: firstPhotoUri }}
+              source={thumbnailUri ? { uri: thumbnailUri } : null}
+                onError={onThumbnailError}
               style={{ width: '100%', height: '100%' }}
               contentFit="cover"
-              transition={150}
+              transition={0}
+              cachePolicy="memory-disk"
+              allowDownscaling
             />
             <LinearGradient
               colors={['transparent', 'rgba(0,0,0,0.75)']}

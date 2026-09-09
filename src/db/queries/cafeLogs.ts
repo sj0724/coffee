@@ -1,3 +1,4 @@
+import { persistPhotoUris, getThumbnail } from '@/src/services/cafePhotos';
 import { getDB } from '../index';
 import { CafeLog } from '../../types';
 
@@ -44,6 +45,11 @@ export async function createCafeLog(
 ): Promise<number | null> {
   try {
     const db = await getDB();
+    const photos = persistPhotoUris(log.photos);
+    const notePhotos = persistPhotoUris(log.note_photos);
+    const representative =
+      (photos ? JSON.parse(photos)[0] : undefined) ??
+      (notePhotos ? JSON.parse(notePhotos)[0] : undefined);
     const result = await db.runAsync(
       `INSERT INTO cafe_logs (
         cafe_name, visited_at, photos, photo_aspect_ratios,
@@ -52,14 +58,15 @@ export async function createCafeLog(
       [
         log.cafe_name,
         log.visited_at,
-        log.photos ?? null,
+        photos ?? null,
         log.photo_aspect_ratios ?? null,
-        log.note_photos ?? null,
+        notePhotos ?? null,
         log.note_photo_aspect_ratios ?? null,
         log.address ?? null,
         log.memo ?? null,
       ],
     );
+    if (representative) void getThumbnail(representative);
     return result.lastInsertRowId;
   } catch (e) {
     console.error('createCafeLog error:', e);
